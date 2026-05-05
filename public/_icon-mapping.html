@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pulse · Icon Mapping</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0b10;
+      --panel: #14141c;
+      --panel-2: #1c1c26;
+      --border: #232330;
+      --border-strong: #353548;
+      --text: #f4f4f7;
+      --muted: #8b8b9a;
+      --purple: #8B5CF6;
+      --gold: #F59E0B;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+      padding: 32px 20px 100px;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    h1 {
+      font-size: 24px;
+      font-weight: 800;
+      margin: 0 0 6px;
+      letter-spacing: -0.01em;
+    }
+    .lede {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 32px;
+      line-height: 1.55;
+      max-width: 720px;
+    }
+    h2 {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #C4B5FD;
+      margin: 36px 0 12px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+
+    .row {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 14px;
+    }
+    .row:hover { border-color: var(--border-strong); }
+
+    .from {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      min-width: 56px;
+    }
+    .from .emoji { font-size: 28px; line-height: 1; }
+    .from .label {
+      font-size: 9px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .arrow {
+      color: var(--muted);
+      font-size: 16px;
+      opacity: 0.5;
+      grid-column: unset;
+    }
+
+    .meta {
+      flex: 1;
+      min-width: 0;
+    }
+    .meta .name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.005em;
+    }
+    .meta .file {
+      font-size: 10px;
+      color: var(--muted);
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .to {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      background: rgba(139, 92, 246, 0.06);
+      border: 1px solid rgba(139, 92, 246, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .to img {
+      width: 32px;
+      height: 32px;
+      filter: invert(94%) sepia(8%) saturate(0%) hue-rotate(0deg) brightness(102%) contrast(100%);
+    }
+
+    /* Tinted-by-category demo at bottom */
+    .tinted-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .tinted {
+      padding: 16px 12px;
+      border-radius: 12px;
+      text-align: center;
+      border: 1px solid var(--border);
+      background: var(--panel);
+    }
+    .tinted .swatch {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 8px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tinted .swatch img { width: 24px; height: 24px; }
+    .tinted .lbl {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .tinted .sub {
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 48px;
+      line-height: 1.7;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(139,92,246,0.12);
+      border: 1px solid rgba(139,92,246,0.3);
+      color: #C4B5FD;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Pulse · Proposed Icon Mapping <span class="pill">Plump · Line</span></h1>
+    <p class="lede">
+      Each row shows the current emoji on the left and the proposed Streamline Plump line icon on the right.
+      Flag any you want to swap and I&apos;ll find an alternative. Once approved, I&apos;ll wire them in with a
+      sprite-based <code style="background:#1c1c26;padding:1px 5px;border-radius:4px;font-size:11px;">&lt;Icon name=&quot;...&quot; /&gt;</code>
+      component so they tint with your category colors.
+    </p>
+
+    <h2>Local Categories <span style="color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0;">— 9 icons</span></h2>
+    <div class="grid">
+      <!-- pothole -->
+      <div class="row">
+        <div class="from"><div class="emoji">🕳️</div><div class="label">Pothole</div></div>
+        <div class="meta">
+          <div class="name">Pothole</div>
+          <div class="file">map-travel / street-sign.svg</div>
+        </div>
+        <div class="to"><img src="/_icon-preview/proposed/local__pothole.svg" /></div>
+      </div>
+      <!-- safety -->
+      <div class="row">
+        <div class="from"><div class="emoji">🚨</div><div class="label">Safety</div></div>
+        <div class="meta">
+          <div class="name">Safety</div>
+          <div class="file">interface / warning-diamond.svg</div>
+        </div>
+        <div class="to"><img src="/_icon-preview/proposed/local__safety.svg" /></div>
+      </div>
+      <!-- noise -->
+      <div class="row">
+        <div class="from"><div class="emoji">🔊</div><div class="label">Noise</div></div>
+        <div class="meta">
+          <div class="name">Noise</div>
+          <div class="file">entertainment / volume-level-high.svg</div>
+        </div>
+        <div class="to"><img src="/_icon-preview/proposed/local__noise.svg" /></div>
+      </div>
+      <!-- parks -->
+      <div class="row">
+        <div class="from"><div class="emoji">🌳</div><div class="label">Parks</div></div>
+        <div class="meta">
+          <div class="name">Parks</div>
+          <div class="file">map-travel / park.svg</div>
+        </div>
+        <div class="to"><img src="/_icon-preview/proposed/local__parks.svg" /></div>
+      </div>
+      <!-- transit -->
+      <div class="row">
+        <div class="from"><div class="emoji">🚌</div><div class="label">Transit</div></div>
+        <div class="meta">
+          <div class="name">Transit</div>
+          <div class="file">map-travel / bus.svg</div>
+        </div>
+        <div class="to"><img src="/_icon-preview/proposed/local__transit.svg" /></div>
+      </div>
+      <!-- housing -->
+      <div class="row">
+        <div class="from"><div class="emoji">🏠</div><div class="label">Housing</div></div>
+        <div class="meta">
+          <div class="name">Housing</div>
+          <div class="file">interface / home-1.svg</div>
+        </div>
+        <div class="to"><img src="/_icon-preview/proposed/local__housing.svg" /></div>
+      </div>
+      <!-- business -->
+      <div class="row">
+        <div class="from"><div class="emoji">🏪</div><div class="label">Business</div></div>
+        <div class="meta">
+          <div class="name">Business</div>
+          <div class="file">money-shopping / store-2.svg</div>
+        </div>
+        <div class="to"><img src="/_icon-preview/proposed/local__business.svg" /></div>
+      </div>
+      <!-- compliment -->
+      <div class="row">
+        <div class="from"><div class="emoji">💚</div><div class="label">Compliment</div></div>
+        <div class="meta">
+          <div class="name">Compliment</div>
+          <div class="file">interface / like-1.svg</div>
+        </div>
+        <div class="to"><img src="/_icon-preview/proposed/local__compliment.svg" /></div>
+      </div>
+      <!-- other -->
+      <div class="row">
+        <div class="from"><div class="emoji">📌</div><div class="label">Other</div></div>
+        <div class="meta">
+          <div class="name">Other</div>
+          <div class="file">interface / pin-2.svg</div>
+        </div>
+        <div class="to"><img src="/_icon-preview/proposed/local__other.svg" /></div>
+      </div>
+    </div>
+
+    <h2>State Categories <span style="color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0;">— 9 icons</span></h2>
+    <div class="grid">
+      <div class="row">
+        <div class="from"><div class="emoji">🎓</div><div class="label">Education</div></div>
+        <div class="meta"><div class="name">Education</div><div class="file">work-education / graduation-cap.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/state__education.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">🏥</div><div class="label">Healthcare</div></div>
+        <div class="meta"><div class="name">Healthcare</div><div class="file">health / hospital-sign-square.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/state__healthcare.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">🛣️</div><div class="label">Infra</div></div>
+        <div class="meta"><div class="name">Infrastructure</div><div class="file">nature-ecology / industry-innovation-and-infrastructure.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/state__infrastructure.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">🌿</div><div class="label">Env</div></div>
+        <div class="meta"><div class="name">Environment</div><div class="file">nature-ecology / leaf-protect.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/state__environment.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">💰</div><div class="label">Budget</div></div>
+        <div class="meta"><div class="name">State Budget</div><div class="file">money-shopping / piggy-bank.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/state__state-budget.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">⚖️</div><div class="label">Law</div></div>
+        <div class="meta"><div class="name">Legislation</div><div class="file">money-shopping / justice-scale-2.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/state__legislation.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">🗳️</div><div class="label">Vote</div></div>
+        <div class="meta"><div class="name">Elections</div><div class="file">culture / politics-vote-2.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/state__elections.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">🏠</div><div class="label">Housing Policy</div></div>
+        <div class="meta"><div class="name">Housing Policy</div><div class="file">interface / door.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/state__housing-policy.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">📌</div><div class="label">Other</div></div>
+        <div class="meta"><div class="name">Other (state)</div><div class="file">map-travel / rectangle-flag.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/state__other-state.svg" /></div>
+      </div>
+    </div>
+
+    <h2>UI Affordances <span style="color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0;">— 17 icons</span></h2>
+    <div class="grid">
+      <div class="row">
+        <div class="from"><div class="emoji">🫀</div><div class="label">Brand</div></div>
+        <div class="meta"><div class="name">Pulse Brand Mark</div><div class="file">health / heart-rate-pulse-graph.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__brand-pulse.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">👤</div><div class="label">Incognito</div></div>
+        <div class="meta"><div class="name">Incognito Mode</div><div class="file">programming / incognito-mode.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__incognito.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">ℹ️</div><div class="label">Info</div></div>
+        <div class="meta"><div class="name">Info</div><div class="file">interface / information-circle.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__info.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">✓</div><div class="label">Verified</div></div>
+        <div class="meta"><div class="name">Verified</div><div class="file">interface / check-thick.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__verified.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">🔒</div><div class="label">Lock</div></div>
+        <div class="meta"><div class="name">Hidden / Lock</div><div class="file">interface / keyhole-lock-circle.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__lock.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">📍</div><div class="label">Location</div></div>
+        <div class="meta"><div class="name">Location</div><div class="file">map-travel / location-pin.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__location.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">📷</div><div class="label">Camera</div></div>
+        <div class="meta"><div class="name">Photo / Evidence</div><div class="file">images / camera-1.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__camera.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">▶</div><div class="label">Play</div></div>
+        <div class="meta"><div class="name">Video Play</div><div class="file">entertainment / button-play-circle.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__play.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">🗓</div><div class="label">Calendar</div></div>
+        <div class="meta"><div class="name">Calendar</div><div class="file">interface / calendar-mark.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__calendar.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">🔍</div><div class="label">Search</div></div>
+        <div class="meta"><div class="name">Search / Empty</div><div class="file">interface / file-search.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__search.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">🏘️</div><div class="label">My City</div></div>
+        <div class="meta"><div class="name">Scope: My City</div><div class="file">map-travel / building-office.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__scope-city.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">🏛️</div><div class="label">My State</div></div>
+        <div class="meta"><div class="name">Scope: My State</div><div class="file">map-travel / government-building-1.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__scope-state.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">✨</div><div class="label">AI</div></div>
+        <div class="meta"><div class="name">AI / Spark</div><div class="file">interface / magic-wand-1.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__ai-spark.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">💡</div><div class="label">Idea</div></div>
+        <div class="meta"><div class="name">Lightbulb / Hint</div><div class="file">interface / lightbulb.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__lightbulb.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">⚡</div><div class="label">Bolt</div></div>
+        <div class="meta"><div class="name">Lightning</div><div class="file">interface / lightning-cloud.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__lightning.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">📣</div><div class="label">Announce</div></div>
+        <div class="meta"><div class="name">Megaphone</div><div class="file">money-shopping / announcement-megaphone.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__megaphone.svg" /></div>
+      </div>
+      <div class="row">
+        <div class="from"><div class="emoji">💬</div><div class="label">Comments</div></div>
+        <div class="meta"><div class="name">Comments / Chat</div><div class="file">mail / chat-bubble-oval-notification.svg</div></div>
+        <div class="to"><img src="/_icon-preview/proposed/ui__comments.svg" /></div>
+      </div>
+    </div>
+
+    <h2>Tinted preview <span style="color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0;">— how categories will look in chips</span></h2>
+    <p class="lede" style="margin-bottom:14px;">
+      In the actual UI, each category icon will inherit the category color
+      (these are filter-faked here for preview). The real wiring uses <code style="background:#1c1c26;padding:1px 5px;border-radius:4px;font-size:11px;">currentColor</code> so it&apos;s pixel-clean.
+    </p>
+    <div class="tinted-grid">
+      <div class="tinted">
+        <div class="swatch" style="background:rgba(255,107,53,0.15);">
+          <img src="/_icon-preview/proposed/local__pothole.svg" style="filter:invert(56%) sepia(78%) saturate(2123%) hue-rotate(338deg) brightness(101%) contrast(101%)" />
+        </div>
+        <div class="lbl">Pothole</div>
+        <div class="sub">#FF6B35</div>
+      </div>
+      <div class="tinted">
+        <div class="swatch" style="background:rgba(34,197,94,0.15);">
+          <img src="/_icon-preview/proposed/local__parks.svg" style="filter:invert(60%) sepia(58%) saturate(523%) hue-rotate(85deg) brightness(94%) contrast(86%)" />
+        </div>
+        <div class="lbl">Parks</div>
+        <div class="sub">#22C55E</div>
+      </div>
+      <div class="tinted">
+        <div class="swatch" style="background:rgba(59,130,246,0.15);">
+          <img src="/_icon-preview/proposed/local__transit.svg" style="filter:invert(54%) sepia(48%) saturate(2978%) hue-rotate(199deg) brightness(101%) contrast(94%)" />
+        </div>
+        <div class="lbl">Transit</div>
+        <div class="sub">#3B82F6</div>
+      </div>
+      <div class="tinted">
+        <div class="swatch" style="background:rgba(99,102,241,0.15);">
+          <img src="/_icon-preview/proposed/state__education.svg" style="filter:invert(46%) sepia(60%) saturate(2018%) hue-rotate(220deg) brightness(96%) contrast(91%)" />
+        </div>
+        <div class="lbl">Education</div>
+        <div class="sub">#6366F1</div>
+      </div>
+      <div class="tinted">
+        <div class="swatch" style="background:rgba(139,92,246,0.15);">
+          <img src="/_icon-preview/proposed/state__legislation.svg" style="filter:invert(44%) sepia(86%) saturate(693%) hue-rotate(232deg) brightness(99%) contrast(96%)" />
+        </div>
+        <div class="lbl">Legislation</div>
+        <div class="sub">#8B5CF6</div>
+      </div>
+      <div class="tinted">
+        <div class="swatch" style="background:rgba(217,119,6,0.15);">
+          <img src="/_icon-preview/proposed/state__state-budget.svg" style="filter:invert(45%) sepia(91%) saturate(845%) hue-rotate(15deg) brightness(95%) contrast(95%)" />
+        </div>
+        <div class="lbl">State Budget</div>
+        <div class="sub">#D97706</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <strong>License:</strong> Streamline Plump — CC BY 4.0 · webalys-hq/streamline-vectors<br/>
+      <strong>Total selected:</strong> 35 icons (9 local + 9 state + 17 UI) · all from the same coherent system<br/>
+      Reply with any swaps you want and I&apos;ll find alternatives, then wire the whole thing in.
+    </div>
+  </div>
+</body>
+</html>

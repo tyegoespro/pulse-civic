@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plump variant comparison</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0b10;
+      --panel: #14141c;
+      --border: #232330;
+      --text: #f4f4f7;
+      --muted: #8b8b9a;
+      --purple: #8B5CF6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+      padding: 32px 24px 80px;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    h1 {
+      font-size: 22px;
+      font-weight: 800;
+      margin: 0 0 4px;
+      letter-spacing: -0.01em;
+    }
+    .sub { color: var(--muted); font-size: 13px; margin-bottom: 28px; line-height: 1.5; }
+    .variants { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .variant {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 14px 16px;
+      text-align: center;
+      transition: border-color 0.2s ease;
+    }
+    .variant:hover { border-color: var(--purple); }
+    .variant h2 {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin: 0 0 12px;
+      color: #C4B5FD;
+    }
+    .icons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .cell {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+    .cell img { width: 100%; height: 100%; object-fit: contain; }
+    .label { font-size: 10px; color: var(--muted); margin-top: 4px; text-align: center; }
+    /* Force tint for the line variant so it's visible on dark bg */
+    .variant.line .cell img { filter: invert(94%) sepia(8%) saturate(0%) hue-rotate(0deg) brightness(102%) contrast(100%); }
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 36px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Streamline Plump — variant comparison</h1>
+    <p class="sub">Same 4 icons rendered in 4 variants. Pick the variant that feels most like the Pulse you want.</p>
+
+    <div class="variants">
+      <div class="variant line">
+        <h2>Line</h2>
+        <div class="icons">
+          <div class="cell"><img src="/_icon-preview/line__tree.svg" alt="" /></div>
+          <div class="cell"><img src="/_icon-preview/line__pin.svg" alt="" /></div>
+          <div class="cell"><img src="/_icon-preview/line__bus.svg" alt="" /></div>
+          <div class="cell"><img src="/_icon-preview/line__building.svg" alt="" /></div>
+        </div>
+        <div class="label">monochrome · stroke-only</div>
+      </div>
+
+      <div class="variant duo">
+        <h2>Duo</h2>
+        <div class="icons">
+          <div class="cell"><img src="/_icon-preview/duo__tree.svg" alt="" /></div>
+          <div class="cell"><img src="/_icon-preview/duo__pin.svg" alt="" /></div>
+          <div class="cell"><img src="/_icon-preview/duo__bus.svg" alt="" /></div>
+          <div class="cell"><img src="/_icon-preview/duo__building.svg" alt="" /></div>
+        </div>
+        <div class="label">two-tone · stroke + accent fill</div>
+      </div>
+
+      <div class="variant flat">
+        <h2>Flat</h2>
+        <div class="icons">
+          <div class="cell"><img src="/_icon-preview/flat__tree.svg" alt="" /></div>
+          <div class="cell"><img src="/_icon-preview/flat__pin.svg" alt="" /></div>
+          <div class="cell"><img src="/_icon-preview/flat__bus.svg" alt="" /></div>
+          <div class="cell"><img src="/_icon-preview/flat__building.svg" alt="" /></div>
+        </div>
+        <div class="label">solid color blocks</div>
+      </div>
+
+      <div class="variant pop">
+        <h2>Pop</h2>
+        <div class="icons">
+          <div class="cell"><img src="/_icon-preview/pop__tree.svg" alt="" /></div>
+          <div class="cell"><img src="/_icon-preview/pop__pin.svg" alt="" /></div>
+          <div class="cell"><img src="/_icon-preview/pop__bus.svg" alt="" /></div>
+          <div class="cell"><img src="/_icon-preview/pop__building.svg" alt="" /></div>
+        </div>
+        <div class="label">colorful · most illustrative</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Streamline Plump · CC BY 4.0 · webalys-hq/streamline-vectors<br/>
+      500 free icons available per variant. Pick a variant and I'll wire it in.
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Vercel
+.vercel/
+
+# Cache
+.npm-cache/
+
+# macOS
+.DS_Store
+._*
+.home-tmp/
+
+# Env
+.env.local
+.env
+
+# Editor
+.claude/
+.vscode/
+
+# Assets source
+.icon-source/
+LocalPulse.pdf
+
+# Temp
+deploy_output.txt
+deploy_log.txt
+node_modules
+node_modules
+node_modules
+node_modules
+node_modules

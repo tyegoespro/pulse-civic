@@ -1,0 +1,245 @@
+import Icon from './Icon'
+
+export default function Header({
+  onBrandClick,
+  incognito,
+  onToggleIncognito,
+  isPro = false,
+  incognitoRemaining = 0,
+  onShowPro,
+  scope,
+  onScopeChange,
+  onInfoClick
+}) {
+  return (
+    <header className="app-header" style={incognito ? {
+      background: 'rgba(139, 92, 246, 0.08)',
+      borderBottomColor: 'rgba(139, 92, 246, 0.2)'
+    } : {}}>
+      <div className="app-header-inner">
+        <div className="app-brand" onClick={onBrandClick}>
+          <span className="app-brand-icon" style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: incognito ? '#C4B5FD' : '#FF3366'
+          }}>
+            <Icon name={incognito ? 'ui-incognito' : 'ui-brand-pulse'} size={26} />
+          </span>
+          <h1 className="app-brand-name">{incognito ? 'Incognito' : 'Pulse'}</h1>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Info Button */}
+          <button
+            onClick={onInfoClick}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              border: '1px solid var(--border)',
+              background: 'rgba(255,255,255,0.04)',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.25s ease'
+            }}
+            title="About Pulse"
+          >
+            <Icon name="ui-info" size={20} />
+          </button>
+          {/* Incognito Toggle */}
+          <button
+            onClick={onToggleIncognito}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              border: incognito
+                ? '2px solid rgba(139, 92, 246, 0.5)'
+                : '1px solid var(--border)',
+              background: incognito
+                ? 'rgba(139, 92, 246, 0.2)'
+                : 'rgba(255,255,255,0.04)',
+              color: incognito ? '#C4B5FD' : 'var(--text-secondary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.25s ease',
+              position: 'relative'
+            }}
+            title={
+              incognito
+                ? 'Exit incognito mode'
+                : isPro
+                  ? 'Enter incognito mode (Pro — unlimited posts)'
+                  : `Enter incognito mode (${incognitoRemaining} of 3 free incognito posts left this month)`
+            }
+          >
+            <Icon name="ui-incognito" size={20} />
+            {incognito && (
+              <div style={{
+                position: 'absolute',
+                top: -3,
+                right: -3,
+                width: 10,
+                height: 10,
+                borderRadius: 5,
+                background: '#8B5CF6',
+                border: '2px solid var(--bg-primary)'
+              }} />
+            )}
+            {!incognito && !isPro && (
+              <div style={{
+                position: 'absolute',
+                top: -4,
+                right: -4,
+                minWidth: 14,
+                height: 14,
+                padding: '0 3px',
+                borderRadius: 7,
+                background: incognitoRemaining === 0 ? '#EF4444' : '#8B5CF6',
+                border: '2px solid var(--bg-primary)',
+                color: 'white',
+                fontSize: 9,
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: 1
+              }}>
+                {incognitoRemaining}
+              </div>
+            )}
+          </button>
+
+          {/* Pro Pill / Upgrade CTA */}
+          {isPro ? (
+            <div
+              onClick={onShowPro}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                height: 40,
+                padding: '0 10px',
+                borderRadius: 12,
+                background: 'linear-gradient(135deg, rgba(245,158,11,0.18), rgba(217,119,6,0.18))',
+                border: '1px solid rgba(245,158,11,0.4)',
+                color: '#FCD34D',
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                cursor: 'default'
+              }}
+              title="You're a Pulse Pro member"
+            >
+              <Icon name="ui-ai-spark" size={14} />
+              Pro
+            </div>
+          ) : (
+            <button
+              onClick={onShowPro}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                height: 40,
+                padding: '0 12px',
+                borderRadius: 12,
+                background: 'linear-gradient(135deg, rgba(139,92,246,0.18), rgba(109,40,217,0.18))',
+                border: '1px solid rgba(139,92,246,0.4)',
+                color: '#C4B5FD',
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                fontFamily: 'var(--font)',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.2s ease'
+              }}
+              title="Upgrade to Pulse Pro"
+            >
+              <Icon name="ui-ai-spark" size={14} />
+              Pro
+            </button>
+          )}
+          {/* User Badge */}
+          <div className="app-user-badge">
+            {incognito ? (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                color: '#A78BFA',
+                fontWeight: 600,
+                fontSize: 12
+              }}>
+                <Icon name="ui-lock" size={12} />
+                Hidden
+              </span>
+            ) : (
+              <>
+                <span className="verified" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                  <Icon name="ui-verified" size={12} />
+                  Verified
+                </span>
+                <span className="location">· {scope === 'state' ? 'Wisconsin' : 'Oshkosh, WI'}</span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Incognito Banner */}
+      {incognito && (
+        <div style={{
+          background: 'linear-gradient(90deg, rgba(139,92,246,0.15), rgba(99,102,241,0.1))',
+          padding: '6px 20px',
+          fontSize: 11,
+          fontWeight: 600,
+          color: '#C4B5FD',
+          textAlign: 'center',
+          letterSpacing: '0.02em',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6
+        }}>
+          <Icon name="ui-incognito" size={13} />
+          Incognito Mode — your votes, comments, and posts are anonymous
+        </div>
+      )}
+
+      {/* Scope Switcher */}
+      <div className="scope-switcher">
+        <div
+          className="scope-indicator"
+          style={{ transform: scope === 'state' ? 'translateX(100%)' : 'translateX(0)' }}
+        />
+        <button
+          className={`scope-option ${scope === 'local' ? 'active' : ''}`}
+          onClick={() => onScopeChange('local')}
+        >
+          <span className="scope-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
+            <Icon name="ui-scope-city" size={16} />
+          </span>
+          <span>My City</span>
+        </button>
+        <button
+          className={`scope-option ${scope === 'state' ? 'active' : ''}`}
+          onClick={() => onScopeChange('state')}
+        >
+          <span className="scope-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
+            <Icon name="ui-scope-state" size={16} />
+          </span>
+          <span>My State</span>
+        </button>
+      </div>
+    </header>
+  )
+}
