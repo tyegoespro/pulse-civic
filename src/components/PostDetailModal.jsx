@@ -69,6 +69,7 @@ function LocationMap({ lat, lng, location, onExploreClick }) {
 
 export default function PostDetailModal({ post, onClose, onVote, onCommentClick, onAuthorClick, onExploreLocation }) {
   const [commentText, setCommentText] = useState('')
+  const [lightboxIndex, setLightboxIndex] = useState(null)
   const allCategories = post.scope === 'state' ? STATE_CATEGORIES : CATEGORIES
   const cat = allCategories.find(c => c.id === post.category)
   const voteClass = post.userVote === 1 ? 'up' : post.userVote === -1 ? 'down' : 'neutral'
@@ -84,6 +85,57 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
   return (
     <div className="post-detail-overlay" onClick={onClose}>
       <div className="post-detail-content" onClick={e => e.stopPropagation()}>
+
+        {/* Image Lightbox */}
+        {lightboxIndex !== null && post.media && post.media[lightboxIndex] && (
+          <div
+            className="lightbox-overlay"
+            onClick={() => setLightboxIndex(null)}
+          >
+            <button
+              className="lightbox-close"
+              onClick={() => setLightboxIndex(null)}
+            >
+              ✕
+            </button>
+
+            {post.media.length > 1 && (
+              <>
+                <button
+                  className="lightbox-nav lightbox-prev"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setLightboxIndex((lightboxIndex - 1 + post.media.length) % post.media.length)
+                  }}
+                >
+                  ‹
+                </button>
+                <button
+                  className="lightbox-nav lightbox-next"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setLightboxIndex((lightboxIndex + 1) % post.media.length)
+                  }}
+                >
+                  ›
+                </button>
+              </>
+            )}
+
+            <img
+              src={post.media[lightboxIndex].preview}
+              alt={`Photo ${lightboxIndex + 1}`}
+              className="lightbox-image"
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            {post.media.length > 1 && (
+              <div className="lightbox-counter">
+                {lightboxIndex + 1} / {post.media.length}
+              </div>
+            )}
+          </div>
+        )}
         {/* Header */}
         <div className="post-detail-header">
           <button className="post-detail-back" onClick={onClose}>
@@ -166,7 +218,7 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
           <p className="post-detail-description">{post.description}</p>
         )}
 
-        {/* Media Gallery — responsive */}
+        {/* Media Gallery — responsive, tappable */}
         {post.media && post.media.length > 0 && (
           <div className="post-detail-media" style={{
             display: 'grid',
@@ -175,12 +227,17 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
             marginBottom: 16
           }}>
             {post.media.map((m, i) => (
-              <div key={i} style={{
-                borderRadius: 12,
-                overflow: 'hidden',
-                border: '1px solid var(--border)',
-                aspectRatio: post.media.length === 1 ? '16/10' : '4/3'
-              }}>
+              <div
+                key={i}
+                onClick={() => m.type !== 'video' && setLightboxIndex(i)}
+                style={{
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  border: '1px solid var(--border)',
+                  aspectRatio: post.media.length === 1 ? '16/10' : '4/3',
+                  cursor: m.type !== 'video' ? 'zoom-in' : 'default'
+                }}
+              >
                 {m.type === 'video' ? (
                   <video src={m.preview} controls style={{
                     width: '100%',
