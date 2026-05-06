@@ -4,7 +4,7 @@ import Icon from './Icon'
 import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import { getDistanceToPost, canVoteOnPost, canVoteOnStatePost, formatDistance } from '../lib/proximity'
 
-export default function PostCard({ post, onVote, onCommentClick, onAuthorClick, onPostClick, isWatched = false, compact = false }) {
+export default function PostCard({ post, onVote, onCommentClick, onAuthorClick, onPostClick, onCategoryClick, isWatched = false, compact = false }) {
   const allCategories = post.scope === 'state' ? STATE_CATEGORIES : CATEGORIES
   const cat = allCategories.find(c => c.id === post.category)
   const voteClass = post.userVote === 1 ? 'up' : post.userVote === -1 ? 'down' : 'neutral'
@@ -36,13 +36,20 @@ export default function PostCard({ post, onVote, onCommentClick, onAuthorClick, 
           <div className="post-meta">
             <span
               className="post-category-tag"
+              onClick={(e) => {
+                if (onCategoryClick) {
+                  e.stopPropagation()
+                  onCategoryClick(post.category)
+                }
+              }}
               style={{
                 background: `${cat?.color}22`,
                 color: cat?.color,
                 borderColor: `${cat?.color}44`,
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 4
+                gap: 4,
+                cursor: onCategoryClick ? 'pointer' : 'default'
               }}
             >
               {cat?.icon && <Icon name={cat.icon} size={12} />}

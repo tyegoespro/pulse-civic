@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import Icon from './Icon'
 
-export default function InsightsPanel({ posts, scope = 'local', onPostClick }) {
+export default function InsightsPanel({ posts, scope = 'local', onPostClick, onCategoryClick }) {
   const activeCategories = scope === 'state' ? STATE_CATEGORIES : CATEGORIES
   const isState = scope === 'state'
   const cityName = isState ? 'Wisconsin' : 'Oshkosh'
@@ -362,7 +362,10 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick }) {
           gap: 12
         }}>
           {categoryData.map(cat => (
-            <div key={cat.id}>
+            <div key={cat.id}
+              style={{ cursor: onCategoryClick ? 'pointer' : 'default' }}
+              onClick={() => onCategoryClick && onCategoryClick(cat.id)}
+            >
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',

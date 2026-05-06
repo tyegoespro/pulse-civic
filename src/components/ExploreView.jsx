@@ -257,7 +257,7 @@ function StateMapView({ posts, onSelectPost, selectedPost, categories }) {
   )
 }
 
-export default function ExploreView({ posts, onVote, scope = 'local' }) {
+export default function ExploreView({ posts, onVote, scope = 'local', onPostClick }) {
   const [search, setSearch] = useState('')
   const [selectedPost, setSelectedPost] = useState(null)
   const [filterCategory, setFilterCategory] = useState('all')
@@ -852,6 +852,27 @@ export default function ExploreView({ posts, onVote, scope = 'local' }) {
               </span>
             )}
           </div>
+          {onPostClick && (
+            <button
+              onClick={() => onPostClick(selectedPost.id)}
+              style={{
+                width: '100%',
+                marginTop: 12,
+                padding: '10px',
+                borderRadius: 10,
+                border: '1px solid var(--border)',
+                background: 'rgba(255,255,255,0.04)',
+                color: 'var(--text-accent)',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'var(--font)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              View Full Details →
+            </button>
+          )}
         </div>
       )}
 

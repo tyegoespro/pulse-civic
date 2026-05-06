@@ -380,6 +380,7 @@ export default function App() {
                   onCommentClick={setCommentPostId}
                   onAuthorClick={(authorId) => setViewingProfile(authorId)}
                   onPostClick={(postId) => setDetailPostId(postId)}
+                  onCategoryClick={(catId) => setFilter(catId)}
                   isWatched={watchedIds.includes(post.id)}
                   compact={activeTab === 'trending'}
                 />
@@ -407,12 +408,20 @@ export default function App() {
 
         {/* Explore / Heatmap View */}
         {!viewingProfile && activeTab === 'explore' && (
-          <ExploreView posts={scopedPosts} onVote={handleVote} scope={scope} />
+          <ExploreView posts={scopedPosts} onVote={handleVote} scope={scope} onPostClick={(postId) => setDetailPostId(postId)} />
         )}
 
         {/* Insights View */}
         {!viewingProfile && activeTab === 'insights' && (
-          <InsightsPanel posts={scopedPosts} scope={scope} onPostClick={(postId) => setDetailPostId(postId)} />
+          <InsightsPanel
+            posts={scopedPosts}
+            scope={scope}
+            onPostClick={(postId) => setDetailPostId(postId)}
+            onCategoryClick={(catId) => {
+              setFilter(catId)
+              setActiveTab('feed')
+            }}
+          />
         )}
 
         {/* Activity View */}
@@ -494,6 +503,11 @@ export default function App() {
           onExploreLocation={handleExploreLocation}
           isWatched={watchedIds.includes(detailPostId)}
           onToggleWatch={() => toggleWatch(detailPostId)}
+          onCategoryClick={(categoryId) => {
+            setDetailPostId(null)
+            setFilter(categoryId)
+            setActiveTab('feed')
+          }}
         />
       )}
 
