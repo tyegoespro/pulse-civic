@@ -347,39 +347,90 @@ body {
 
 .tab-bar {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   padding: 16px 0;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 16px;
+  margin-bottom: 0;
+  position: relative;
+}
+
+/* Sliding indicator */
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  background: var(--gradient-brand);
+  border-radius: 3px 3px 0 0;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+              width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 2;
 }
 
 .tab-btn {
   flex: 1;
-  padding: 10px;
+  padding: 10px 4px;
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  color: var(--text-tertiary);
-  font-size: 13px;
+  border: none;
+  border-radius: 0;
+  color: var(--text-muted);
+  font-size: 12px;
   font-weight: 600;
   font-family: var(--font);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.25s ease, transform 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
+  position: relative;
+  z-index: 1;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .tab-btn:hover {
   color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.02);
+}
+
+.tab-btn:active {
+  transform: scale(0.95);
 }
 
 .tab-btn.active {
-  background: rgba(99, 102, 241, 0.15);
-  border-color: var(--border-active);
   color: var(--text-accent);
+  background: transparent;
+  border: none;
+}
+
+/* --- Tab Content Transitions --- */
+.tab-content {
+  animation: tab-enter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  will-change: transform, opacity;
+  padding-top: 16px;
+}
+
+/* Slide from right (navigating forward) */
+.slide-enter-left {
+  animation: tab-slide-from-right 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Slide from left (navigating backward) */
+.slide-enter-right {
+  animation: tab-slide-from-left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes tab-enter {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tab-slide-from-right {
+  0% { opacity: 0; transform: translateX(30px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes tab-slide-from-left {
+  0% { opacity: 0; transform: translateX(-30px); }
+  100% { opacity: 1; transform: translateX(0); }
 }
 
 /* --- Category Filter --- */
@@ -429,12 +480,24 @@ body {
   padding: 20px;
   margin-bottom: 12px;
   animation: slide-up 0.4s ease;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.2s ease,
+              border-color 0.2s ease,
+              box-shadow 0.25s ease;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .post-card:hover {
   background: var(--bg-card-hover);
   border-color: var(--border-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.post-card:active {
+  transform: scale(0.985);
+  box-shadow: none;
 }
 
 .post-card.compact {
@@ -458,7 +521,7 @@ body {
   font-size: 18px;
   font-weight: 800;
   padding: 2px 0;
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   min-width: 32px;
   text-align: center;
 }
@@ -477,11 +540,16 @@ body {
   border-radius: var(--radius-md);
   padding: 8px 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   min-width: 48px;
   font-size: 18px;
   font-family: var(--font);
   color: var(--text-secondary);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.vote-btn:active {
+  transform: scale(0.88);
 }
 
 .vote-btn:hover {
@@ -3079,9 +3147,4 @@ textarea.form-input {
   padding: 2px 6px;
   border-radius: 4px;
   border: 1px solid var(--border);
-}
-
-/* Post card tap hint */
-.post-card {
-  cursor: pointer;
 }

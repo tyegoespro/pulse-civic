@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { SEED_POSTS, STATE_SEED_POSTS, CATEGORIES, STATE_CATEGORIES } from './constants'
 import iconSprite from './icons/sprite.svg?raw'
 import Icon from './components/Icon'
@@ -46,6 +46,9 @@ export default function App() {
   const [posts, setPosts] = useState([...SEED_POSTS, ...STATE_SEED_POSTS])
   const [activeTab, setActiveTab] = useState('feed')
   const [filter, setFilter] = useState('all')
+  const [slideDirection, setSlideDirection] = useState('none')
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const prevTabRef = useRef('feed')
 
   // Scope: 'local' or 'state'
   const [scope, setScope] = useState('local')
@@ -99,6 +102,26 @@ export default function App() {
     setScope(newScope)
     setFilter('all') // Reset filter when switching scope
     setViewingProfile(null)
+  }
+
+  // Tab order for determining slide direction
+  const TAB_ORDER = ['feed', 'explore', 'trending', 'insights', 'activity']
+
+  const handleTabChange = (newTab) => {
+    if (newTab === activeTab) return
+    const oldIndex = TAB_ORDER.indexOf(activeTab)
+    const newIndex = TAB_ORDER.indexOf(newTab)
+    setSlideDirection(newIndex > oldIndex ? 'left' : 'right')
+    setIsTransitioning(true)
+    prevTabRef.current = activeTab
+
+    // Brief delay for exit animation, then switch
+    setTimeout(() => {
+      setActiveTab(newTab)
+      setViewingProfile(null)
+      // Reset transition after enter animation
+      setTimeout(() => setIsTransitioning(false), 350)
+    }, 80)
   }
 
   const handleVote = (postId, direction) => {
@@ -231,7 +254,13 @@ export default function App() {
       />
 
       <div className="app-content">
-        <TabBar activeTab={activeTab} onTabChange={(tab) => { setActiveTab(tab); setViewingProfile(null) }} />
+        <TabBar activeTab={activeTab} onTabChange={handleTabChange} />
+
+        {/* Animated Tab Content */}
+        <div
+          className={`tab-content ${slideDirection !== 'none' ? `slide-enter-${slideDirection}` : ''}`}
+          key={activeTab}
+        >
 
         {/* Profile View */}
         {viewingProfile && (
@@ -296,6 +325,7 @@ export default function App() {
         {!viewingProfile && activeTab === 'activity' && (
           <ActivityScreen posts={posts} />
         )}
+        </div> {/* end tab-content */}
       </div>
 
       {/* FAB */}
