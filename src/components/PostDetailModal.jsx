@@ -401,7 +401,13 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
                         <span style={{ color: '#A78BFA' }}>Anonymous</span>
                       </>
                     ) : (
-                      c.author
+                      <span
+                        className={c.authorId && onAuthorClick ? 'author-link' : ''}
+                        onClick={() => c.authorId && onAuthorClick && onAuthorClick(c.authorId)}
+                        style={{ cursor: c.authorId && onAuthorClick ? 'pointer' : 'default' }}
+                      >
+                        {c.author}
+                      </span>
                     )}
                   </div>
                   <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0 0', lineHeight: 1.4 }}>
