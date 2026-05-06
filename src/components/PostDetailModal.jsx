@@ -270,7 +270,7 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
               }}
             >
               <Icon name="ui-eye" size={15} />
-              {isWatched ? 'Watching' : 'Watch this Issue'}
+              {isWatched ? 'Watching' : 'Watch this Pulse'}
             </button>
           </div>
         )}
