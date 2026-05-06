@@ -342,7 +342,7 @@ export default function App() {
 
         {/* Activity View */}
         {!viewingProfile && activeTab === 'activity' && (
-          <ActivityScreen posts={posts} />
+          <ActivityScreen posts={posts} watchedIds={watchedIds} onPostClick={(postId) => setDetailPostId(postId)} />
         )}
         </div> {/* end tab-content */}
       </div>

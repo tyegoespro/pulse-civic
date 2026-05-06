@@ -16,7 +16,7 @@ const IncognitoInline = ({ size = 11 }) => (
   </span>
 )
 
-export default function ActivityScreen({ posts }) {
+export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) {
   const myPosts = posts.filter(p => p.userId === 'me')
   const myVoted = posts.filter(p => p.userVote !== 0)
 
@@ -41,6 +41,7 @@ export default function ActivityScreen({ posts }) {
   const incognitoVoted = myVoted.filter(p => p.userVoteIncognito)
 
   const hasAny = myPosts.length > 0 || myVoted.length > 0 || myComments.length > 0
+  const watchedPosts = posts.filter(p => watchedIds.includes(p.id))
 
   return (
     <div style={{ paddingBottom: 100 }}>
@@ -49,6 +50,66 @@ export default function ActivityScreen({ posts }) {
         <Icon name="ui-lock" size={12} />
         Only visible to you — including all incognito activity.
       </p>
+
+      {/* ─── Watching ─── */}
+      {watchedPosts.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <div style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: '#22C55E',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            marginBottom: 12,
+            paddingLeft: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6
+          }}>
+            <Icon name="ui-eye" size={12} />
+            Watching ({watchedPosts.length})
+          </div>
+          {watchedPosts.map(p => {
+            const cat = CATEGORIES.find(c => c.id === p.category)
+            return (
+              <div
+                key={p.id}
+                className="activity-item animate-slide-up"
+                style={{ cursor: onPostClick ? 'pointer' : 'default' }}
+                onClick={() => onPostClick && onPostClick(p.id)}
+              >
+                <div style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: 12, alignItems: 'center' }}>
+                  {cat && <CategoryInline cat={cat} />}
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: '#22C55E',
+                    background: 'rgba(34, 197, 94, 0.1)',
+                    padding: '1px 6px',
+                    borderRadius: 4,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 3
+                  }}>
+                    <Icon name="ui-eye" size={9} />
+                    Watching
+                  </span>
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{p.title}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>▲ {p.votes} votes</span>
+                  <span>·</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                    <Icon name="ui-comments" size={11} />
+                    {p.comments?.length || 0}
+                  </span>
+                  <span>· {p.location}</span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* ─── Regular Activity ─── */}
       {(regularPosts.length > 0 || regularComments.length > 0 || regularVoted.length > 0) && (
