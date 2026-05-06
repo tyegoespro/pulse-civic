@@ -296,7 +296,11 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
 
         {/* Author */}
         {!post.incognito && post.author && (
-          <div className="post-detail-author">
+          <div
+            className="post-detail-author"
+            style={{ cursor: post.authorId && onAuthorClick ? 'pointer' : 'default' }}
+            onClick={() => post.authorId && onAuthorClick && onAuthorClick(post.authorId)}
+          >
             <div style={{
               width: 36,
               height: 36,
@@ -312,17 +316,18 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
             }}>
               {post.author.charAt(0)}
             </div>
-            <div>
-              <span
-                className={post.authorId && onAuthorClick ? 'author-link' : ''}
-                onClick={() => post.authorId && onAuthorClick && onAuthorClick(post.authorId)}
-                style={{ fontWeight: 600, fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-              >
+            <div style={{ flex: 1 }}>
+              <span style={{ fontWeight: 600, fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--text-primary)' }}>
                 {post.author}
                 <Icon name="ui-verified" size={12} style={{ color: 'var(--indigo)' }} />
               </span>
               <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Verified resident</div>
             </div>
+            {post.authorId && onAuthorClick && (
+              <span style={{ fontSize: 11, color: 'var(--text-accent)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                View Profile →
+              </span>
+            )}
           </div>
         )}
 

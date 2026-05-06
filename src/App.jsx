@@ -271,6 +271,7 @@ export default function App() {
             onVote={handleVote}
             onCommentClick={setCommentPostId}
             onAuthorClick={(authorId) => setViewingProfile(authorId)}
+            onPostClick={(postId) => setDetailPostId(postId)}
           />
         )}
 

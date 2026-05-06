@@ -2834,13 +2834,16 @@ textarea.form-input {
   border-radius: 4px;
   padding: 1px 4px;
   margin: -1px -4px;
+  color: var(--text-accent);
+  text-decoration: underline;
+  text-decoration-color: rgba(99, 102, 241, 0.3);
+  text-underline-offset: 2px;
 }
 
 .author-link:hover {
   color: var(--text-accent);
   background: rgba(99, 102, 241, 0.1);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration-color: var(--text-accent);
 }
 
 /* Profile View container */

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { CATEGORIES, SEED_USERS } from '../constants'
 import Icon from './Icon'
 
-export default function ProfileView({ userId, posts, onBack, onVote, onCommentClick, onAuthorClick }) {
+export default function ProfileView({ userId, posts, onBack, onVote, onCommentClick, onAuthorClick, onPostClick }) {
   const [activeTab, setActiveTab] = useState('posts')
   const user = SEED_USERS[userId]
 
@@ -155,7 +155,10 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
             publicPosts.map(post => {
               const cat = CATEGORIES.find(c => c.id === post.category)
               return (
-                <div key={post.id} className="profile-post-card animate-slide-up">
+                <div key={post.id} className="profile-post-card animate-slide-up"
+                  style={{ cursor: onPostClick ? 'pointer' : 'default' }}
+                  onClick={() => onPostClick && onPostClick(post.id)}
+                >
                   <div className="profile-post-meta">
                     <span
                       className="post-category-tag"
