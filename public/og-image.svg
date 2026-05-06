@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0F0F1A"/>
+      <stop offset="100%" style="stop-color:#1a0f2e"/>
+    </linearGradient>
+    <linearGradient id="heartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF3B5C"/>
+      <stop offset="100%" style="stop-color:#FF6B6B"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <!-- Heart pulse logo -->
+  <g transform="translate(340, 180)" filter="url(#glow)">
+    <path d="M60 20C60 8.954 50.046 0 39 0C30.5 0 23.3 5.1 20 12.5C16.7 5.1 9.5 0 1 0C-10.046 0 -20 8.954 -20 20C-20 50 20 70 20 70S60 50 60 20Z" 
+          fill="url(#heartGrad)" transform="scale(1.8) translate(0, -10)"/>
+    <path d="M-18 38 L8 38 L18 18 L28 55 L38 28 L48 38 L78 38" 
+          stroke="white" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="scale(1.8)"/>
+  </g>
+  <!-- Text -->
+  <text x="600" y="340" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="72" font-weight="800" fill="white">Pulse</text>
+  <text x="600" y="395" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="28" font-weight="400" fill="rgba(255,255,255,0.7)">The Voice of Your City</text>
+  <text x="600" y="470" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="20" font-weight="400" fill="rgba(255,255,255,0.4)">Real citizens. Real issues. Real change.</text>
+  <!-- Accent line -->
+  <rect x="520" y="420" width="160" height="2" rx="1" fill="rgba(99,102,241,0.5)"/>
+</svg>
