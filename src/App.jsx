@@ -334,7 +334,7 @@ export default function App() {
       />
 
       <Header
-        onBrandClick={() => setShowInfoPage(true)}
+        onBrandClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         incognito={incognito}
         onToggleIncognito={tryToggleIncognito}
         isPro={proState.isPro}
