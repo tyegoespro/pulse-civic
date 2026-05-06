@@ -9,7 +9,9 @@ export default function Header({
   onShowPro,
   scope,
   onScopeChange,
-  onInfoClick
+  onInfoClick,
+  activityBadge = 0,
+  onActivityClick
 }) {
   return (
     <header className="app-header" style={incognito ? {
@@ -49,6 +51,31 @@ export default function Header({
             title="About Pulse"
           >
             <Icon name="ui-info" size={16} />
+          </button>
+          {/* Activity Badge */}
+          <button
+            onClick={onActivityClick}
+            className="header-action-btn"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              border: '1px solid var(--border)',
+              background: 'rgba(255,255,255,0.04)',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.25s ease',
+              position: 'relative'
+            }}
+            title="Activity"
+          >
+            <Icon name="ui-activity" size={16} />
+            {activityBadge > 0 && (
+              <span className="tab-badge">{activityBadge > 9 ? '9+' : activityBadge}</span>
+            )}
           </button>
           {/* Incognito Toggle */}
           <button

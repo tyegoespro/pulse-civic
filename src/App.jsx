@@ -343,11 +343,12 @@ export default function App() {
         scope={scope}
         onScopeChange={handleScopeChange}
         onInfoClick={() => setShowInfoPage(true)}
+        activityBadge={activityBadge}
+        onActivityClick={() => handleTabChange('activity')}
       />
 
-      <TabBar activeTab={activeTab} onTabChange={handleTabChange} badges={{ activity: activityBadge }} />
-
       <div className="app-content">
+        <TabBar activeTab={activeTab} onTabChange={handleTabChange} badges={{ activity: activityBadge }} />
 
         {/* Animated Tab Content */}
         <div
