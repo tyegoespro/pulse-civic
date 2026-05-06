@@ -3014,6 +3014,15 @@ textarea.form-input {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* --- Watch Issue Button --- */
+.watch-issue-btn:active {
+  transform: scale(0.92);
+}
+
+.watch-issue-btn:hover {
+  border-color: rgba(34, 197, 94, 0.3) !important;
+}
+
 .post-detail-vote-bar {
   display: flex;
   align-items: center;

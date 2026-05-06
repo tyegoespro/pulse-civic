@@ -4,7 +4,7 @@ import Icon from './Icon'
 import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import { getDistanceToPost, canVoteOnPost, canVoteOnStatePost, formatDistance } from '../lib/proximity'
 
-export default function PostCard({ post, onVote, onCommentClick, onAuthorClick, onPostClick, compact = false }) {
+export default function PostCard({ post, onVote, onCommentClick, onAuthorClick, onPostClick, isWatched = false, compact = false }) {
   const allCategories = post.scope === 'state' ? STATE_CATEGORIES : CATEGORIES
   const cat = allCategories.find(c => c.id === post.category)
   const voteClass = post.userVote === 1 ? 'up' : post.userVote === -1 ? 'down' : 'neutral'
@@ -81,7 +81,20 @@ export default function PostCard({ post, onVote, onCommentClick, onAuthorClick, 
             )}
           </div>
 
-          <h3 className="post-title">{post.title}</h3>
+          <h3 className="post-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {post.title}
+            {isWatched && (
+              <span style={{
+                flexShrink: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                color: '#22C55E',
+                opacity: 0.7
+              }}>
+                <Icon name="ui-eye" size={13} />
+              </span>
+            )}
+          </h3>
 
           {!compact && post.description && (
             <p className="post-description">{post.description}</p>

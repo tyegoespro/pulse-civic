@@ -67,7 +67,7 @@ function LocationMap({ lat, lng, location, onExploreClick }) {
   )
 }
 
-export default function PostDetailModal({ post, onClose, onVote, onCommentClick, onAuthorClick, onExploreLocation }) {
+export default function PostDetailModal({ post, onClose, onVote, onCommentClick, onAuthorClick, onExploreLocation, isWatched, onToggleWatch }) {
   const [commentText, setCommentText] = useState('')
   const [lightboxIndex, setLightboxIndex] = useState(null)
   const allCategories = post.scope === 'state' ? STATE_CATEGORIES : CATEGORIES
@@ -142,20 +142,39 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
             <span style={{ fontSize: 20 }}>‹</span>
             <span>Back</span>
           </button>
-          <span
-            className="post-category-tag"
-            style={{
-              background: `${cat?.color}22`,
-              color: cat?.color,
-              borderColor: `${cat?.color}44`,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4
-            }}
-          >
-            {cat?.icon && <Icon name={cat.icon} size={12} />}
-            {cat?.label}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span
+              className="post-category-tag"
+              style={{
+                background: `${cat?.color}22`,
+                color: cat?.color,
+                borderColor: `${cat?.color}44`,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4
+              }}
+            >
+              {cat?.icon && <Icon name={cat.icon} size={12} />}
+              {cat?.label}
+            </span>
+            {isWatched && (
+              <span style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: '#22C55E',
+                background: 'rgba(34, 197, 94, 0.1)',
+                border: '1px solid rgba(34, 197, 94, 0.25)',
+                padding: '2px 8px',
+                borderRadius: 10,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3
+              }}>
+                <Icon name="ui-eye" size={10} />
+                Watching
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Title & Meta */}
@@ -222,6 +241,39 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
             />
           </div>
         </div>
+
+        {/* Watch Issue Toggle */}
+        {onToggleWatch && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            <button
+              onClick={onToggleWatch}
+              className="watch-issue-btn"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 20px',
+                borderRadius: 40,
+                border: isWatched
+                  ? '1px solid rgba(34, 197, 94, 0.4)'
+                  : '1px solid var(--border)',
+                background: isWatched
+                  ? 'rgba(34, 197, 94, 0.1)'
+                  : 'var(--bg-card)',
+                color: isWatched ? '#22C55E' : 'var(--text-secondary)',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'var(--font)',
+                transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                WebkitTapHighlightColor: 'transparent'
+              }}
+            >
+              <Icon name="ui-eye" size={15} />
+              {isWatched ? 'Watching' : 'Watch this Issue'}
+            </button>
+          </div>
+        )}
 
         {/* Description */}
         {post.description && (

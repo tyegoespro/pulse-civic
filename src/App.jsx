@@ -96,6 +96,23 @@ export default function App() {
   // Post Detail View
   const [detailPostId, setDetailPostId] = useState(null)
 
+  // Watched Issues — persisted to localStorage
+  const [watchedIds, setWatchedIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('pulse_watched') || '[]')
+    } catch { return [] }
+  })
+
+  const toggleWatch = (postId) => {
+    setWatchedIds(prev => {
+      const next = prev.includes(postId)
+        ? prev.filter(id => id !== postId)
+        : [...prev, postId]
+      localStorage.setItem('pulse_watched', JSON.stringify(next))
+      return next
+    })
+  }
+
   // --- Handlers ---
 
   const handleScopeChange = (newScope) => {
@@ -288,6 +305,7 @@ export default function App() {
                   onCommentClick={setCommentPostId}
                   onAuthorClick={(authorId) => setViewingProfile(authorId)}
                   onPostClick={(postId) => setDetailPostId(postId)}
+                  isWatched={watchedIds.includes(post.id)}
                   compact={activeTab === 'trending'}
                 />
               ))}
@@ -399,6 +417,8 @@ export default function App() {
             setViewingProfile(authorId)
           }}
           onExploreLocation={handleExploreLocation}
+          isWatched={watchedIds.includes(detailPostId)}
+          onToggleWatch={() => toggleWatch(detailPostId)}
         />
       )}
     </div>
