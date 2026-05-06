@@ -16,6 +16,7 @@ import InfoPage from './components/InfoPage'
 import ProfileView from './components/ProfileView'
 import PulseProModal from './components/PulseProModal'
 import PostDetailModal from './components/PostDetailModal'
+import OnboardingModal from './components/OnboardingModal'
 import { canVoteOnPost, canVoteOnStatePost } from './lib/proximity'
 
 const FREE_INCOGNITO_LIMIT = 3
@@ -40,10 +41,38 @@ const loadProState = () => {
     return { isPro: false, plan: null, usage: 0, usageMonth: monthKey() }
   }
 }
+const POSTS_STORAGE_KEY = 'pulse_posts_data'
+
+// Load posts: merge seed data with any saved user modifications
+const loadPosts = () => {
+  const seed = [...SEED_POSTS, ...STATE_SEED_POSTS]
+  try {
+    const raw = localStorage.getItem(POSTS_STORAGE_KEY)
+    if (!raw) return seed
+    const saved = JSON.parse(raw)
+    // saved = { overrides: { [postId]: { userVote, comments, ... } }, userPosts: [...] }
+    const merged = seed.map(p => {
+      const override = saved.overrides?.[p.id]
+      if (!override) return p
+      return {
+        ...p,
+        userVote: override.userVote ?? p.userVote,
+        votes: override.votes ?? p.votes,
+        userVoteIncognito: override.userVoteIncognito ?? p.userVoteIncognito,
+        comments: override.comments ?? p.comments
+      }
+    })
+    // Append user-created posts
+    const userPosts = (saved.userPosts || []).map(p => ({ ...p }))
+    return [...userPosts, ...merged]
+  } catch {
+    return seed
+  }
+}
 
 export default function App() {
   // Core State
-  const [posts, setPosts] = useState([...SEED_POSTS, ...STATE_SEED_POSTS])
+  const [posts, setPosts] = useState(loadPosts)
   const [activeTab, setActiveTab] = useState('feed')
   const [filter, setFilter] = useState('all')
   const [slideDirection, setSlideDirection] = useState('none')
@@ -64,6 +93,30 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(PRO_STORAGE_KEY, JSON.stringify(proState))
   }, [proState])
+
+  // Persist posts: save overrides for seed posts + full user-created posts
+  const seedIds = new Set([...SEED_POSTS, ...STATE_SEED_POSTS].map(p => p.id))
+
+  useEffect(() => {
+    const overrides = {}
+    const userPosts = []
+    posts.forEach(p => {
+      if (seedIds.has(p.id)) {
+        // Only store fields that differ from seed
+        if (p.userVote !== 0 || (p.comments && p.comments.length > (SEED_POSTS.concat(STATE_SEED_POSTS).find(s => s.id === p.id)?.comments?.length || 0))) {
+          overrides[p.id] = {
+            userVote: p.userVote,
+            votes: p.votes,
+            userVoteIncognito: p.userVoteIncognito,
+            comments: p.comments
+          }
+        }
+      } else {
+        userPosts.push(p)
+      }
+    })
+    localStorage.setItem(POSTS_STORAGE_KEY, JSON.stringify({ overrides, userPosts }))
+  }, [posts])
 
   const incognitoRemaining = Math.max(0, FREE_INCOGNITO_LIMIT - proState.usage)
 
@@ -95,6 +148,16 @@ export default function App() {
 
   // Post Detail View
   const [detailPostId, setDetailPostId] = useState(null)
+
+  // Onboarding — first visit only
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return !localStorage.getItem('pulse_onboarded')
+  })
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('pulse_onboarded', 'true')
+    setShowOnboarding(false)
+  }
 
   // Watched Issues — persisted to localStorage
   const [watchedIds, setWatchedIds] = useState(() => {
@@ -432,6 +495,11 @@ export default function App() {
           isWatched={watchedIds.includes(detailPostId)}
           onToggleWatch={() => toggleWatch(detailPostId)}
         />
+      )}
+
+      {/* Onboarding — first visit */}
+      {showOnboarding && (
+        <OnboardingModal onComplete={handleOnboardingComplete} />
       )}
     </div>
   )

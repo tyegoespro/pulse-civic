@@ -275,6 +275,48 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
           </div>
         )}
 
+        {/* Share */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+          <button
+            className="watch-issue-btn"
+            onClick={async () => {
+              const shareData = {
+                title: post.title,
+                text: `Check out this pulse: "${post.title}" — ${post.location}`,
+                url: window.location.origin
+              }
+              try {
+                if (navigator.share) {
+                  await navigator.share(shareData)
+                } else {
+                  await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`)
+                  // Brief toast
+                  const btn = document.getElementById('share-toast')
+                  if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Share' }, 1500) }
+                }
+              } catch {}
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 20px',
+              borderRadius: 40,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-card)',
+              color: 'var(--text-secondary)',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'var(--font)',
+              transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              WebkitTapHighlightColor: 'transparent'
+            }}
+          >
+            <Icon name="ui-megaphone" size={15} />
+            <span id="share-toast">Share</span>
+          </button>
+        </div>
         {/* Description */}
         {post.description && (
           <p className="post-detail-description">{post.description}</p>
