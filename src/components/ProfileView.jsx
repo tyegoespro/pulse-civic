@@ -32,6 +32,12 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
   // Stats
   const totalUpvotes = publicPosts.reduce((sum, p) => sum + Math.max(0, p.votes), 0)
 
+  // Watched pulses
+  const watchedPosts = useMemo(() => {
+    const ids = user?.watching || []
+    return posts.filter(p => ids.includes(p.id))
+  }, [posts, user])
+
   if (!user) {
     return (
       <div style={{ paddingBottom: 100 }}>
@@ -141,6 +147,14 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
           <Icon name="ui-comments" size={14} />
           Comments ({publicComments.length})
         </button>
+        <button
+          className={`profile-tab ${activeTab === 'watching' ? 'active' : ''}`}
+          onClick={() => setActiveTab('watching')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+        >
+          <Icon name="ui-eye" size={14} />
+          Watching ({watchedPosts.length})
+        </button>
       </div>
 
       {/* Posts Tab */}
@@ -232,6 +246,72 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
                         style={{ cursor: 'default', color: 'var(--text-muted)' }}
                       >{c.postTitle}</span> · {new Date(c.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      )}
+
+      {/* Watching Tab */}
+      {activeTab === 'watching' && (
+        <div className="stagger-children">
+          {watchedPosts.length === 0 ? (
+            <div className="profile-empty-tab">
+              <span style={{ display: 'flex', justifyContent: 'center', opacity: 0.5 }}><Icon name="ui-eye" size={28} /></span>
+              <p>Not watching any pulses yet.</p>
+            </div>
+          ) : (
+            watchedPosts.map(post => {
+              const cat = CATEGORIES.find(c => c.id === post.category)
+              return (
+                <div
+                  key={post.id}
+                  className="profile-post-card animate-slide-up"
+                  style={{ cursor: onPostClick ? 'pointer' : 'default' }}
+                  onClick={() => onPostClick && onPostClick(post.id)}
+                >
+                  <div className="profile-post-meta">
+                    <span
+                      className="post-category-tag"
+                      style={{
+                        background: `${cat?.color}22`,
+                        color: cat?.color,
+                        borderColor: `${cat?.color}44`,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4
+                      }}
+                    >
+                      {cat?.icon && <Icon name={cat.icon} size={11} />}
+                      {cat?.label}
+                    </span>
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: '#22C55E',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 3
+                    }}>
+                      <Icon name="ui-eye" size={10} />
+                      Watching
+                    </span>
+                  </div>
+                  <h3 className="profile-post-title">{post.title}</h3>
+                  <div className="profile-post-footer">
+                    <span className="profile-post-stat">
+                      ▲ {post.votes}
+                    </span>
+                    <span className="profile-post-stat" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <Icon name="ui-comments" size={11} />
+                      {post.comments?.length || 0}
+                    </span>
+                    <span className="profile-post-stat" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                      <Icon name="ui-location" size={11} />
+                      {post.location}
+                    </span>
                   </div>
                 </div>
               )

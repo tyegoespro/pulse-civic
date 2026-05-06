@@ -33,6 +33,7 @@ export const SEED_USERS = {
     state: 'WI',
     isVerified: true,
     joinedAt: 'Jan 2026',
+    watching: ['1', '6', 's1'],
   },
   'jamie': {
     id: 'jamie',
@@ -44,6 +45,7 @@ export const SEED_USERS = {
     isVerified: true,
     isPro: true,
     joinedAt: 'Feb 2026',
+    watching: ['3', '5', 's1'],
   },
   'desiree': {
     id: 'desiree',
@@ -54,6 +56,7 @@ export const SEED_USERS = {
     state: 'WI',
     isVerified: true,
     joinedAt: 'Feb 2026',
+    watching: ['4', '2', 's2'],
   },
   'deshawn': {
     id: 'deshawn',
@@ -64,6 +67,7 @@ export const SEED_USERS = {
     state: 'WI',
     isVerified: true,
     joinedAt: 'Mar 2026',
+    watching: ['6', '1', 's5'],
   },
   'natalie': {
     id: 'natalie',
@@ -74,6 +78,7 @@ export const SEED_USERS = {
     state: 'WI',
     isVerified: true,
     joinedAt: 'Jan 2026',
+    watching: ['7', '3'],
   },
   // Comment-only users
   'oshkoshnative': {
