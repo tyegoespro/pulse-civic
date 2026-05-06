@@ -169,6 +169,7 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
           {post.scope !== 'state' && distance > 0 && (
             <span>· {formatDistance(distance)}</span>
           )}
+          <span>· {post.createdAt}</span>
           {post.scope === 'state' && (
             <span style={{
               fontSize: 10,
@@ -189,16 +190,28 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
           )}
         </div>
 
-        {/* Voting bar */}
-        <div className="post-detail-vote-bar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Voting — compact centered */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          marginBottom: 16
+        }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '10px 20px',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 40
+          }}>
             <VoteButton
               direction="up"
               active={post.userVote === 1}
               onClick={() => canVote && onVote(post.id, 1)}
               style={!canVote ? { opacity: 0.3, cursor: 'not-allowed' } : {}}
             />
-            <span className={`vote-count ${voteClass}`} style={{ fontSize: 24, fontWeight: 900, minWidth: 44, textAlign: 'center' }}>
+            <span className={`vote-count ${voteClass}`} style={{ fontSize: 24, fontWeight: 900, minWidth: 40, textAlign: 'center' }}>
               {post.votes}
             </span>
             <VoteButton
@@ -208,9 +221,6 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
               style={!canVote ? { opacity: 0.3, cursor: 'not-allowed' } : {}}
             />
           </div>
-          <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-            {post.createdAt}
-          </span>
         </div>
 
         {/* Description */}
