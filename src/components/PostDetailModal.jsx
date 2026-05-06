@@ -1,0 +1,302 @@
+import { useState, useMemo } from 'react'
+import Icon from './Icon'
+import VoteButton from './VoteButton'
+import { CATEGORIES, STATE_CATEGORIES } from '../constants'
+import { getDistanceToPost, canVoteOnPost, formatDistance } from '../lib/proximity'
+
+// Simple demo map centered on Oshkosh — shows a pin at the post's lat/lng
+function LocationMap({ lat, lng, location, onExploreClick }) {
+  if (!lat || !lng) return null
+
+  // Normalize lat/lng to position within the map area
+  // Oshkosh center: 44.024, -88.543
+  const centerLat = 44.024
+  const centerLng = -88.543
+  const spanLat = 0.03  // ~2 miles vertical
+  const spanLng = 0.04  // ~2 miles horizontal
+
+  const pinX = Math.max(5, Math.min(95, 50 + ((lng - centerLng) / spanLng) * 100))
+  const pinY = Math.max(5, Math.min(95, 50 - ((lat - centerLat) / spanLat) * 100))
+
+  return (
+    <div className="detail-map-section">
+      <div className="detail-map-label">
+        <Icon name="ui-location" size={13} />
+        <span>Location</span>
+      </div>
+      <div className="detail-map-container">
+        {/* Grid lines */}
+        <svg className="detail-map-grid" viewBox="0 0 300 200" preserveAspectRatio="none">
+          {/* Horizontal streets */}
+          {[40, 80, 120, 160].map(y => (
+            <line key={`h${y}`} x1="0" y1={y} x2="300" y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+          ))}
+          {/* Vertical streets */}
+          {[60, 120, 180, 240].map(x => (
+            <line key={`v${x}`} x1={x} y1="0" x2={x} y2="200" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+          ))}
+          {/* Main roads */}
+          <line x1="0" y1="100" x2="300" y2="100" stroke="rgba(255,255,255,0.12)" strokeWidth="2" />
+          <line x1="150" y1="0" x2="150" y2="200" stroke="rgba(255,255,255,0.12)" strokeWidth="2" />
+        </svg>
+
+        {/* Pin */}
+        <div
+          className="detail-map-pin"
+          style={{ left: `${pinX}%`, top: `${pinY}%` }}
+        >
+          <div className="detail-map-pin-dot" />
+          <div className="detail-map-pin-pulse" />
+        </div>
+
+        {/* Street label */}
+        {location && (
+          <div className="detail-map-street-label">
+            {location}
+          </div>
+        )}
+      </div>
+
+      {onExploreClick && (
+        <button className="detail-map-explore-btn" onClick={onExploreClick}>
+          <Icon name="ui-explore" size={14} />
+          View on Explore Map
+        </button>
+      )}
+    </div>
+  )
+}
+
+export default function PostDetailModal({ post, onClose, onVote, onCommentClick, onAuthorClick, onExploreLocation }) {
+  const [commentText, setCommentText] = useState('')
+  const allCategories = post.scope === 'state' ? STATE_CATEGORIES : CATEGORIES
+  const cat = allCategories.find(c => c.id === post.category)
+  const voteClass = post.userVote === 1 ? 'up' : post.userVote === -1 ? 'down' : 'neutral'
+  const distance = useMemo(() => post.scope === 'state' ? 0 : getDistanceToPost(post.lat, post.lng), [post.lat, post.lng, post.scope])
+  const canVote = useMemo(() => post.scope === 'state' ? true : canVoteOnPost(post.lat, post.lng), [post.lat, post.lng, post.scope])
+
+  const handleExplore = () => {
+    if (onExploreLocation) {
+      onExploreLocation(post)
+    }
+  }
+
+  return (
+    <div className="post-detail-overlay" onClick={onClose}>
+      <div className="post-detail-content" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="post-detail-header">
+          <button className="post-detail-back" onClick={onClose}>
+            <span style={{ fontSize: 20 }}>‹</span>
+            <span>Back</span>
+          </button>
+          <span
+            className="post-category-tag"
+            style={{
+              background: `${cat?.color}22`,
+              color: cat?.color,
+              borderColor: `${cat?.color}44`,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4
+            }}
+          >
+            {cat?.icon && <Icon name={cat.icon} size={12} />}
+            {cat?.label}
+          </span>
+        </div>
+
+        {/* Title & Meta */}
+        <h2 className="post-detail-title">{post.title}</h2>
+
+        <div className="post-detail-meta">
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <Icon name="ui-location" size={12} />
+            {post.location}
+          </span>
+          {post.scope !== 'state' && distance > 0 && (
+            <span>· {formatDistance(distance)}</span>
+          )}
+          {post.scope === 'state' && (
+            <span style={{
+              fontSize: 10,
+              color: '#D97706',
+              fontWeight: 600,
+              background: 'rgba(217, 119, 6, 0.1)',
+              padding: '1px 6px',
+              borderRadius: 4
+            }}>
+              STATE
+            </span>
+          )}
+          {post.incognito && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--violet)' }}>
+              <Icon name="ui-incognito" size={11} />
+              Incognito
+            </span>
+          )}
+        </div>
+
+        {/* Voting bar */}
+        <div className="post-detail-vote-bar">
+          <VoteButton
+            direction="up"
+            active={post.userVote === 1}
+            onClick={() => canVote && onVote(post.id, 1)}
+            style={!canVote ? { opacity: 0.3, cursor: 'not-allowed' } : {}}
+          />
+          <span className={`vote-count ${voteClass}`} style={{ fontSize: 22, fontWeight: 900 }}>
+            {post.votes}
+          </span>
+          <VoteButton
+            direction="down"
+            active={post.userVote === -1}
+            onClick={() => canVote && onVote(post.id, -1)}
+            style={!canVote ? { opacity: 0.3, cursor: 'not-allowed' } : {}}
+          />
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-tertiary)' }}>
+            {post.createdAt}
+          </span>
+        </div>
+
+        {/* Description */}
+        {post.description && (
+          <p className="post-detail-description">{post.description}</p>
+        )}
+
+        {/* Media Gallery — larger */}
+        {post.media && post.media.length > 0 && (
+          <div className="post-detail-media">
+            {post.media.map((m, i) => (
+              <div key={i} className="post-detail-media-item">
+                {m.type === 'video' ? (
+                  <video src={m.preview} controls style={{
+                    width: '100%',
+                    maxHeight: 300,
+                    objectFit: 'cover',
+                    borderRadius: 12,
+                    border: '1px solid var(--border)'
+                  }} />
+                ) : (
+                  <img
+                    src={m.preview}
+                    alt={`Evidence ${i + 1}`}
+                    onError={(e) => { e.currentTarget.style.display = 'none' }}
+                    style={{
+                      width: '100%',
+                      maxHeight: 300,
+                      objectFit: 'cover',
+                      borderRadius: 12,
+                      border: '1px solid var(--border)'
+                    }}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* AI Impact Analysis */}
+        {post.impact && (
+          <div className="post-detail-impact">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 12, fontWeight: 700, color: '#A78BFA' }}>
+              <Icon name="ui-ai-spark" size={14} />
+              AI Impact Score: {post.impact.score}/100
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+              {post.impact.analysis}
+            </p>
+          </div>
+        )}
+
+        {/* Location Map */}
+        <LocationMap
+          lat={post.lat}
+          lng={post.lng}
+          location={post.location}
+          onExploreClick={post.lat && post.lng ? handleExplore : null}
+        />
+
+        {/* Author */}
+        {!post.incognito && post.author && (
+          <div className="post-detail-author">
+            <div style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              background: 'var(--gradient-brand)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 14,
+              fontWeight: 800,
+              color: 'white',
+              flexShrink: 0
+            }}>
+              {post.author.charAt(0)}
+            </div>
+            <div>
+              <span
+                className={post.authorId && onAuthorClick ? 'author-link' : ''}
+                onClick={() => post.authorId && onAuthorClick && onAuthorClick(post.authorId)}
+                style={{ fontWeight: 600, fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
+                {post.author}
+                <Icon name="ui-verified" size={12} style={{ color: 'var(--indigo)' }} />
+              </span>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Verified resident</div>
+            </div>
+          </div>
+        )}
+
+        {/* Comments Section */}
+        <div className="post-detail-comments">
+          <div className="post-detail-comments-header">
+            <Icon name="ui-comments" size={14} />
+            Comments ({post.comments?.length || 0})
+          </div>
+
+          {post.comments && post.comments.length > 0 && (
+            <div className="post-detail-comments-list">
+              {post.comments.map(c => (
+                <div key={c.id} className="post-detail-comment">
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {c.incognito ? (
+                      <>
+                        <Icon name="ui-incognito" size={11} />
+                        <span style={{ color: '#A78BFA' }}>Anonymous</span>
+                      </>
+                    ) : (
+                      c.author
+                    )}
+                  </div>
+                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0 0', lineHeight: 1.4 }}>
+                    {c.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Quick comment input */}
+          <div className="post-detail-comment-input">
+            <input
+              type="text"
+              value={commentText}
+              onChange={e => setCommentText(e.target.value)}
+              placeholder="Add a comment..."
+              className="form-input"
+              style={{ fontSize: 13, padding: '10px 14px' }}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && commentText.trim()) {
+                  onCommentClick && onCommentClick(post.id, commentText.trim())
+                  setCommentText('')
+                }
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

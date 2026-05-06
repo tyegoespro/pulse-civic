@@ -28,17 +28,18 @@ export default function Header({
           </span>
           <h1 className="app-brand-name">{incognito ? 'Incognito' : 'Pulse'}</h1>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {/* Info Button */}
           <button
             onClick={onInfoClick}
+            className="header-action-btn"
             style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
+              width: 36,
+              height: 36,
+              borderRadius: 10,
               border: '1px solid var(--border)',
               background: 'rgba(255,255,255,0.04)',
-              color: 'var(--text-secondary)',
+              color: 'var(--text-muted)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -47,15 +48,15 @@ export default function Header({
             }}
             title="About Pulse"
           >
-            <Icon name="ui-info" size={20} />
+            <Icon name="ui-info" size={16} />
           </button>
           {/* Incognito Toggle */}
           <button
             onClick={onToggleIncognito}
             style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
+              width: 36,
+              height: 36,
+              borderRadius: 10,
               border: incognito
                 ? '2px solid rgba(139, 92, 246, 0.5)'
                 : '1px solid var(--border)',
@@ -78,7 +79,7 @@ export default function Header({
                   : `Enter incognito mode (${incognitoRemaining} of 3 free incognito posts left this month)`
             }
           >
-            <Icon name="ui-incognito" size={20} />
+            <Icon name="ui-incognito" size={18} />
             {incognito && (
               <div style={{
                 position: 'absolute',
@@ -122,10 +123,10 @@ export default function Header({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6,
-                height: 40,
+                gap: 5,
+                height: 36,
                 padding: '0 10px',
-                borderRadius: 12,
+                borderRadius: 10,
                 background: 'linear-gradient(135deg, rgba(245,158,11,0.18), rgba(217,119,6,0.18))',
                 border: '1px solid rgba(245,158,11,0.4)',
                 color: '#FCD34D',
@@ -137,7 +138,7 @@ export default function Header({
               }}
               title="You're a Pulse Pro member"
             >
-              <Icon name="ui-ai-spark" size={14} />
+              <Icon name="ui-ai-spark" size={13} />
               Pro
             </div>
           ) : (
@@ -146,10 +147,10 @@ export default function Header({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6,
-                height: 40,
-                padding: '0 12px',
-                borderRadius: 12,
+                gap: 5,
+                height: 36,
+                padding: '0 10px',
+                borderRadius: 10,
                 background: 'linear-gradient(135deg, rgba(139,92,246,0.18), rgba(109,40,217,0.18))',
                 border: '1px solid rgba(139,92,246,0.4)',
                 color: '#C4B5FD',
@@ -164,34 +165,37 @@ export default function Header({
               }}
               title="Upgrade to Pulse Pro"
             >
-              <Icon name="ui-ai-spark" size={14} />
+              <Icon name="ui-ai-spark" size={13} />
               Pro
             </button>
           )}
-          {/* User Badge */}
-          <div className="app-user-badge">
-            {incognito ? (
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                color: '#A78BFA',
-                fontWeight: 600,
-                fontSize: 12
-              }}>
-                <Icon name="ui-lock" size={12} />
-                Hidden
+        </div>
+      </div>
+
+      {/* User Badge — second row */}
+      <div className="app-header-badge">
+        <div className="app-user-badge">
+          {incognito ? (
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              color: '#A78BFA',
+              fontWeight: 600,
+              fontSize: 12
+            }}>
+              <Icon name="ui-lock" size={12} />
+              Identity Hidden
+            </span>
+          ) : (
+            <>
+              <span className="verified" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <Icon name="ui-verified" size={12} />
+                Verified
               </span>
-            ) : (
-              <>
-                <span className="verified" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                  <Icon name="ui-verified" size={12} />
-                  Verified
-                </span>
-                <span className="location">· {scope === 'state' ? 'Wisconsin' : 'Oshkosh, WI'}</span>
-              </>
-            )}
-          </div>
+              <span className="location">· {scope === 'state' ? 'Wisconsin' : 'Oshkosh, WI'}</span>
+            </>
+          )}
         </div>
       </div>
 

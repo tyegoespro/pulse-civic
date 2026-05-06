@@ -4,7 +4,7 @@ import Icon from './Icon'
 import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import { getDistanceToPost, canVoteOnPost, canVoteOnStatePost, formatDistance } from '../lib/proximity'
 
-export default function PostCard({ post, onVote, onCommentClick, onAuthorClick, compact = false }) {
+export default function PostCard({ post, onVote, onCommentClick, onAuthorClick, onPostClick, compact = false }) {
   const allCategories = post.scope === 'state' ? STATE_CATEGORIES : CATEGORIES
   const cat = allCategories.find(c => c.id === post.category)
   const voteClass = post.userVote === 1 ? 'up' : post.userVote === -1 ? 'down' : 'neutral'
@@ -12,10 +12,10 @@ export default function PostCard({ post, onVote, onCommentClick, onAuthorClick, 
   const canVote = useMemo(() => post.scope === 'state' ? canVoteOnStatePost() : canVoteOnPost(post.lat, post.lng), [post.lat, post.lng, post.scope])
 
   return (
-    <div className={`post-card ${compact ? 'compact' : ''}`}>
+    <div className={`post-card ${compact ? 'compact' : ''}`} onClick={() => onPostClick && onPostClick(post.id)}>
       <div className="post-card-inner">
         {/* Vote Column */}
-        <div className="vote-column">
+        <div className="vote-column" onClick={e => e.stopPropagation()}>
           <VoteButton
             direction="up"
             active={post.userVote === 1}
@@ -150,7 +150,7 @@ export default function PostCard({ post, onVote, onCommentClick, onAuthorClick, 
 
           <div className="post-footer">
             <span
-              onClick={() => onCommentClick && onCommentClick(post.id)}
+              onClick={(e) => { e.stopPropagation(); onCommentClick && onCommentClick(post.id) }}
               style={{
                 cursor: onCommentClick ? 'pointer' : 'default',
                 display: 'inline-flex',

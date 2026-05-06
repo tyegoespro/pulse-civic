@@ -13,6 +13,8 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
   const [similarPosts, setSimilarPosts] = useState([])
   const [media, setMedia] = useState([])
   const [dragOver, setDragOver] = useState(false)
+  const [pinLat, setPinLat] = useState(null)
+  const [pinLng, setPinLng] = useState(null)
   const fileInputRef = useRef(null)
 
   // AI Impact Analysis state
@@ -91,7 +93,11 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
 
   const handleSubmit = () => {
     if (!canSubmit) return
-    onSubmit({ title, description, category, location, impact, media, scope })
+    onSubmit({
+      title, description, category, location, impact, media, scope,
+      lat: pinLat,
+      lng: pinLng
+    })
   }
 
   const getScoreColor = (score) => {
@@ -428,8 +434,60 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
           onChange={e => setLocation(e.target.value)}
           placeholder={isState ? "e.g. Statewide, Madison, WI..." : "e.g. Main St & 9th Ave"}
           className="form-input"
-          style={{ marginBottom: 20 }}
+          style={{ marginBottom: 8 }}
         />
+
+        {/* Pin Drop Map */}
+        {!isState && (
+          <div
+            className={`create-map-container ${pinLat ? 'has-pin' : ''}`}
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect()
+              const x = (e.clientX - rect.left) / rect.width
+              const y = (e.clientY - rect.top) / rect.height
+              // Map to Oshkosh area coordinates
+              const lat = 44.024 + (0.5 - y) * 0.03
+              const lng = -88.543 + (x - 0.5) * 0.04
+              setPinLat(lat)
+              setPinLng(lng)
+            }}
+          >
+            {/* Grid */}
+            <svg className="detail-map-grid" viewBox="0 0 300 200" preserveAspectRatio="none">
+              {[40, 80, 120, 160].map(y => (
+                <line key={`h${y}`} x1="0" y1={y} x2="300" y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+              ))}
+              {[60, 120, 180, 240].map(x => (
+                <line key={`v${x}`} x1={x} y1="0" x2={x} y2="200" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+              ))}
+              <line x1="0" y1="100" x2="300" y2="100" stroke="rgba(255,255,255,0.12)" strokeWidth="2" />
+              <line x1="150" y1="0" x2="150" y2="200" stroke="rgba(255,255,255,0.12)" strokeWidth="2" />
+            </svg>
+
+            {pinLat && pinLng ? (
+              <>
+                <div
+                  className="detail-map-pin"
+                  style={{
+                    left: `${Math.max(5, Math.min(95, 50 + ((pinLng - (-88.543)) / 0.04) * 100))}%`,
+                    top: `${Math.max(5, Math.min(95, 50 - ((pinLat - 44.024) / 0.03) * 100))}%`
+                  }}
+                >
+                  <div className="detail-map-pin-dot" />
+                  <div className="detail-map-pin-pulse" />
+                </div>
+                <div className="create-map-coords">
+                  {pinLat.toFixed(4)}, {pinLng.toFixed(4)}
+                </div>
+              </>
+            ) : (
+              <div className="create-map-hint">
+                <Icon name="ui-location" size={18} style={{ marginBottom: 4, opacity: 0.4 }} />
+                <div>Tap to drop a pin</div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Incognito Indicator (read-only — controlled by global toggle) */}
         {incognito && (

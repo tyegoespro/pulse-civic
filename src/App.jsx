@@ -15,6 +15,7 @@ import DemoBanner from './components/DemoBanner'
 import InfoPage from './components/InfoPage'
 import ProfileView from './components/ProfileView'
 import PulseProModal from './components/PulseProModal'
+import PostDetailModal from './components/PostDetailModal'
 import { canVoteOnPost, canVoteOnStatePost } from './lib/proximity'
 
 const FREE_INCOGNITO_LIMIT = 3
@@ -89,6 +90,9 @@ export default function App() {
   // Info Page (replaces old landing page)
   const [showInfoPage, setShowInfoPage] = useState(false)
 
+  // Post Detail View
+  const [detailPostId, setDetailPostId] = useState(null)
+
   // --- Handlers ---
 
   const handleScopeChange = (newScope) => {
@@ -112,7 +116,7 @@ export default function App() {
     }))
   }
 
-  const handleCreatePost = ({ title, description, category, location, impact, media, scope: postScope }) => {
+  const handleCreatePost = ({ title, description, category, location, impact, media, scope: postScope, lat, lng }) => {
     // Quota gate: free users get FREE_INCOGNITO_LIMIT incognito POSTS per month.
     if (incognito && !proState.isPro && proState.usage >= FREE_INCOGNITO_LIMIT) {
       setProModalReason(`You've used all ${FREE_INCOGNITO_LIMIT} free incognito posts this month. Go Pro for unlimited.`)
@@ -138,8 +142,8 @@ export default function App() {
       userId: 'me',
       media: media || [],
       impact: impact || null,
-      lat: isState ? null : 44.024 + (Math.random() - 0.5) * 0.01,
-      lng: isState ? null : -88.543 + (Math.random() - 0.5) * 0.01
+      lat: lat != null ? lat : (isState ? null : 44.024 + (Math.random() - 0.5) * 0.01),
+      lng: lng != null ? lng : (isState ? null : -88.543 + (Math.random() - 0.5) * 0.01)
     }
     setPosts(prev => [newPost, ...prev])
 
@@ -188,6 +192,18 @@ export default function App() {
   const trendingPosts = [...filteredPosts].sort((a, b) => b.votes - a.votes)
 
   const commentPost = posts.find(p => p.id === commentPostId)
+  const detailPost = posts.find(p => p.id === detailPostId)
+
+  // Navigate from post detail → explore tab with location
+  const handleExploreLocation = (post) => {
+    setDetailPostId(null)
+    setActiveTab('explore')
+  }
+
+  // Add comment from detail view
+  const handleDetailComment = (postId, text) => {
+    handleAddComment(postId, text)
+  }
 
   // --- Main App (shown immediately) ---
 
@@ -241,6 +257,7 @@ export default function App() {
                   onVote={handleVote}
                   onCommentClick={setCommentPostId}
                   onAuthorClick={(authorId) => setViewingProfile(authorId)}
+                  onPostClick={(postId) => setDetailPostId(postId)}
                   compact={activeTab === 'trending'}
                 />
               ))}
@@ -336,6 +353,21 @@ export default function App() {
           onClose={() => { setShowProModal(false); setProModalReason(null) }}
           onUpgrade={handleUpgrade}
           reason={proModalReason}
+        />
+      )}
+
+      {/* Post Detail Modal */}
+      {detailPostId && detailPost && (
+        <PostDetailModal
+          post={detailPost}
+          onClose={() => setDetailPostId(null)}
+          onVote={handleVote}
+          onCommentClick={handleDetailComment}
+          onAuthorClick={(authorId) => {
+            setDetailPostId(null)
+            setViewingProfile(authorId)
+          }}
+          onExploreLocation={handleExploreLocation}
         />
       )}
     </div>
