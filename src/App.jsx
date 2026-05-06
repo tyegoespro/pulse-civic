@@ -289,7 +289,7 @@ export default function App() {
 
         {/* Insights View */}
         {!viewingProfile && activeTab === 'insights' && (
-          <InsightsPanel posts={scopedPosts} scope={scope} />
+          <InsightsPanel posts={scopedPosts} scope={scope} onPostClick={(postId) => setDetailPostId(postId)} />
         )}
 
         {/* Activity View */}

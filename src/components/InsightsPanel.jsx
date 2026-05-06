@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import Icon from './Icon'
 
-export default function InsightsPanel({ posts, scope = 'local' }) {
+export default function InsightsPanel({ posts, scope = 'local', onPostClick }) {
   const activeCategories = scope === 'state' ? STATE_CATEGORIES : CATEGORIES
   const isState = scope === 'state'
   const cityName = isState ? 'Wisconsin' : 'Oshkosh'
@@ -152,8 +152,12 @@ export default function InsightsPanel({ posts, scope = 'local' }) {
           border: `1px solid ${isState ? 'rgba(217,119,6,0.2)' : 'rgba(99,102,241,0.2)'}`,
           borderRadius: 16,
           padding: '18px 20px',
-          marginBottom: 20
-        }}>
+          marginBottom: 20,
+          cursor: onPostClick ? 'pointer' : 'default',
+          transition: 'all 0.2s ease'
+        }}
+        onClick={() => onPostClick && topPost && onPostClick(topPost.id)}
+      >
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -245,8 +249,11 @@ export default function InsightsPanel({ posts, scope = 'local' }) {
                 background: 'var(--bg-card)',
                 border: '1px solid var(--border)',
                 borderRadius: 14,
-                transition: 'all 0.2s ease'
-              }}>
+                transition: 'all 0.2s ease',
+                cursor: onPostClick ? 'pointer' : 'default'
+              }}
+              onClick={() => onPostClick && onPostClick(post.id)}
+              >
                 {/* Rank */}
                 <div style={{
                   width: 32,
