@@ -109,9 +109,15 @@ export default function App() {
         ? prev.filter(id => id !== postId)
         : [...prev, postId]
       localStorage.setItem('pulse_watched', JSON.stringify(next))
+      if (!prev.includes(postId)) {
+        setActivityBadge(b => b + 1)
+      }
       return next
     })
   }
+
+  // Activity badge — counts new actions since last Activity tab visit
+  const [activityBadge, setActivityBadge] = useState(0)
 
   // --- Handlers ---
 
@@ -136,6 +142,9 @@ export default function App() {
     setTimeout(() => {
       setActiveTab(newTab)
       setViewingProfile(null)
+      if (newTab === 'activity') {
+        setActivityBadge(0)
+      }
       // Reset transition after enter animation
       setTimeout(() => setIsTransitioning(false), 350)
     }, 80)
@@ -154,6 +163,7 @@ export default function App() {
         userVoteIncognito: newVote !== 0 ? incognito : false
       }
     }))
+    if (activeTab !== 'activity') setActivityBadge(b => b + 1)
   }
 
   const handleCreatePost = ({ title, description, category, location, impact, media, scope: postScope, lat, lng }) => {
@@ -194,6 +204,7 @@ export default function App() {
 
     setShowCreate(false)
     setActiveTab('feed')
+    setActivityBadge(b => b + 1)
   }
 
   const handleAddComment = (postId, text) => {
@@ -213,6 +224,7 @@ export default function App() {
         ]
       }
     }))
+    if (activeTab !== 'activity') setActivityBadge(b => b + 1)
   }
 
   // --- Derived Data ---
@@ -271,7 +283,7 @@ export default function App() {
       />
 
       <div className="app-content">
-        <TabBar activeTab={activeTab} onTabChange={handleTabChange} />
+        <TabBar activeTab={activeTab} onTabChange={handleTabChange} badges={{ activity: activityBadge }} />
 
         {/* Animated Tab Content */}
         <div

@@ -9,7 +9,7 @@ const TABS = [
   { id: 'activity', label: 'Activity', icon: 'ui-activity' },
 ]
 
-export default function TabBar({ activeTab, onTabChange }) {
+export default function TabBar({ activeTab, onTabChange, badges = {} }) {
   const tabRefs = useRef({})
   const barRef = useRef(null)
   const [indicator, setIndicator] = useState({ left: 0, width: 0 })
@@ -45,8 +45,11 @@ export default function TabBar({ activeTab, onTabChange }) {
           className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
           onClick={() => onTabChange(tab.id)}
         >
-          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
             <Icon name={tab.icon} size={20} />
+            {badges[tab.id] > 0 && (
+              <span className="tab-badge">{badges[tab.id] > 9 ? '9+' : badges[tab.id]}</span>
+            )}
           </span>
           <span>{tab.label}</span>
         </button>
