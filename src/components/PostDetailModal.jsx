@@ -139,22 +139,24 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
 
         {/* Voting bar */}
         <div className="post-detail-vote-bar">
-          <VoteButton
-            direction="up"
-            active={post.userVote === 1}
-            onClick={() => canVote && onVote(post.id, 1)}
-            style={!canVote ? { opacity: 0.3, cursor: 'not-allowed' } : {}}
-          />
-          <span className={`vote-count ${voteClass}`} style={{ fontSize: 22, fontWeight: 900 }}>
-            {post.votes}
-          </span>
-          <VoteButton
-            direction="down"
-            active={post.userVote === -1}
-            onClick={() => canVote && onVote(post.id, -1)}
-            style={!canVote ? { opacity: 0.3, cursor: 'not-allowed' } : {}}
-          />
-          <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-tertiary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <VoteButton
+              direction="up"
+              active={post.userVote === 1}
+              onClick={() => canVote && onVote(post.id, 1)}
+              style={!canVote ? { opacity: 0.3, cursor: 'not-allowed' } : {}}
+            />
+            <span className={`vote-count ${voteClass}`} style={{ fontSize: 24, fontWeight: 900, minWidth: 44, textAlign: 'center' }}>
+              {post.votes}
+            </span>
+            <VoteButton
+              direction="down"
+              active={post.userVote === -1}
+              onClick={() => canVote && onVote(post.id, -1)}
+              style={!canVote ? { opacity: 0.3, cursor: 'not-allowed' } : {}}
+            />
+          </div>
+          <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
             {post.createdAt}
           </span>
         </div>
@@ -164,18 +166,27 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
           <p className="post-detail-description">{post.description}</p>
         )}
 
-        {/* Media Gallery — larger */}
+        {/* Media Gallery — responsive */}
         {post.media && post.media.length > 0 && (
-          <div className="post-detail-media">
+          <div className="post-detail-media" style={{
+            display: 'grid',
+            gridTemplateColumns: post.media.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(140px, 1fr))',
+            gap: 8,
+            marginBottom: 16
+          }}>
             {post.media.map((m, i) => (
-              <div key={i} className="post-detail-media-item">
+              <div key={i} style={{
+                borderRadius: 12,
+                overflow: 'hidden',
+                border: '1px solid var(--border)',
+                aspectRatio: post.media.length === 1 ? '16/10' : '4/3'
+              }}>
                 {m.type === 'video' ? (
                   <video src={m.preview} controls style={{
                     width: '100%',
-                    maxHeight: 300,
+                    height: '100%',
                     objectFit: 'cover',
-                    borderRadius: 12,
-                    border: '1px solid var(--border)'
+                    display: 'block'
                   }} />
                 ) : (
                   <img
@@ -184,10 +195,9 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
                     onError={(e) => { e.currentTarget.style.display = 'none' }}
                     style={{
                       width: '100%',
-                      maxHeight: 300,
+                      height: '100%',
                       objectFit: 'cover',
-                      borderRadius: 12,
-                      border: '1px solid var(--border)'
+                      display: 'block'
                     }}
                   />
                 )}
