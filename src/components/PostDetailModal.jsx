@@ -433,14 +433,14 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
           )}
 
           {/* Quick comment input */}
-          <div className="post-detail-comment-input">
+          <div className="post-detail-comment-input" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <input
               type="text"
               value={commentText}
               onChange={e => setCommentText(e.target.value)}
               placeholder="Add a comment..."
               className="form-input"
-              style={{ fontSize: 13, padding: '10px 14px' }}
+              style={{ flex: 1, fontSize: 13, padding: '10px 14px' }}
               onKeyDown={e => {
                 if (e.key === 'Enter' && commentText.trim()) {
                   onCommentClick && onCommentClick(post.id, commentText.trim())
@@ -448,6 +448,18 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
                 }
               }}
             />
+            <button
+              className="comment-send-btn"
+              onClick={() => {
+                if (!commentText.trim()) return
+                onCommentClick && onCommentClick(post.id, commentText.trim())
+                setCommentText('')
+              }}
+              disabled={!commentText.trim()}
+              aria-label="Post comment"
+            >
+              ↑
+            </button>
           </div>
         </div>
       </div>
