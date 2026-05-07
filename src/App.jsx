@@ -349,6 +349,7 @@ export default function App() {
           setCommentPostId(null)
           setViewingProfile(null)
           handleTabChange('activity')
+          window.scrollTo({ top: 0, behavior: 'smooth' })
         }}
       />
 
