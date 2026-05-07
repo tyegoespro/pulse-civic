@@ -539,6 +539,32 @@ body {
   flex-shrink: 0;
 }
 
+/* --- Category Chips (Explore View) --- */
+.category-chip {
+  padding: 6px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.category-chip:hover {
+  border-color: var(--border-hover);
+}
+
+.category-chip.active {
+  border-color: var(--highlight-color, var(--indigo));
+  background: var(--highlight-bg, rgba(99, 102, 241, 0.2));
+  color: var(--highlight-color, var(--text-accent));
+}
+
 /* --- Post Card --- */
 .post-card {
   background: var(--bg-card);
