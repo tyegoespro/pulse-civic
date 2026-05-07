@@ -19,6 +19,7 @@ const IncognitoInline = ({ size = 11 }) => (
 export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) {
   const myPosts = posts.filter(p => p.userId === 'me')
   const myVoted = posts.filter(p => p.userVote !== 0)
+    .sort((a, b) => (b.userVoteTimestamp || 0) - (a.userVoteTimestamp || 0))
 
   // Extract all comments the user made across all posts
   const myComments = useMemo(() => {
@@ -35,8 +36,8 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
 
   const regularComments = myComments.filter(c => !c.incognito)
   const incognitoComments = myComments.filter(c => c.incognito)
-  const regularPosts = myPosts.filter(p => !p.incognito)
-  const incognitoPosts = myPosts.filter(p => p.incognito)
+  const regularPosts = [...myPosts.filter(p => !p.incognito)].reverse()
+  const incognitoPosts = [...myPosts.filter(p => p.incognito)].reverse()
   const regularVoted = myVoted.filter(p => !p.userVoteIncognito)
   const incognitoVoted = myVoted.filter(p => p.userVoteIncognito)
 

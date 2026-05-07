@@ -224,7 +224,8 @@ export default function App() {
         ...p,
         userVote: newVote,
         votes: p.votes + (newVote - p.userVote),
-        userVoteIncognito: newVote !== 0 ? incognito : false
+        userVoteIncognito: newVote !== 0 ? incognito : false,
+        userVoteTimestamp: newVote !== 0 ? Date.now() : null
       }
     }))
     if (activeTab !== 'activity') setActivityBadge(b => b + 1)
