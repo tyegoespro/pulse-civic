@@ -114,7 +114,7 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
         <div className="modal-header">
           <h2 className="modal-title" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             {isState && <Icon name="ui-scope-state" size={20} color="#D97706" />}
-            {isState ? 'Raise a State Issue' : 'Raise an Issue'}
+            {isState ? 'Create a State Pulse' : 'Create a Pulse'}
           </h2>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
