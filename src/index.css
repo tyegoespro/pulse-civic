@@ -1392,7 +1392,8 @@ textarea.form-input {
 /* --- Responsive --- */
 @media (max-width: 480px) {
   .app-content {
-    padding: 0 12px;
+    padding-left: 12px;
+    padding-right: 12px;
   }
 
   .post-card {
