@@ -176,7 +176,7 @@ export default function App() {
     setWatchedIds(prev => {
       const next = prev.includes(postId)
         ? prev.filter(id => id !== postId)
-        : [...prev, postId]
+        : [postId, ...prev]
       localStorage.setItem('pulse_watched', JSON.stringify(next))
       if (!prev.includes(postId)) {
         setActivityBadge(b => b + 1)

@@ -42,7 +42,9 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
   const incognitoVoted = myVoted.filter(p => p.userVoteIncognito)
 
   const hasAny = myPosts.length > 0 || myVoted.length > 0 || myComments.length > 0
-  const watchedPosts = posts.filter(p => watchedIds.includes(p.id))
+  const watchedPosts = watchedIds
+    .map(id => posts.find(p => p.id === id))
+    .filter(Boolean)
 
   return (
     <div style={{ paddingBottom: 100 }}>
