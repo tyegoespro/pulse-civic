@@ -267,8 +267,14 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
           ) : (
             publicComments.map(c => {
               const cat = CATEGORIES.find(ct => ct.id === c.postCategory)
+              const clickable = onPostClick && c.postId
               return (
-                <div key={c.id} className="profile-comment-card animate-slide-up">
+                <div
+                  key={c.id}
+                  className="profile-comment-card animate-slide-up"
+                  onClick={() => clickable && onPostClick(c.postId)}
+                  style={clickable ? { cursor: 'pointer' } : undefined}
+                >
                   <div className="profile-comment-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Icon name="ui-comments" size={16} />
                   </div>
@@ -279,10 +285,7 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
                     <div className="profile-comment-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                       on
                       {cat?.icon && <Icon name={cat.icon} size={11} style={{ color: cat.color }} />}
-                      <span
-                        className="author-link"
-                        style={{ cursor: 'default', color: 'var(--text-muted)' }}
-                      >{c.postTitle}</span> · {new Date(c.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <span style={{ color: 'var(--text-muted)' }}>{c.postTitle}</span> · {new Date(c.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                 </div>
