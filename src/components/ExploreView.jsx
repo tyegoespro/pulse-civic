@@ -657,8 +657,15 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-tertiary)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <Icon name="ui-location" size={11} /> {selectedPost.location} · {selectedPost.votes} votes · {selectedPost.createdAt}
+            <div style={{ fontSize: 12, color: 'var(--text-tertiary)', display: 'inline-flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+              <Icon name="ui-location" size={11} /> {selectedPost.location} · {selectedPost.votes} votes
+              {(() => {
+                const watchers = selectedPost.watcherCount != null
+                  ? selectedPost.watcherCount
+                  : Math.max(0, Math.floor((selectedPost.votes || 0) / 7))
+                return watchers > 0 ? ` · ${watchers.toLocaleString()} watching` : ''
+              })()}
+              {' · '}{selectedPost.createdAt}
             </div>
             {isState || isHomeCity ? (
               <div style={{ display: 'flex', gap: 6 }}>

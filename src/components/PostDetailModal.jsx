@@ -215,37 +215,58 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
         </div>
 
         {/* Watch Issue Toggle */}
-        {onToggleWatch && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-            <button
-              onClick={onToggleWatch}
-              className="watch-issue-btn"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 20px',
-                borderRadius: 40,
-                border: isWatched
-                  ? '1px solid rgba(34, 197, 94, 0.4)'
-                  : '1px solid var(--border)',
-                background: isWatched
-                  ? 'rgba(34, 197, 94, 0.1)'
-                  : 'var(--bg-card)',
-                color: isWatched ? '#22C55E' : 'var(--text-secondary)',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'var(--font)',
-                transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                WebkitTapHighlightColor: 'transparent'
-              }}
-            >
-              <Icon name="ui-eye" size={15} />
-              {isWatched ? 'Watching' : 'Watch this Pulse'}
-            </button>
-          </div>
-        )}
+        {onToggleWatch && (() => {
+          const baseWatchers = post.watcherCount != null
+            ? post.watcherCount
+            : Math.max(0, Math.floor((post.votes || 0) / 7))
+          const totalWatchers = baseWatchers + (isWatched ? 1 : 0)
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, marginBottom: 16 }}>
+              <button
+                onClick={onToggleWatch}
+                className="watch-issue-btn"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 20px',
+                  borderRadius: 40,
+                  border: isWatched
+                    ? '1px solid rgba(34, 197, 94, 0.4)'
+                    : '1px solid var(--border)',
+                  background: isWatched
+                    ? 'rgba(34, 197, 94, 0.1)'
+                    : 'var(--bg-card)',
+                  color: isWatched ? '#22C55E' : 'var(--text-secondary)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font)',
+                  transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  WebkitTapHighlightColor: 'transparent'
+                }}
+              >
+                <Icon name="ui-eye" size={15} />
+                {isWatched ? 'Watching' : 'Watch this Pulse'}
+              </button>
+              {totalWatchers > 0 && (
+                <div style={{
+                  fontSize: 11,
+                  color: 'var(--text-muted)',
+                  fontWeight: 500,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}>
+                  <Icon name="ui-eye" size={11} />
+                  {totalWatchers === 1
+                    ? '1 person watching'
+                    : `${totalWatchers.toLocaleString()} people watching`}
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         {/* Share */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
