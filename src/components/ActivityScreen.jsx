@@ -133,7 +133,10 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
               {regularPosts.map(p => {
                 const cat = CATEGORIES.find(c => c.id === p.category)
                 return (
-                  <div key={p.id} className="activity-item animate-slide-up">
+                  <div key={p.id} className="activity-item animate-slide-up"
+                    style={{ cursor: onPostClick ? 'pointer' : 'default' }}
+                    onClick={() => onPostClick && onPostClick(p.id)}
+                  >
                     <div style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: 12 }}>
                       <CategoryInline cat={cat} />
                     </div>
@@ -156,7 +159,10 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
               {regularComments.map(c => {
                 const cat = CATEGORIES.find(ct => ct.id === c.postCategory)
                 return (
-                  <div key={c.id} className="activity-item animate-slide-up" style={{ display: 'flex', gap: 12 }}>
+                  <div key={c.id} className="activity-item animate-slide-up"
+                    style={{ display: 'flex', gap: 12, cursor: onPostClick ? 'pointer' : 'default' }}
+                    onClick={() => onPostClick && onPostClick(c.postId)}
+                  >
                     <div style={{
                       width: 36,
                       height: 36,
@@ -200,7 +206,10 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
               {regularVoted.map(p => {
                 const cat = CATEGORIES.find(c => c.id === p.category)
                 return (
-                  <div key={p.id} className="activity-item activity-vote-item animate-slide-up">
+                  <div key={p.id} className="activity-item activity-vote-item animate-slide-up"
+                    style={{ cursor: onPostClick ? 'pointer' : 'default' }}
+                    onClick={() => onPostClick && onPostClick(p.id)}
+                  >
                     <span className={`activity-vote-icon ${p.userVote === 1 ? 'up' : 'down'}`}>
                       {p.userVote === 1 ? '▲' : '▼'}
                     </span>
@@ -264,8 +273,11 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
                 const cat = CATEGORIES.find(c => c.id === p.category)
                 return (
                   <div key={p.id} className="activity-item animate-slide-up" style={{
-                    borderColor: 'rgba(139, 92, 246, 0.15)'
-                  }}>
+                    borderColor: 'rgba(139, 92, 246, 0.15)',
+                    cursor: onPostClick ? 'pointer' : 'default'
+                  }}
+                    onClick={() => onPostClick && onPostClick(p.id)}
+                  >
                     <div style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: 12 }}>
                       <CategoryInline cat={cat} />
                       <IncognitoInline />
@@ -295,8 +307,11 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
                   <div key={c.id} className="activity-item animate-slide-up" style={{
                     display: 'flex',
                     gap: 12,
-                    borderColor: 'rgba(139, 92, 246, 0.15)'
-                  }}>
+                    borderColor: 'rgba(139, 92, 246, 0.15)',
+                    cursor: onPostClick ? 'pointer' : 'default'
+                  }}
+                    onClick={() => onPostClick && onPostClick(c.postId)}
+                  >
                     <div style={{
                       width: 36,
                       height: 36,
@@ -347,8 +362,11 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
                 const cat = CATEGORIES.find(c => c.id === p.category)
                 return (
                   <div key={p.id} className="activity-item activity-vote-item animate-slide-up" style={{
-                    borderColor: 'rgba(139, 92, 246, 0.15)'
-                  }}>
+                    borderColor: 'rgba(139, 92, 246, 0.15)',
+                    cursor: onPostClick ? 'pointer' : 'default'
+                  }}
+                    onClick={() => onPostClick && onPostClick(p.id)}
+                  >
                     <span className={`activity-vote-icon ${p.userVote === 1 ? 'up' : 'down'}`} style={{ opacity: 0.7 }}>
                       {p.userVote === 1 ? '▲' : '▼'}
                     </span>
