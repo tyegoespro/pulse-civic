@@ -92,6 +92,62 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
         </p>
       </div>
 
+      {/* Your Impact */}
+      <div className="animate-slide-up" style={{
+        background: 'linear-gradient(135deg, rgba(236,72,153,0.08), rgba(139,92,246,0.06))',
+        border: '1px solid rgba(236,72,153,0.15)',
+        borderRadius: 16,
+        padding: '18px 20px',
+        marginBottom: 20
+      }}>
+        <div style={{
+          fontSize: 11,
+          fontWeight: 700,
+          color: '#EC4899',
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          marginBottom: 12,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6
+        }}>
+          <Icon name="ui-verified" size={13} />
+          Your Impact
+        </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 12
+        }}>
+          <div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+              {yourVotes}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+              Votes cast
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+              {yourPosts}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+              Voices added
+            </div>
+          </div>
+        </div>
+        {yourVotes === 0 && yourPosts === 0 && (
+          <div style={{
+            fontSize: 12,
+            color: 'var(--text-tertiary)',
+            marginTop: 10,
+            fontStyle: 'italic'
+          }}>
+            Start voting and posting to track your civic impact.
+          </div>
+        )}
+      </div>
+
       {/* Quick Stats Row */}
       <div className="animate-slide-up" style={{
         display: 'grid',
@@ -409,62 +465,6 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Your Impact */}
-      <div className="animate-slide-up" style={{
-        background: 'linear-gradient(135deg, rgba(236,72,153,0.08), rgba(139,92,246,0.06))',
-        border: '1px solid rgba(236,72,153,0.15)',
-        borderRadius: 16,
-        padding: '18px 20px',
-        marginBottom: 20
-      }}>
-        <div style={{
-          fontSize: 11,
-          fontWeight: 700,
-          color: '#EC4899',
-          textTransform: 'uppercase',
-          letterSpacing: '0.06em',
-          marginBottom: 12,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6
-        }}>
-          <Icon name="ui-verified" size={13} />
-          Your Impact
-        </div>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 12
-        }}>
-          <div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
-              {yourVotes}
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-              Votes cast
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
-              {yourPosts}
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-              Voices added
-            </div>
-          </div>
-        </div>
-        {yourVotes === 0 && yourPosts === 0 && (
-          <div style={{
-            fontSize: 12,
-            color: 'var(--text-tertiary)',
-            marginTop: 10,
-            fontStyle: 'italic'
-          }}>
-            Start voting and posting to track your civic impact.
-          </div>
-        )}
       </div>
 
       {/* Footer */}
