@@ -354,7 +354,12 @@ body {
   padding: 16px 0;
   border-bottom: 1px solid var(--border);
   margin-bottom: 0;
-  position: relative;
+  position: sticky;
+  top: 140px;
+  z-index: 100;
+  background: rgba(15, 15, 26, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 /* Sliding indicator */
