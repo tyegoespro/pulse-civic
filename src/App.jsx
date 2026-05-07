@@ -330,7 +330,7 @@ export default function App() {
       {/* Demo Banner — shown on first load */}
       <DemoBanner
         onLearnMore={() => setShowInfoPage(true)}
-        onGetStarted={() => {}}
+        onGetStarted={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       />
 
       <Header
