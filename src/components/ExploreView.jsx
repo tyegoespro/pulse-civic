@@ -896,7 +896,13 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
         return (
           <div
             key={post.id}
-            onClick={() => setSelectedPost(post)}
+            onClick={() => {
+              if (selectedPost?.id === post.id && onPostClick) {
+                onPostClick(post)
+              } else {
+                setSelectedPost(post)
+              }
+            }}
             className="activity-item"
             style={{
               cursor: 'pointer',
@@ -934,11 +940,15 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
                 <Icon name="ui-location" size={10} /> {post.location} · {post.votes} votes
               </div>
             </div>
-            {post.media && post.media.length > 0 && (
+            {selectedPost?.id === post.id && onPostClick ? (
+              <span style={{ fontSize: 11, color: 'var(--text-accent)', fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                Details →
+              </span>
+            ) : post.media && post.media.length > 0 ? (
               <span style={{ fontSize: 11, color: 'var(--text-muted)', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                 <Icon name="ui-camera" size={11} /> {post.media.length}
               </span>
-            )}
+            ) : null}
           </div>
         )
       })}
