@@ -114,7 +114,7 @@ function StateMapView({ posts, onSelectPost, selectedPost, categories }) {
       <div style={{
         position: 'absolute',
         top: 12,
-        left: 16,
+        right: 16,
         zIndex: 500,
         display: 'flex',
         alignItems: 'center',
@@ -494,7 +494,7 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
           <div style={{
             position: 'absolute',
             top: 12,
-            left: 16,
+            right: 16,
             zIndex: 500,
             display: 'flex',
             alignItems: 'center',
