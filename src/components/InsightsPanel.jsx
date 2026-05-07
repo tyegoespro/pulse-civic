@@ -30,7 +30,7 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
   }, [posts, activeCategories])
 
   const topPosts = useMemo(() =>
-    [...posts].sort((a, b) => b.votes - a.votes).slice(0, 7),
+    [...posts].sort((a, b) => b.votes - a.votes).slice(0, 10),
     [posts]
   )
 
