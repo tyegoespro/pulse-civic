@@ -45,9 +45,14 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
   // Your impact (demo data)
   const yourVotes = posts.filter(p => p.userVote !== 0).length
   const yourPosts = posts.filter(p => p.userId === 'me').length
-  const votesReceived = posts
-    .filter(p => p.userId === 'me')
-    .reduce((sum, p) => sum + (p.votes || 0), 0)
+  const myPosts = posts.filter(p => p.userId === 'me')
+  const votesReceived = myPosts.reduce((sum, p) => sum + (p.votes || 0), 0)
+  const watchersTotal = myPosts.reduce((sum, p) => {
+    const w = p.watcherCount != null
+      ? p.watcherCount
+      : Math.max(0, Math.floor((p.votes || 0) / 7))
+    return sum + w
+  }, 0)
 
   // Generate a dynamic summary
   const summary = useMemo(() => {
@@ -119,8 +124,8 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
         </div>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr',
-          gap: 12
+          gridTemplateColumns: '1fr 1fr',
+          gap: 14
         }}>
           <div>
             <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
@@ -144,6 +149,14 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
               Votes received
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+              {watchersTotal.toLocaleString()}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+              Watching you
             </div>
           </div>
         </div>
