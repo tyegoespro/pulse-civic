@@ -245,8 +245,9 @@ export default function App() {
     }
 
     const isState = postScope === 'state'
+    const now = Date.now()
     const newPost = {
-      id: Date.now().toString(),
+      id: now.toString(),
       title,
       description,
       category,
@@ -259,6 +260,7 @@ export default function App() {
       author: incognito ? null : 'Tye D.',
       authorVerified: true,
       createdAt: 'Just now',
+      createdAtTs: now,
       userId: 'me',
       media: media || [],
       impact: impact || null,
@@ -305,11 +307,9 @@ export default function App() {
   const filteredPosts = scopedPosts
     .filter(p => filter === 'all' || p.category === filter)
 
-  const feedPosts = [...filteredPosts].sort((a, b) => {
-    if (a.createdAt === 'Just now') return -1
-    if (b.createdAt === 'Just now') return 1
-    return 0
-  })
+  const feedPosts = [...filteredPosts].sort(
+    (a, b) => (b.createdAtTs || 0) - (a.createdAtTs || 0)
+  )
 
   const trendingPosts = [...filteredPosts].sort((a, b) => b.votes - a.votes)
 
