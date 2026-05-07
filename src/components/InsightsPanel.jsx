@@ -148,57 +148,6 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
         )}
       </div>
 
-      {/* Quick Stats Row */}
-      <div className="animate-slide-up" style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1fr',
-        gap: 10,
-        marginBottom: 20
-      }}>
-        <div style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-          borderRadius: 14,
-          padding: '14px 12px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--indigo)', lineHeight: 1 }}>
-            {totalPosts}
-          </div>
-          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Voices
-          </div>
-        </div>
-        <div style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-          borderRadius: 14,
-          padding: '14px 12px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--success)', lineHeight: 1 }}>
-            {totalVotes.toLocaleString()}
-          </div>
-          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Votes
-          </div>
-        </div>
-        <div style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-          borderRadius: 14,
-          padding: '14px 12px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: 24, fontWeight: 900, color: '#EC4899', lineHeight: 1 }}>
-            {categoryData.length}
-          </div>
-          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Topics
-          </div>
-        </div>
-      </div>
-
       {/* Community Consensus */}
       {topPost && (
         <div className="animate-slide-up" style={{
@@ -278,6 +227,57 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
           </div>
         </div>
       )}
+
+      {/* Quick Stats Row */}
+      <div className="animate-slide-up" style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr 1fr',
+        gap: 10,
+        marginBottom: 20
+      }}>
+        <div style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          borderRadius: 14,
+          padding: '14px 12px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--indigo)', lineHeight: 1 }}>
+            {totalPosts}
+          </div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Voices
+          </div>
+        </div>
+        <div style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          borderRadius: 14,
+          padding: '14px 12px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--success)', lineHeight: 1 }}>
+            {totalVotes.toLocaleString()}
+          </div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Votes
+          </div>
+        </div>
+        <div style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          borderRadius: 14,
+          padding: '14px 12px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: '#EC4899', lineHeight: 1 }}>
+            {categoryData.length}
+          </div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Topics
+          </div>
+        </div>
+      </div>
 
       {/* Top Issues */}
       <div className="animate-slide-up" style={{ marginBottom: 20 }}>
