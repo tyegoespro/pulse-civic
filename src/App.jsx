@@ -148,6 +148,7 @@ export default function App() {
 
   // Post Detail View
   const [detailPostId, setDetailPostId] = useState(null)
+  const [detailPostData, setDetailPostData] = useState(null)
 
   // Onboarding — first visit only
   const [showOnboarding, setShowOnboarding] = useState(() => {
@@ -307,7 +308,7 @@ export default function App() {
   const trendingPosts = [...filteredPosts].sort((a, b) => b.votes - a.votes)
 
   const commentPost = posts.find(p => p.id === commentPostId)
-  const detailPost = posts.find(p => p.id === detailPostId)
+  const detailPost = detailPostData || posts.find(p => p.id === detailPostId)
 
   // Navigate from post detail → explore tab with location
   const handleExploreLocation = (post) => {
@@ -416,7 +417,15 @@ export default function App() {
 
         {/* Explore / Heatmap View */}
         {!viewingProfile && activeTab === 'explore' && (
-          <ExploreView posts={scopedPosts} onVote={handleVote} scope={scope} onPostClick={(postId) => setDetailPostId(postId)} />
+          <ExploreView posts={scopedPosts} onVote={handleVote} scope={scope} onPostClick={(postOrId) => {
+            if (typeof postOrId === 'object') {
+              setDetailPostData(postOrId)
+              setDetailPostId(postOrId.id)
+            } else {
+              setDetailPostData(null)
+              setDetailPostId(postOrId)
+            }
+          }} />
         )}
 
         {/* Insights View */}
@@ -501,7 +510,7 @@ export default function App() {
       {detailPostId && detailPost && (
         <PostDetailModal
           post={detailPost}
-          onClose={() => setDetailPostId(null)}
+          onClose={() => { setDetailPostId(null); setDetailPostData(null) }}
           onVote={handleVote}
           onCommentClick={handleDetailComment}
           onAuthorClick={(authorId) => {

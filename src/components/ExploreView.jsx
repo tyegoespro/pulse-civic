@@ -854,7 +854,7 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
           </div>
           {onPostClick && (
             <button
-              onClick={() => onPostClick(selectedPost.id)}
+              onClick={() => onPostClick(selectedPost)}
               style={{
                 width: '100%',
                 marginTop: 12,
