@@ -208,10 +208,12 @@ body {
 }
 
 .app-header {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 110;
-  background: rgba(15, 15, 26, 0.9);
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: rgba(15, 15, 26, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
@@ -274,6 +276,7 @@ body {
   max-width: 640px;
   margin: 0 auto;
   padding: 0 16px;
+  padding-top: 100px;
   width: 100%;
 }
 

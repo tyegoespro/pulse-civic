@@ -344,7 +344,12 @@ export default function App() {
         onScopeChange={handleScopeChange}
         onInfoClick={() => setShowInfoPage(true)}
         activityBadge={activityBadge}
-        onActivityClick={() => handleTabChange('activity')}
+        onActivityClick={() => {
+          setDetailPostId(null)
+          setCommentPostId(null)
+          setViewingProfile(null)
+          handleTabChange('activity')
+        }}
       />
 
       <div className="app-content">
