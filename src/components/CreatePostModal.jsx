@@ -3,6 +3,7 @@ import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import { findSimilarPosts } from '../lib/similarity'
 import { analyzePostImpact, isGeminiConfigured } from '../lib/gemini'
 import SimilarPostCard from './SimilarPostCard'
+import LeafletMap from './LeafletMap'
 import Icon from './Icon'
 
 export default function CreatePostModal({ onClose, onSubmit, existingPosts, incognito, scope = 'local' }) {
@@ -439,51 +440,52 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
 
         {/* Pin Drop Map */}
         {!isState && (
-          <div
-            className={`create-map-container ${pinLat ? 'has-pin' : ''}`}
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect()
-              const x = (e.clientX - rect.left) / rect.width
-              const y = (e.clientY - rect.top) / rect.height
-              // Map to Oshkosh area coordinates
-              const lat = 44.024 + (0.5 - y) * 0.03
-              const lng = -88.543 + (x - 0.5) * 0.04
-              setPinLat(lat)
-              setPinLng(lng)
-            }}
-          >
-            {/* Grid */}
-            <svg className="detail-map-grid" viewBox="0 0 300 200" preserveAspectRatio="none">
-              {[40, 80, 120, 160].map(y => (
-                <line key={`h${y}`} x1="0" y1={y} x2="300" y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-              ))}
-              {[60, 120, 180, 240].map(x => (
-                <line key={`v${x}`} x1={x} y1="0" x2={x} y2="200" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-              ))}
-              <line x1="0" y1="100" x2="300" y2="100" stroke="rgba(255,255,255,0.12)" strokeWidth="2" />
-              <line x1="150" y1="0" x2="150" y2="200" stroke="rgba(255,255,255,0.12)" strokeWidth="2" />
-            </svg>
-
-            {pinLat && pinLng ? (
-              <>
-                <div
-                  className="detail-map-pin"
-                  style={{
-                    left: `${Math.max(5, Math.min(95, 50 + ((pinLng - (-88.543)) / 0.04) * 100))}%`,
-                    top: `${Math.max(5, Math.min(95, 50 - ((pinLat - 44.024) / 0.03) * 100))}%`
-                  }}
-                >
-                  <div className="detail-map-pin-dot" />
-                  <div className="detail-map-pin-pulse" />
-                </div>
-                <div className="create-map-coords">
-                  {pinLat.toFixed(4)}, {pinLng.toFixed(4)}
-                </div>
-              </>
-            ) : (
-              <div className="create-map-hint">
+          <div className="create-leaflet-map">
+            <LeafletMap
+              center={{ lat: 44.024, lng: -88.543 }}
+              zoom={14}
+              interactive={true}
+              dropPin={pinLat && pinLng ? { lat: pinLat, lng: pinLng } : null}
+              onDropPinMove={({ lat, lng }) => {
+                setPinLat(lat)
+                setPinLng(lng)
+              }}
+              onMapClick={({ lat, lng }) => {
+                setPinLat(lat)
+                setPinLng(lng)
+              }}
+            />
+            {!pinLat && !pinLng && (
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                textAlign: 'center',
+                color: 'var(--text-muted)',
+                fontSize: 12,
+                pointerEvents: 'none',
+                zIndex: 500
+              }}>
                 <Icon name="ui-location" size={18} style={{ marginBottom: 4, opacity: 0.4 }} />
                 <div>Tap to drop a pin</div>
+              </div>
+            )}
+            {pinLat && pinLng && (
+              <div style={{
+                position: 'absolute',
+                bottom: 6,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                fontSize: 10,
+                color: 'var(--text-muted)',
+                background: 'rgba(15, 15, 26, 0.8)',
+                padding: '2px 8px',
+                borderRadius: 6,
+                zIndex: 500,
+                pointerEvents: 'none'
+              }}>
+                {pinLat.toFixed(4)}, {pinLng.toFixed(4)}
               </div>
             )}
           </div>

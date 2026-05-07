@@ -1,22 +1,15 @@
 import { useState, useMemo } from 'react'
 import Icon from './Icon'
 import VoteButton from './VoteButton'
+import LeafletMap from './LeafletMap'
 import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import { getDistanceToPost, canVoteOnPost, formatDistance } from '../lib/proximity'
 
-// Simple demo map centered on Oshkosh — shows a pin at the post's lat/lng
+// Real map showing the post's location
 function LocationMap({ lat, lng, location, onExploreClick }) {
   if (!lat || !lng) return null
 
-  // Normalize lat/lng to position within the map area
-  // Oshkosh center: 44.024, -88.543
-  const centerLat = 44.024
-  const centerLng = -88.543
-  const spanLat = 0.03  // ~2 miles vertical
-  const spanLng = 0.04  // ~2 miles horizontal
-
-  const pinX = Math.max(5, Math.min(95, 50 + ((lng - centerLng) / spanLng) * 100))
-  const pinY = Math.max(5, Math.min(95, 50 - ((lat - centerLat) / spanLat) * 100))
+  const pins = [{ id: 'loc', lat, lng, color: '#FF3366', selected: true, label: location }]
 
   return (
     <div className="detail-map-section">
@@ -24,37 +17,13 @@ function LocationMap({ lat, lng, location, onExploreClick }) {
         <Icon name="ui-location" size={13} />
         <span>Location</span>
       </div>
-      <div className="detail-map-container">
-        {/* Grid lines */}
-        <svg className="detail-map-grid" viewBox="0 0 300 200" preserveAspectRatio="none">
-          {/* Horizontal streets */}
-          {[40, 80, 120, 160].map(y => (
-            <line key={`h${y}`} x1="0" y1={y} x2="300" y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-          ))}
-          {/* Vertical streets */}
-          {[60, 120, 180, 240].map(x => (
-            <line key={`v${x}`} x1={x} y1="0" x2={x} y2="200" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-          ))}
-          {/* Main roads */}
-          <line x1="0" y1="100" x2="300" y2="100" stroke="rgba(255,255,255,0.12)" strokeWidth="2" />
-          <line x1="150" y1="0" x2="150" y2="200" stroke="rgba(255,255,255,0.12)" strokeWidth="2" />
-        </svg>
-
-        {/* Pin */}
-        <div
-          className="detail-map-pin"
-          style={{ left: `${pinX}%`, top: `${pinY}%` }}
-        >
-          <div className="detail-map-pin-dot" />
-          <div className="detail-map-pin-pulse" />
-        </div>
-
-        {/* Street label */}
-        {location && (
-          <div className="detail-map-street-label">
-            {location}
-          </div>
-        )}
+      <div className="detail-leaflet-map">
+        <LeafletMap
+          center={{ lat, lng }}
+          zoom={15}
+          pins={pins}
+          interactive={false}
+        />
       </div>
 
       {onExploreClick && (

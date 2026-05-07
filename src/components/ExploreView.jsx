@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import { CITIES, CITY_ISSUES } from '../lib/cities'
+import LeafletMap from './LeafletMap'
 import Icon from './Icon'
 
 function latLngToXY(lat, lng, bounds, width, height) {
@@ -559,21 +560,14 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
           categories={activeCategories}
         />
       ) : (
-        /* Local City Map */
-        <div style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-          borderRadius: 16,
-          overflow: 'hidden',
-          marginBottom: 16,
-          position: 'relative'
-        }}>
-          {/* Map Label */}
+        /* Local City Map — Real Leaflet Map */
+        <div style={{ position: 'relative', marginBottom: 16 }}>
+          {/* Map Label Overlay */}
           <div style={{
             position: 'absolute',
             top: 12,
             left: 16,
-            zIndex: 5,
+            zIndex: 500,
             display: 'flex',
             alignItems: 'center',
             gap: 8
@@ -621,115 +615,28 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
             )}
           </div>
 
-          <svg
-            viewBox={`0 0 ${mapWidth} ${mapHeight}`}
-            style={{ width: '100%', height: 'auto', display: 'block' }}
-          >
-            <defs>
-              <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
-                <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
-              </pattern>
-              {heatmapGradients.map((cluster, i) => (
-                <radialGradient key={i} id={`heat-${i}`} cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor={
-                    cluster.intensity > 200 ? '#EF4444' :
-                    cluster.intensity > 100 ? '#F59E0B' :
-                    '#6366F1'
-                  } stopOpacity="0.3" />
-                  <stop offset="100%" stopColor="transparent" stopOpacity="0" />
-                </radialGradient>
-              ))}
-            </defs>
-
-            <rect width={mapWidth} height={mapHeight} fill="#0a0a18" rx="0" />
-            <rect width={mapWidth} height={mapHeight} fill="url(#grid)" />
-
-            {/* Road grid */}
-            <line x1="0" y1={mapHeight * 0.35} x2={mapWidth} y2={mapHeight * 0.35} stroke="rgba(255,255,255,0.06)" strokeWidth="2" />
-            <line x1="0" y1={mapHeight * 0.55} x2={mapWidth} y2={mapHeight * 0.55} stroke="rgba(255,255,255,0.06)" strokeWidth="2" />
-            <line x1={mapWidth * 0.3} y1="0" x2={mapWidth * 0.3} y2={mapHeight} stroke="rgba(255,255,255,0.06)" strokeWidth="2" />
-            <line x1={mapWidth * 0.6} y1="0" x2={mapWidth * 0.6} y2={mapHeight} stroke="rgba(255,255,255,0.06)" strokeWidth="2" />
-            <line x1={mapWidth * 0.45} y1="0" x2={mapWidth * 0.45} y2={mapHeight} stroke="rgba(255,255,255,0.04)" strokeWidth="1.5" />
-            <line x1="0" y1={mapHeight * 0.7} x2={mapWidth * 0.5} y2={mapHeight * 0.2} stroke="rgba(255,255,255,0.04)" strokeWidth="1.5" />
-
-            {/* City-specific water feature */}
-            {selectedCityId === 'oshkosh' && (
-              <>
-                <path
-                  d={`M ${mapWidth * 0.85} 0 Q ${mapWidth * 0.88} ${mapHeight * 0.3} ${mapWidth * 0.82} ${mapHeight * 0.5} Q ${mapWidth * 0.86} ${mapHeight * 0.7} ${mapWidth * 0.83} ${mapHeight} L ${mapWidth} ${mapHeight} L ${mapWidth} 0 Z`}
-                  fill="rgba(56, 130, 246, 0.08)"
-                  stroke="rgba(56, 130, 246, 0.15)"
-                  strokeWidth="1"
-                />
-                <text x={mapWidth * 0.89} y={mapHeight * 0.45} fontSize="10" fill="rgba(56, 130, 246, 0.3)" fontWeight="600" transform={`rotate(-90 ${mapWidth * 0.89} ${mapHeight * 0.45})`}>
-                  LAKE WINNEBAGO
-                </text>
-              </>
-            )}
-            {selectedCityId === 'santa-barbara' && (
-              <>
-                <path
-                  d={`M 0 ${mapHeight * 0.85} Q ${mapWidth * 0.3} ${mapHeight * 0.9} ${mapWidth * 0.5} ${mapHeight * 0.82} Q ${mapWidth * 0.7} ${mapHeight * 0.88} ${mapWidth} ${mapHeight * 0.8} L ${mapWidth} ${mapHeight} L 0 ${mapHeight} Z`}
-                  fill="rgba(56, 130, 246, 0.08)"
-                  stroke="rgba(56, 130, 246, 0.15)"
-                  strokeWidth="1"
-                />
-                <text x={mapWidth * 0.4} y={mapHeight * 0.92} fontSize="10" fill="rgba(56, 130, 246, 0.3)" fontWeight="600">
-                  PACIFIC OCEAN
-                </text>
-              </>
-            )}
-            {selectedCityId === 'madison' && (
-              <>
-                <path
-                  d={`M 0 ${mapHeight * 0.15} Q ${mapWidth * 0.15} ${mapHeight * 0.25} ${mapWidth * 0.25} ${mapHeight * 0.1} L ${mapWidth * 0.15} 0 L 0 0 Z`}
-                  fill="rgba(56, 130, 246, 0.08)"
-                  stroke="rgba(56, 130, 246, 0.15)"
-                  strokeWidth="1"
-                />
-                <text x={mapWidth * 0.06} y={mapHeight * 0.12} fontSize="9" fill="rgba(56, 130, 246, 0.3)" fontWeight="600">
-                  LAKE MENDOTA
-                </text>
-                <path
-                  d={`M ${mapWidth * 0.7} ${mapHeight} Q ${mapWidth * 0.75} ${mapHeight * 0.85} ${mapWidth * 0.85} ${mapHeight * 0.9} L ${mapWidth} ${mapHeight * 0.85} L ${mapWidth} ${mapHeight} Z`}
-                  fill="rgba(56, 130, 246, 0.08)"
-                  stroke="rgba(56, 130, 246, 0.15)"
-                  strokeWidth="1"
-                />
-                <text x={mapWidth * 0.78} y={mapHeight * 0.95} fontSize="9" fill="rgba(56, 130, 246, 0.3)" fontWeight="600">
-                  LAKE MONONA
-                </text>
-              </>
-            )}
-
-            {/* Heatmap blobs */}
-            {heatmapGradients.map((cluster, i) => (
-              <circle
-                key={i}
-                cx={cluster.x}
-                cy={cluster.y}
-                r={30 + cluster.intensity / 5}
-                fill={`url(#heat-${i})`}
-              />
-            ))}
-
-            {/* Post pins */}
-            {filteredPosts.map(post => {
-              if (!post.lat || !post.lng) return null
-              const { x, y } = latLngToXY(post.lat, post.lng, selectedCity.bounds, mapWidth, mapHeight)
-              return (
-                <PostPin
-                  key={post.id}
-                  post={post}
-                  x={x}
-                  y={y}
-                  isSelected={selectedPost?.id === post.id}
-                  onClick={setSelectedPost}
-                  categories={activeCategories}
-                />
-              )
-            })}
-          </svg>
+          <div className="explore-leaflet-map" style={{ height: 350 }}>
+            <LeafletMap
+              center={selectedCity.center}
+              zoom={13}
+              pins={filteredPosts.filter(p => p.lat && p.lng).map(post => {
+                const cat = activeCategories.find(c => c.id === post.category)
+                return {
+                  id: post.id,
+                  lat: post.lat,
+                  lng: post.lng,
+                  color: cat?.color || '#6366F1',
+                  selected: selectedPost?.id === post.id,
+                  label: post.title
+                }
+              })}
+              onPinClick={(id) => {
+                const post = filteredPosts.find(p => p.id === id)
+                if (post) setSelectedPost(post)
+              }}
+              interactive={true}
+            />
+          </div>
 
           {/* Legend */}
           <div style={{
@@ -737,7 +644,6 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
             justifyContent: 'center',
             gap: 16,
             padding: '10px 16px',
-            borderTop: '1px solid var(--border)',
             fontSize: 10,
             color: 'var(--text-muted)',
             fontWeight: 500
