@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import { findSimilarPosts } from '../lib/similarity'
 import { analyzePostImpact, isGeminiConfigured } from '../lib/gemini'
+import { reverseGeocode } from '../lib/geocoding'
 import SimilarPostCard from './SimilarPostCard'
 import LeafletMap from './LeafletMap'
 import Icon from './Icon'
@@ -16,6 +17,9 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
   const [dragOver, setDragOver] = useState(false)
   const [pinLat, setPinLat] = useState(null)
   const [pinLng, setPinLng] = useState(null)
+  const [locationAutoFilled, setLocationAutoFilled] = useState(true)
+  const [geocoding, setGeocoding] = useState(false)
+  const geocodeTimeoutRef = useRef(null)
   const fileInputRef = useRef(null)
 
   // AI Impact Analysis state
@@ -61,6 +65,20 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
 
     return () => clearTimeout(debounceRef.current)
   }, [title, description, category])
+
+  // Reverse geocode the dropped pin → auto-fill location text
+  useEffect(() => {
+    if (pinLat == null || pinLng == null) return
+    if (!locationAutoFilled) return
+    clearTimeout(geocodeTimeoutRef.current)
+    setGeocoding(true)
+    geocodeTimeoutRef.current = setTimeout(async () => {
+      const address = await reverseGeocode(pinLat, pinLng)
+      if (address) setLocation(address)
+      setGeocoding(false)
+    }, 600)
+    return () => clearTimeout(geocodeTimeoutRef.current)
+  }, [pinLat, pinLng, locationAutoFilled])
 
   const canSubmit = title && category && location
 
@@ -432,8 +450,14 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
         </label>
         <input
           value={location}
-          onChange={e => setLocation(e.target.value)}
-          placeholder={isState ? "e.g. Statewide, Madison, WI..." : "e.g. Main St & 9th Ave"}
+          onChange={e => { setLocation(e.target.value); setLocationAutoFilled(false) }}
+          placeholder={
+            geocoding
+              ? 'Finding location…'
+              : isState
+                ? 'e.g. Statewide, Madison, WI…'
+                : 'Drop a pin or type — e.g. Main St & 9th Ave'
+          }
           className="form-input"
           style={{ marginBottom: 8 }}
         />
