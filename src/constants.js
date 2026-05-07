@@ -131,7 +131,7 @@ export const SEED_POSTS = [
     category: 'pothole',
     location: 'Main St & 9th Ave',
     scope: 'local',
-    votes: 147,
+    votes: 234,
     userVote: 0,
     comments: [
       { id: 'c1', author: 'OshkoshNative', authorId: 'oshkoshnative', text: 'I hit one of these last week and it bent my rim. $400 repair.', timestamp: Date.now() - 3600000 },
@@ -157,7 +157,7 @@ export const SEED_POSTS = [
     category: 'safety',
     location: 'Algoma Blvd',
     scope: 'local',
-    votes: 89,
+    votes: 168,
     userVote: 0,
     comments: [],
     media: [
@@ -179,7 +179,7 @@ export const SEED_POSTS = [
     category: 'compliment',
     location: 'Oregon St',
     scope: 'local',
-    votes: 203,
+    votes: 174,
     userVote: 0,
     comments: [
       { id: 'c3', author: 'ArtLover', authorId: 'artlover', text: 'The artist is from Milwaukee! They did an amazing job.', timestamp: Date.now() - 43200000 }
@@ -204,7 +204,7 @@ export const SEED_POSTS = [
     category: 'noise',
     location: 'Jackson St',
     scope: 'local',
-    votes: 64,
+    votes: 87,
     userVote: 0,
     comments: [],
     incognito: true,
@@ -223,7 +223,7 @@ export const SEED_POSTS = [
     category: 'parks',
     location: 'South Park',
     scope: 'local',
-    votes: 112,
+    votes: 128,
     userVote: 0,
     comments: [],
     media: [
@@ -247,7 +247,7 @@ export const SEED_POSTS = [
     category: 'transit',
     location: 'Route 21 — Murdock Ave',
     scope: 'local',
-    votes: 78,
+    votes: 119,
     userVote: 0,
     comments: [
       { id: 'c4', author: 'BusRider22', authorId: 'busrider22', text: 'Same here. I\'ve been late to work 3 times this month because of this.', timestamp: Date.now() - 7200000 }
@@ -268,7 +268,7 @@ export const SEED_POSTS = [
     category: 'compliment',
     location: 'Downtown Oshkosh',
     scope: 'local',
-    votes: 245,
+    votes: 89,
     userVote: 0,
     comments: [],
     media: [
@@ -293,7 +293,7 @@ export const SEED_POSTS = [
     category: 'housing',
     location: 'Near UW Oshkosh',
     scope: 'local',
-    votes: 134,
+    votes: 187,
     userVote: 0,
     comments: [],
     incognito: true,
@@ -312,7 +312,7 @@ export const SEED_POSTS = [
     category: 'safety',
     location: 'Witzel Ave & Westfield',
     scope: 'local',
-    votes: 93,
+    votes: 142,
     userVote: 0,
     comments: [
       { id: 'c9a', author: 'CommuteDad', authorId: 'commutedad', text: 'My kids cross here every day for school. Terrifying.', timestamp: Date.now() - 5400000 }
@@ -333,7 +333,7 @@ export const SEED_POSTS = [
     category: 'compliment',
     location: 'Menominee Park',
     scope: 'local',
-    votes: 312,
+    votes: 72,
     userVote: 0,
     comments: [
       { id: 'c10a', author: 'OshkoshNative', authorId: 'oshkoshnative', text: 'This is the Oshkosh I grew up in. More of this please.', timestamp: Date.now() - 7200000 }
@@ -354,7 +354,7 @@ export const SEED_POSTS = [
     category: 'pothole',
     location: 'Ohio St Bridge',
     scope: 'local',
-    votes: 178,
+    votes: 256,
     userVote: 0,
     comments: [],
     incognito: false,
@@ -373,7 +373,7 @@ export const SEED_POSTS = [
     category: 'noise',
     location: 'Oregon St',
     scope: 'local',
-    votes: 71,
+    votes: 96,
     userVote: 0,
     comments: [
       { id: 'c12a', author: 'ArtLover', authorId: 'artlover', text: 'I love Oregon St but the late night noise is getting out of control.', timestamp: Date.now() - 14400000 }
@@ -394,7 +394,7 @@ export const SEED_POSTS = [
     category: 'compliment',
     location: 'Jackson St',
     scope: 'local',
-    votes: 189,
+    votes: 118,
     userVote: 0,
     comments: [],
     incognito: false,
@@ -413,7 +413,7 @@ export const SEED_POSTS = [
     category: 'parks',
     location: 'Menominee Park',
     scope: 'local',
-    votes: 98,
+    votes: 112,
     userVote: 0,
     comments: [],
     incognito: false,
@@ -432,7 +432,7 @@ export const SEED_POSTS = [
     category: 'business',
     location: 'Main St',
     scope: 'local',
-    votes: 156,
+    votes: 158,
     userVote: 0,
     comments: [
       { id: 'c15a', author: 'Natalie K.', authorId: 'natalie', text: 'A food co-op would be incredible there. Central location, good parking.', timestamp: Date.now() - 18000000 }
@@ -453,7 +453,7 @@ export const SEED_POSTS = [
     category: 'other',
     location: 'Washington Ave',
     scope: 'local',
-    votes: 201,
+    votes: 287,
     userVote: 0,
     comments: [
       { id: 'c16a', author: 'OshkoshNative', authorId: 'oshkoshnative', text: 'This happened last spring too. The pipes on this block are ancient.', timestamp: Date.now() - 10800000 },
@@ -475,7 +475,7 @@ export const SEED_POSTS = [
     category: 'transit',
     location: 'Citywide',
     scope: 'local',
-    votes: 134,
+    votes: 124,
     userVote: 0,
     comments: [
       { id: 'c17a', author: 'BusRider22', authorId: 'busrider22', text: 'I have to spend $25 on Uber every Sunday just to get to my shift. That\'s $100/month.', timestamp: Date.now() - 21600000 }
@@ -496,7 +496,7 @@ export const SEED_POSTS = [
     category: 'housing',
     location: 'Near UW Oshkosh',
     scope: 'local',
-    votes: 87,
+    votes: 96,
     userVote: 0,
     comments: [
       { id: 'c18a', author: 'Desiree W.', authorId: 'desiree', text: 'Contact the city building inspector. They can force the landlord to act.', timestamp: Date.now() - 43200000 }
@@ -517,7 +517,7 @@ export const SEED_POSTS = [
     category: 'compliment',
     location: 'Pollock Water Park',
     scope: 'local',
-    votes: 267,
+    votes: 152,
     userVote: 0,
     comments: [],
     incognito: false,
@@ -536,7 +536,7 @@ export const SEED_POSTS = [
     category: 'safety',
     location: 'Murdock Ave',
     scope: 'local',
-    votes: 143,
+    votes: 201,
     userVote: 0,
     comments: [
       { id: 'c20a', author: 'CommuteDad', authorId: 'commutedad', text: 'Agreed. I\'ve seen people doing 50+ in a 25 zone.', timestamp: Date.now() - 36000000 }
@@ -557,7 +557,7 @@ export const SEED_POSTS = [
     category: 'parks',
     location: 'Fuechsl Park',
     scope: 'local',
-    votes: 76,
+    votes: 67,
     userVote: 0,
     comments: [],
     incognito: false,
@@ -576,7 +576,7 @@ export const SEED_POSTS = [
     category: 'business',
     location: 'Koeller St',
     scope: 'local',
-    votes: 118,
+    votes: 94,
     userVote: 0,
     comments: [
       { id: 'c22a', author: 'ArtLover', authorId: 'artlover', text: 'Oshkosh has amazing local food. We should be promoting that, not more chains.', timestamp: Date.now() - 50400000 }
@@ -597,7 +597,7 @@ export const SEED_POSTS = [
     category: 'safety',
     location: 'Ceape Ave Bridge',
     scope: 'local',
-    votes: 55,
+    votes: 71,
     userVote: 0,
     comments: [],
     incognito: true,
@@ -616,7 +616,7 @@ export const SEED_POSTS = [
     category: 'compliment',
     location: 'Oshkosh Public Library',
     scope: 'local',
-    votes: 198,
+    votes: 78,
     userVote: 0,
     comments: [
       { id: 'c24a', author: 'Desiree W.', authorId: 'desiree', text: 'My kids look forward to this every year. Thank you to the library staff!', timestamp: Date.now() - 64800000 }
@@ -637,7 +637,7 @@ export const SEED_POSTS = [
     category: 'noise',
     location: 'Near Pioneer Dr',
     scope: 'local',
-    votes: 42,
+    votes: 47,
     userVote: 0,
     comments: [],
     incognito: true,
@@ -656,7 +656,7 @@ export const SEED_POSTS = [
     category: 'pothole',
     location: 'High Ave',
     scope: 'local',
-    votes: 167,
+    votes: 218,
     userVote: 0,
     comments: [
       { id: 'c26a', author: 'BusRider22', authorId: 'busrider22', text: 'ADA compliance isn\'t optional. The city needs to fix this.', timestamp: Date.now() - 72000000 }
@@ -677,7 +677,7 @@ export const SEED_POSTS = [
     category: 'compliment',
     location: 'Various neighborhoods',
     scope: 'local',
-    votes: 221,
+    votes: 68,
     userVote: 0,
     comments: [],
     incognito: false,
@@ -696,7 +696,7 @@ export const SEED_POSTS = [
     category: 'transit',
     location: 'West Side',
     scope: 'local',
-    votes: 91,
+    votes: 108,
     userVote: 0,
     comments: [],
     incognito: false,
@@ -715,7 +715,7 @@ export const SEED_POSTS = [
     category: 'noise',
     location: 'Near Wittman Airport',
     scope: 'local',
-    votes: 58,
+    votes: 68,
     userVote: 0,
     comments: [
       { id: 'c29a', author: 'OshkoshNative', authorId: 'oshkoshnative', text: 'It\'s EAA season. It\'ll only get louder from here through July.', timestamp: Date.now() - 86400000 }
@@ -736,7 +736,7 @@ export const SEED_POSTS = [
     category: 'parks',
     location: 'Citywide',
     scope: 'local',
-    votes: 183,
+    votes: 121,
     userVote: 0,
     comments: [
       { id: 'c30a', author: 'DeShawn R.', authorId: 'deshawn', text: 'This would reduce traffic AND improve health outcomes. Win-win.', timestamp: Date.now() - 90000000 }
@@ -757,7 +757,7 @@ export const SEED_POSTS = [
     category: 'housing',
     location: 'South Side',
     scope: 'local',
-    votes: 145,
+    votes: 149,
     userVote: 0,
     comments: [],
     incognito: true,
@@ -776,7 +776,7 @@ export const SEED_POSTS = [
     category: 'business',
     location: 'Downtown',
     scope: 'local',
-    votes: 276,
+    votes: 134,
     userVote: 0,
     comments: [
       { id: 'c32a', author: 'Natalie K.', authorId: 'natalie', text: 'Their local cheese selection is incredible. So proud of this city.', timestamp: Date.now() - 108000000 }
@@ -797,7 +797,7 @@ export const SEED_POSTS = [
     category: 'other',
     location: 'Smith Ave',
     scope: 'local',
-    votes: 109,
+    votes: 143,
     userVote: 0,
     comments: [],
     incognito: false,
