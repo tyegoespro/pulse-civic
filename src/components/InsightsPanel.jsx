@@ -45,6 +45,9 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
   // Your impact (demo data)
   const yourVotes = posts.filter(p => p.userVote !== 0).length
   const yourPosts = posts.filter(p => p.userId === 'me').length
+  const votesReceived = posts
+    .filter(p => p.userId === 'me')
+    .reduce((sum, p) => sum + (p.votes || 0), 0)
 
   // Generate a dynamic summary
   const summary = useMemo(() => {
@@ -116,7 +119,7 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
         </div>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
+          gridTemplateColumns: '1fr 1fr 1fr',
           gap: 12
         }}>
           <div>
@@ -133,6 +136,14 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
               Voices added
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+              {votesReceived.toLocaleString()}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+              Votes received
             </div>
           </div>
         </div>
