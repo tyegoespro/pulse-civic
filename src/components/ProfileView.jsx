@@ -68,10 +68,10 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
   // Stats
   const totalUpvotes = publicPosts.reduce((sum, p) => sum + Math.max(0, p.votes), 0)
 
-  // Watched pulses
+  // Watched pulses — preserve the order of the watching list (newest first)
   const watchedPosts = useMemo(() => {
     const ids = (user || cityUser)?.watching || []
-    return posts.filter(p => ids.includes(p.id))
+    return ids.map(id => posts.find(p => p.id === id)).filter(Boolean)
   }, [posts, user, cityUser])
 
   const activeUser = user || cityUser
