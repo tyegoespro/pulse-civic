@@ -46,22 +46,23 @@ function PostPin({ post, x, y, isSelected, onClick, categories }) {
   )
 }
 
-// Wisconsin state map region data — major cities/regions positioned on a simplified state outline
+// Wisconsin state map region data — real lat/lng for Leaflet rendering
 const WI_STATE_REGIONS = [
-  { id: 'milwaukee', label: 'Milwaukee', x: 480, y: 340, population: '577K' },
-  { id: 'madison', label: 'Madison', x: 350, y: 355, population: '270K' },
-  { id: 'green-bay', label: 'Green Bay', x: 430, y: 155, population: '107K' },
-  { id: 'oshkosh', label: 'Oshkosh', x: 395, y: 235, population: '67K', isHome: true },
-  { id: 'appleton', label: 'Appleton', x: 410, y: 210, population: '75K' },
-  { id: 'eau-claire', label: 'Eau Claire', x: 180, y: 200, population: '70K' },
-  { id: 'la-crosse', label: 'La Crosse', x: 140, y: 320, population: '52K' },
-  { id: 'superior', label: 'Superior', x: 130, y: 40, population: '27K' },
-  { id: 'wausau', label: 'Wausau', x: 310, y: 155, population: '39K' },
-  { id: 'racine', label: 'Racine', x: 475, y: 385, population: '78K' },
+  { id: 'milwaukee', label: 'Milwaukee', lat: 43.0389, lng: -87.9065, population: '577K' },
+  { id: 'madison', label: 'Madison', lat: 43.0731, lng: -89.4012, population: '270K' },
+  { id: 'green-bay', label: 'Green Bay', lat: 44.5133, lng: -88.0133, population: '107K' },
+  { id: 'oshkosh', label: 'Oshkosh', lat: 44.0247, lng: -88.5426, population: '67K', isHome: true },
+  { id: 'appleton', label: 'Appleton', lat: 44.2619, lng: -88.4154, population: '75K' },
+  { id: 'eau-claire', label: 'Eau Claire', lat: 44.8113, lng: -91.4985, population: '70K' },
+  { id: 'la-crosse', label: 'La Crosse', lat: 43.8014, lng: -91.2396, population: '52K' },
+  { id: 'superior', label: 'Superior', lat: 46.7208, lng: -92.1041, population: '27K' },
+  { id: 'wausau', label: 'Wausau', lat: 44.9591, lng: -89.6301, population: '39K' },
+  { id: 'racine', label: 'Racine', lat: 42.7261, lng: -87.7829, population: '78K' },
 ]
 
-// Simplified Wisconsin state outline path
-const WI_STATE_PATH = "M 90 20 L 160 15 Q 200 20 250 15 L 350 20 Q 400 18 450 25 L 510 40 Q 520 60 515 100 L 510 150 Q 505 200 510 250 L 515 300 Q 520 340 510 380 L 500 405 Q 490 415 470 410 L 440 405 Q 420 408 400 405 L 350 398 Q 300 395 270 400 L 230 405 Q 200 410 170 405 L 140 395 Q 120 385 110 370 L 100 340 Q 95 310 90 280 L 85 240 Q 80 200 85 160 L 90 120 Q 88 80 90 50 Z"
+// Wisconsin map center + zoom for state-wide view
+const WI_CENTER = { lat: 44.6, lng: -89.7 }
+const WI_ZOOM = 6
 
 function StateMapView({ posts, onSelectPost, selectedPost, categories }) {
   // Distribute state posts to regions based on location text
@@ -70,7 +71,6 @@ function StateMapView({ posts, onSelectPost, selectedPost, categories }) {
       const regionPosts = posts.filter(p => {
         const loc = (p.location || '').toLowerCase()
         const title = (p.title || '').toLowerCase()
-        // Match posts by location text
         if (loc === 'statewide' || loc === 'multiple counties') return true
         if (loc.includes(region.label.toLowerCase())) return true
         if (title.includes(region.label.toLowerCase())) return true
@@ -81,11 +81,25 @@ function StateMapView({ posts, onSelectPost, selectedPost, categories }) {
     })
   }, [posts])
 
-  // Assign some posts to regions that don't have direct matches (statewide posts go to all)
-  const statewidePosts = posts.filter(p =>
-    (p.location || '').toLowerCase() === 'statewide' ||
-    (p.location || '').toLowerCase() === 'multiple counties'
-  )
+  const pins = useMemo(() => regionData.map(region => {
+    const hasIssues = region.issueCount > 0
+    const color = region.isHome
+      ? '#D97706'
+      : hasIssues
+        ? '#D97706'
+        : 'rgba(180, 180, 200, 0.5)'
+    const label = hasIssues
+      ? `${region.label} · ${region.totalVotes.toLocaleString()} votes${region.isHome ? ' · Home' : ''}`
+      : `${region.label}${region.isHome ? ' · Home' : ''}`
+    return {
+      id: region.id,
+      lat: region.lat,
+      lng: region.lng,
+      color,
+      selected: region.isHome || hasIssues,
+      label
+    }
+  }), [regionData])
 
   return (
     <div style={{
@@ -101,7 +115,7 @@ function StateMapView({ posts, onSelectPost, selectedPost, categories }) {
         position: 'absolute',
         top: 12,
         left: 16,
-        zIndex: 5,
+        zIndex: 500,
         display: 'flex',
         alignItems: 'center',
         gap: 8
@@ -135,100 +149,14 @@ function StateMapView({ posts, onSelectPost, selectedPost, categories }) {
         </span>
       </div>
 
-      <svg viewBox="0 0 600 440" style={{ width: '100%', height: 'auto', display: 'block' }}>
-        <defs>
-          <pattern id="state-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.02)" strokeWidth="0.5" />
-          </pattern>
-          <linearGradient id="state-fill" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="rgba(217, 119, 6, 0.06)" />
-            <stop offset="100%" stopColor="rgba(217, 119, 6, 0.02)" />
-          </linearGradient>
-          {/* Lake Michigan glow */}
-          <radialGradient id="lake-glow" cx="90%" cy="40%" r="30%">
-            <stop offset="0%" stopColor="rgba(56, 130, 246, 0.08)" />
-            <stop offset="100%" stopColor="transparent" />
-          </radialGradient>
-        </defs>
-
-        {/* Background */}
-        <rect width="600" height="440" fill="#0a0a18" />
-        <rect width="600" height="440" fill="url(#state-grid)" />
-
-        {/* State outline */}
-        <path d={WI_STATE_PATH} fill="url(#state-fill)" stroke="rgba(217, 119, 6, 0.2)" strokeWidth="1.5" />
-
-        {/* Lake Michigan hint (east side) */}
-        <rect x="520" y="40" width="80" height="380" fill="url(#lake-glow)" opacity="0.5" />
-        <text x="555" y="200" fontSize="9" fill="rgba(56, 130, 246, 0.25)" fontWeight="600" transform="rotate(-90 555 200)">
-          LAKE MICHIGAN
-        </text>
-
-        {/* Lake Superior hint (north) */}
-        <text x="180" y="12" fontSize="8" fill="rgba(56, 130, 246, 0.2)" fontWeight="600">
-          LAKE SUPERIOR
-        </text>
-
-        {/* Region dots with vote-based sizing */}
-        {regionData.map(region => {
-          const baseSize = 12
-          const voteScale = Math.min(region.totalVotes / 200, 3)
-          const size = baseSize + voteScale * 6
-          const hasIssues = region.issueCount > 0
-
-          return (
-            <g key={region.id}>
-              {/* Outer glow for regions with issues */}
-              {hasIssues && (
-                <circle cx={region.x} cy={region.y} r={size + 8} fill="rgba(217, 119, 6, 0.06)">
-                  <animate attributeName="r" from={size + 6} to={size + 14} dur="3s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" from="0.4" to="0" dur="3s" repeatCount="indefinite" />
-                </circle>
-              )}
-              {/* Main dot */}
-              <circle
-                cx={region.x} cy={region.y}
-                r={size}
-                fill={hasIssues ? 'rgba(217, 119, 6, 0.3)' : 'rgba(255, 255, 255, 0.05)'}
-                stroke={hasIssues ? 'rgba(217, 119, 6, 0.5)' : 'rgba(255, 255, 255, 0.1)'}
-                strokeWidth={region.isHome ? 2 : 1}
-              />
-              {/* Inner dot */}
-              <circle
-                cx={region.x} cy={region.y}
-                r={4}
-                fill={region.isHome ? '#D97706' : hasIssues ? '#D97706' : 'rgba(255, 255, 255, 0.2)'}
-                opacity={0.9}
-              />
-              {/* Label */}
-              <text
-                x={region.x}
-                y={region.y + size + 14}
-                textAnchor="middle"
-                fontSize="10"
-                fontWeight="600"
-                fill={region.isHome ? '#D97706' : 'var(--text-secondary)'}
-              >
-                {region.label}
-                {region.isHome ? ' ●' : ''}
-              </text>
-              {/* Issue count badge */}
-              {hasIssues && (
-                <text
-                  x={region.x}
-                  y={region.y + size + 26}
-                  textAnchor="middle"
-                  fontSize="9"
-                  fontWeight="500"
-                  fill="var(--text-muted)"
-                >
-                  {region.totalVotes.toLocaleString()} votes
-                </text>
-              )}
-            </g>
-          )
-        })}
-      </svg>
+      <div className="state-leaflet-map">
+        <LeafletMap
+          center={WI_CENTER}
+          zoom={WI_ZOOM}
+          pins={pins}
+          interactive={true}
+        />
+      </div>
 
       {/* Legend */}
       <div style={{
@@ -242,15 +170,15 @@ function StateMapView({ posts, onSelectPost, selectedPost, categories }) {
         fontWeight: 500
       }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ width: 8, height: 8, borderRadius: 4, background: 'rgba(217, 119, 6, 0.3)', border: '1px solid rgba(217, 119, 6, 0.5)' }} />
+          <span style={{ width: 8, height: 8, borderRadius: 4, background: '#D97706' }} />
           Active Region
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ width: 8, height: 8, borderRadius: 4, background: '#D97706' }} />
+          <span style={{ width: 8, height: 8, borderRadius: 4, background: '#D97706', boxShadow: '0 0 6px #D97706' }} />
           Your City
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ width: 6, height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.1)' }} />
+          <span style={{ width: 6, height: 6, borderRadius: 3, background: 'rgba(180, 180, 200, 0.5)' }} />
           No Issues
         </span>
       </div>
