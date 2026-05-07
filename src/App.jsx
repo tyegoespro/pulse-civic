@@ -94,6 +94,7 @@ export default function App() {
     localStorage.setItem(PRO_STORAGE_KEY, JSON.stringify(proState))
   }, [proState])
 
+
   // Persist posts: save overrides for seed posts + full user-created posts
   const seedIds = new Set([...SEED_POSTS, ...STATE_SEED_POSTS].map(p => p.id))
 
@@ -142,6 +143,10 @@ export default function App() {
 
   // Profile Viewing
   const [viewingProfile, setViewingProfile] = useState(null)
+
+  useEffect(() => {
+    if (viewingProfile) window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [viewingProfile])
 
   // Info Page (replaces old landing page)
   const [showInfoPage, setShowInfoPage] = useState(false)
