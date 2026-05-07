@@ -494,7 +494,7 @@ body {
   top: calc(100% + 6px);
   left: 0;
   min-width: 200px;
-  background: var(--bg-card);
+  background: #1a1a2e;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 6px;
