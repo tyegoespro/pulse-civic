@@ -402,7 +402,7 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
               width: 36,
               height: 36,
               borderRadius: 18,
-              background: post.authorId ? 'var(--gradient-brand)' : 'linear-gradient(135deg, #374151, #4B5563)',
+              background: 'var(--gradient-brand)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -418,17 +418,11 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
                 {post.author}
                 <Icon name="ui-verified" size={12} style={{ color: 'var(--indigo)' }} />
               </span>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                {post.userId === 'other' ? 'Verified resident · Another city' : 'Verified resident'}
-              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Verified resident</div>
             </div>
-            {post.authorId && onAuthorClick ? (
+            {post.authorId && onAuthorClick && (
               <span style={{ fontSize: 11, color: 'var(--text-accent)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                 View Profile →
-              </span>
-            ) : !post.authorId && (
-              <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                <Icon name="ui-eye" size={10} /> View only
               </span>
             )}
           </div>

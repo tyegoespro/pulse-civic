@@ -1,20 +1,56 @@
 import { useState, useMemo } from 'react'
 import { CATEGORIES, SEED_USERS } from '../constants'
+import { CITIES, CITY_ISSUES } from '../lib/cities'
 import Icon from './Icon'
 
 export default function ProfileView({ userId, posts, onBack, onVote, onCommentClick, onAuthorClick, onPostClick }) {
   const [activeTab, setActiveTab] = useState('posts')
   const user = SEED_USERS[userId]
 
-  // Derive public activity from all posts
-  const publicPosts = useMemo(() =>
-    posts.filter(p => p.authorId === userId && !p.incognito),
-    [posts, userId]
+  // For city authors: gather all city posts and build a derived profile
+  const allCityPosts = useMemo(() => {
+    const all = []
+    Object.entries(CITY_ISSUES).forEach(([cityId, issues]) => {
+      const city = CITIES.find(c => c.id === cityId)
+      issues.forEach(issue => {
+        all.push({ ...issue, _cityId: cityId, _cityLabel: city?.label || cityId })
+      })
+    })
+    return all
+  }, [])
+
+  const cityAuthorPosts = useMemo(() =>
+    allCityPosts.filter(p => p.authorId === userId && !p.incognito),
+    [allCityPosts, userId]
   )
+
+  const cityUser = useMemo(() => {
+    if (user) return null
+    const firstPost = cityAuthorPosts[0]
+    if (!firstPost) return null
+    const city = CITIES.find(c => c.id === firstPost._cityId)
+    return {
+      displayName: firstPost.author,
+      avatar: firstPost.author.charAt(0),
+      city: city?.name || 'Unknown',
+      state: city?.state || '',
+      isVerified: true,
+      joinedAt: 'Recently',
+      bio: null,
+      isPro: false
+    }
+  }, [user, cityAuthorPosts])
+
+  // Derive public activity from all posts (local + city)
+  const publicPosts = useMemo(() => {
+    if (user) return posts.filter(p => p.authorId === userId && !p.incognito)
+    return cityAuthorPosts
+  }, [posts, userId, user, cityAuthorPosts])
 
   const publicComments = useMemo(() => {
     const comments = []
-    posts.forEach(post => {
+    const searchPosts = user ? posts : allCityPosts
+    searchPosts.forEach(post => {
       (post.comments || []).forEach(c => {
         if (c.authorId === userId && !c.incognito) {
           comments.push({
@@ -27,18 +63,20 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
       })
     })
     return comments.sort((a, b) => b.timestamp - a.timestamp)
-  }, [posts, userId])
+  }, [posts, allCityPosts, userId, user])
 
   // Stats
   const totalUpvotes = publicPosts.reduce((sum, p) => sum + Math.max(0, p.votes), 0)
 
   // Watched pulses
   const watchedPosts = useMemo(() => {
-    const ids = user?.watching || []
+    const ids = (user || cityUser)?.watching || []
     return posts.filter(p => ids.includes(p.id))
-  }, [posts, user])
+  }, [posts, user, cityUser])
 
-  if (!user) {
+  const activeUser = user || cityUser
+
+  if (!activeUser) {
     return (
       <div style={{ paddingBottom: 100 }}>
         <button className="profile-back-btn" onClick={onBack}>
@@ -65,19 +103,19 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
         <div className="profile-header-bg" />
         <div className="profile-avatar-wrapper">
           <div className="profile-avatar">
-            <span>{user.avatar}</span>
+            <span>{activeUser.avatar}</span>
           </div>
         </div>
         <div className="profile-info">
           <div className="profile-name-row">
-            <h2 className="profile-display-name">{user.displayName}</h2>
-            {user.isVerified && (
+            <h2 className="profile-display-name">{activeUser.displayName}</h2>
+            {activeUser.isVerified && (
               <span className="profile-verified-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                 <Icon name="ui-verified" size={11} />
                 Verified
               </span>
             )}
-            {user.isPro && (
+            {activeUser.isPro && (
               <span style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -99,14 +137,14 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
           </div>
           <div className="profile-location" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <Icon name="ui-location" size={12} />
-            {user.city}, {user.state}
+            {activeUser.city}, {activeUser.state}
           </div>
           <div className="profile-joined" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <Icon name="ui-calendar" size={12} />
-            Joined {user.joinedAt}
+            Joined {activeUser.joinedAt}
           </div>
-          {user.bio && (
-            <p className="profile-bio">{user.bio}</p>
+          {activeUser.bio && (
+            <p className="profile-bio">{activeUser.bio}</p>
           )}
         </div>
 
