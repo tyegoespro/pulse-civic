@@ -190,7 +190,7 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
               gap: 4
             }}>
               <Icon name="ui-lightning" size={13} />
-              Similar Pulses already posted:
+              Similar voices already posted:
             </div>
             {similarPosts.map(p => (
               <SimilarPostCard key={p.id} post={p} onMerge={() => onClose()} />
@@ -253,7 +253,7 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
                 Tap to add photos or videos
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                Visual evidence helps verify Pulses · Max 4 files
+                Visual evidence helps verify your Pulse · Max 4 files
               </div>
             </>
           ) : (

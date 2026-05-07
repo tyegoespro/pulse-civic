@@ -406,8 +406,8 @@ export default function App() {
                   </div>
                   <div>
                     {scope === 'state'
-                      ? 'No statewide Pulses found in this category.'
-                      : 'No Pulses found in this category.'
+                      ? 'No statewide voices found in this category.'
+                      : 'No voices found in this category.'
                     }
                   </div>
                 </div>

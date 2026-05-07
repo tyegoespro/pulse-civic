@@ -5,7 +5,7 @@ const STEPS = [
   {
     title: 'Welcome to Pulse',
     subtitle: 'Your city. Your voice. Verified.',
-    body: 'Pulse is a civic platform where verified residents post, discuss, and vote on the Pulses that shape their neighborhoods.',
+    body: 'Pulse is a civic platform where verified residents post, discuss, and vote on the voices that shape their neighborhoods.',
     icon: 'ui-brand-pulse',
     accent: '#FF3366'
   },
@@ -15,13 +15,13 @@ const STEPS = [
     bullets: [
       { icon: 'ui-feed', text: 'Post a Pulse — flag a problem, drop a compliment, or share an observation', color: '#6366F1' },
       { icon: 'ui-trending', text: 'Vote on what matters — your vote carries equal weight', color: '#22C55E' },
-      { icon: 'ui-eye', text: 'Watch pulses to stay updated on outcomes', color: '#3B82F6' }
+      { icon: 'ui-eye', text: 'Watch voices to stay updated on outcomes', color: '#3B82F6' }
     ]
   },
   {
     title: 'Your Community',
     subtitle: 'Pulse starts local.',
-    body: 'You\'re connected to Oshkosh, WI — a real community with real Pulses. Everything you see is within your proximity.',
+    body: 'You\'re connected to Oshkosh, WI — a real community with real voices. Everything you see is within your proximity.',
     icon: 'ui-location',
     accent: '#22C55E',
     footer: 'More cities launching soon.'

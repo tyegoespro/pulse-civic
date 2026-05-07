@@ -23,7 +23,7 @@ export default function VerificationScreen({ onVerify }) {
 
         {/* Step Content */}
         <p className="verification-subtitle">
-          {step === 0 && 'The voice of your city. Real citizens. Real Pulses. Real change.'}
+          {step === 0 && 'The voice of your city. Real citizens. Real voices. Real change.'}
           {step === 1 && 'To keep Pulse authentic, we verify every user with a real ID.'}
           {step === 2 && "You're verified! Welcome to Pulse."}
         </p>

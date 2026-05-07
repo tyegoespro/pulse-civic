@@ -298,7 +298,7 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
           {watchedPosts.length === 0 ? (
             <div className="profile-empty-tab">
               <span style={{ display: 'flex', justifyContent: 'center', opacity: 0.5 }}><Icon name="ui-eye" size={28} /></span>
-              <p>Not watching any pulses yet.</p>
+              <p>Not watching any voices yet.</p>
             </div>
           ) : (
             watchedPosts.map(post => {

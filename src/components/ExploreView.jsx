@@ -145,7 +145,7 @@ function StateMapView({ posts, onSelectPost, selectedPost, categories }) {
           color: 'var(--text-secondary)',
           border: '1px solid var(--border)'
         }}>
-          {posts.length} Pulses
+          {posts.length} voices
         </span>
       </div>
 
@@ -179,7 +179,7 @@ function StateMapView({ posts, onSelectPost, selectedPost, categories }) {
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <span style={{ width: 6, height: 6, borderRadius: 3, background: 'rgba(180, 180, 200, 0.5)' }} />
-          No Pulses
+          Quiet
         </span>
       </div>
     </div>
@@ -287,7 +287,7 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
               <div style={{ textAlign: 'left' }}>
                 <div>{selectedCity.label}</div>
                 <div style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-muted)', marginTop: 1 }}>
-                  {selectedCity.population} residents · {cityPosts.length} Pulses
+                  {selectedCity.population} residents · {cityPosts.length} voices
                 </div>
               </div>
             </div>
@@ -351,7 +351,7 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
                       <div>
                         <div style={{ fontWeight: 600 }}>{city.label}</div>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>
-                          {city.population} · {city.id === 'oshkosh' ? posts.filter(p => p.lat && p.lng).length : (CITY_ISSUES[city.id]?.length || 0)} Pulses
+                          {city.population} · {city.id === 'oshkosh' ? posts.filter(p => p.lat && p.lng).length : (CITY_ISSUES[city.id]?.length || 0)} voices
                         </div>
                       </div>
                     </div>
@@ -400,9 +400,9 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
         }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', color: '#D97706' }}><Icon name="ui-scope-state" size={20} /></span>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#D97706' }}>Wisconsin Statewide Pulses</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#D97706' }}>Wisconsin Statewide Pulse</div>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>
-              All verified residents can vote · {posts.length} active Pulses
+              All verified residents can vote · {posts.length} active voices
             </div>
           </div>
         </div>
@@ -425,7 +425,7 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
           <div>
             <span style={{ fontWeight: 600, color: '#F59E0B' }}>Browsing Mode</span>
             <span style={{ color: 'var(--text-secondary)', marginLeft: 6 }}>
-              You can view Pulses in {selectedCity.name} but can't vote — you're verified in Oshkosh.
+              You can check the Pulse in {selectedCity.name} but can't vote — you're verified in Oshkosh.
             </span>
           </div>
         </div>
@@ -445,7 +445,7 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder={isState ? 'Search statewide Pulses...' : `Search Pulses in ${selectedCity.name}...`}
+          placeholder={isState ? 'Search the statewide Pulse...' : `Search the Pulse in ${selectedCity.name}...`}
           className="form-input"
           style={{ paddingLeft: 42, fontSize: 14 }}
         />
@@ -525,7 +525,7 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
               color: 'var(--text-secondary)',
               border: '1px solid var(--border)'
             }}>
-              {filteredPosts.length} Pulses
+              {filteredPosts.length} voices
             </span>
             {!isHomeCity && (
               <span style={{
@@ -715,14 +715,14 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
         {search
           ? `Results for "${search}"`
           : isState
-            ? 'Statewide Pulses'
-            : `Pulses in ${selectedCity.name}`
+            ? 'Statewide Pulse'
+            : `Pulse in ${selectedCity.name}`
         }
       </h3>
       {filteredPosts.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-tertiary)' }}>
           <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center', opacity: 0.5 }}><Icon name={isState ? 'ui-scope-state' : 'ui-explore'} size={32} /></div>
-          <div>No Pulses found{search ? ` matching "${search}"` : ''}.</div>
+          <div>No voices found{search ? ` matching "${search}"` : ''}.</div>
         </div>
       )}
       {filteredPosts.map(post => {

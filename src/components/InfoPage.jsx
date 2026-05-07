@@ -116,7 +116,7 @@ export default function InfoPage({ onClose, onLaunchApp }) {
                 <div className="landing-step-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="ui-feed" size={28} /></div>
                 <h3 className="landing-step-title">Raise or vote</h3>
                 <p className="landing-step-body">
-                  Post a Pulse, attach photos for evidence, and vote on the Pulses that
+                  Post a Pulse, attach photos for evidence, and vote on the voices that
                   matter to you. Duplicates are detected automatically — your voice
                   adds weight to existing ones instead of getting lost.
                 </p>
@@ -189,9 +189,9 @@ export default function InfoPage({ onClose, onLaunchApp }) {
                 <div className="landing-bento-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="ui-explore" size={28} /></div>
                 <h3>Live City Heatmap</h3>
                 <p>
-                  See where Pulses cluster across your city in real time. Potholes
+                  See where voices cluster across your city in real time. Potholes
                   downtown. Safety concerns on the south side. The map reveals patterns
-                  that individual voices never could.
+                  that single voices never could.
                 </p>
               </div>
               <div className="landing-bento-card">
@@ -225,7 +225,7 @@ export default function InfoPage({ onClose, onLaunchApp }) {
                 <h3>Duplicate Detection</h3>
                 <p>
                   AI-powered semantic matching ensures your voice adds weight to
-                  existing Pulses rather than fragmenting the conversation.
+                  existing voices rather than fragmenting the conversation.
                   20 people, one thread, one vote count.
                 </p>
               </div>
@@ -315,7 +315,7 @@ export default function InfoPage({ onClose, onLaunchApp }) {
               </div>
               <div className="landing-city-card">
                 <span className="landing-city-number">Real-time</span>
-                <p>Pulses surface as they happen, not months later in a survey</p>
+                <p>Voices surface as they happen, not months later in a survey</p>
               </div>
             </div>
           </div>
