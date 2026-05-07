@@ -52,7 +52,7 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
     const top = categoryData[0]
     const second = categoryData[1]
     if (isState) {
-      return `${top?.name} is the most discussed statewide topic with ${top?.votes} votes across ${top?.count} issues. ${second ? `${second.name} follows closely with ${second.votes} votes.` : ''}`
+      return `${top?.name} is the most discussed statewide topic with ${top?.votes} votes across ${top?.count} Pulses. ${second ? `${second.name} follows closely with ${second.votes} votes.` : ''}`
     }
     return `${top?.name} is the #1 concern in ${cityName} right now with ${top?.votes} votes across ${top?.count} reports. ${second ? `${second.name} is also gaining traction with ${second.votes} votes.` : ''}`
   }, [topPosts, categoryData, cityName, isState])
@@ -110,7 +110,7 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
             {totalPosts}
           </div>
           <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Issues
+            Pulses
           </div>
         </div>
         <div style={{
@@ -235,7 +235,7 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
           gap: 6
         }}>
           <Icon name="ui-lightning" size={14} style={{ color: '#F59E0B' }} />
-          Top Issues
+          Top Pulses
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {topPosts.map((post, i) => {
@@ -388,7 +388,7 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
                   fontWeight: 700,
                   color: 'var(--text-muted)'
                 }}>
-                  {cat.count} {cat.count === 1 ? 'issue' : 'issues'} · {cat.votes} votes
+                  {cat.count} {cat.count === 1 ? 'Pulse' : 'Pulses'} · {cat.votes} votes
                 </span>
               </div>
               <div style={{
@@ -451,7 +451,7 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
               {yourPosts}
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-              Issues raised
+              Pulses created
             </div>
           </div>
         </div>

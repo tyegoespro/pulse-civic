@@ -397,7 +397,7 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
       {!hasAny && (
         <div className="activity-empty">
           <div className="activity-empty-icon">🫥</div>
-          <div>No activity yet. Start voting or post an issue!</div>
+          <div>No activity yet. Start voting or create a Pulse!</div>
         </div>
       )}
     </div>

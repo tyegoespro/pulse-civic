@@ -159,9 +159,9 @@ export default function LandingPage({ onLaunchApp }) {
               <div className="landing-step-icon">📋</div>
               <h3 className="landing-step-title">Raise or vote</h3>
               <p className="landing-step-body">
-                Flag an issue, attach photos for evidence, and vote on issues that 
-                matter to you. Duplicates are detected automatically — your voice 
-                adds weight to existing concerns instead of getting lost.
+                Post a Pulse, attach photos for evidence, and vote on the Pulses that
+                matter to you. Duplicates are detected automatically — your voice
+                adds weight to existing ones instead of getting lost.
               </p>
             </div>
             <div className="landing-step-connector" />
@@ -170,8 +170,8 @@ export default function LandingPage({ onLaunchApp }) {
               <div className="landing-step-icon">📊</div>
               <h3 className="landing-step-title">Consensus forms</h3>
               <p className="landing-step-body">
-                When enough verified residents back an issue, it crosses the 
-                threshold. Structured reports — categorized, geo-tagged, and 
+                When enough verified residents back a Pulse, it crosses the
+                threshold. Structured reports — categorized, geo-tagged, and
                 ranked — get delivered to the relevant city departments.
               </p>
             </div>
@@ -206,7 +206,7 @@ export default function LandingPage({ onLaunchApp }) {
               { feature: 'Voting radius', others: 'No geographic limits', pulse: 'Verified residents within 15mi only' },
               { feature: 'Bot accounts', others: 'Widespread', pulse: 'Structurally impossible' },
               { feature: 'Content ranking', others: 'Engagement algorithm', pulse: 'Democratic vote count' },
-              { feature: 'Issue tracking', others: 'Buried in feed', pulse: 'Categorized, geo-tagged, persistent' },
+              { feature: 'Pulse tracking', others: 'Buried in feed', pulse: 'Categorized, geo-tagged, persistent' },
               { feature: 'Privacy model', others: 'Data harvested for ads', pulse: 'Encrypted identity, incognito mode' },
               { feature: 'Output', others: 'Rage threads', pulse: 'Structured reports for city hall' },
               { feature: 'Business model', others: 'Attention → Ads', pulse: 'Civic SaaS, no ads ever' },
@@ -234,9 +234,9 @@ export default function LandingPage({ onLaunchApp }) {
               <div className="landing-bento-icon">🗺️</div>
               <h3>Live City Heatmap</h3>
               <p>
-                See where issues cluster across your city in real time. Potholes 
-                downtown. Safety concerns on the south side. The map reveals patterns 
-                that individual complaints never could.
+                See where Pulses cluster across your city in real time. Potholes
+                downtown. Safety concerns on the south side. The map reveals patterns
+                that individual voices never could.
               </p>
             </div>
             <div className="landing-bento-card">
@@ -252,7 +252,7 @@ export default function LandingPage({ onLaunchApp }) {
               <div className="landing-bento-icon">📸</div>
               <h3>Photo & Video Evidence</h3>
               <p>
-                Attach up to 4 photos or videos per issue. Visual proof eliminates 
+                Attach up to 4 photos or videos per Pulse. Visual proof eliminates
                 ambiguity and gives city departments what they need to act.
               </p>
             </div>
@@ -269,8 +269,8 @@ export default function LandingPage({ onLaunchApp }) {
               <div className="landing-bento-icon">🔄</div>
               <h3>Duplicate Detection</h3>
               <p>
-                AI-powered semantic matching ensures your concern adds weight to 
-                existing issues rather than fragmenting the conversation. 
+                AI-powered semantic matching ensures your voice adds weight to
+                existing Pulses rather than fragmenting the conversation.
                 20 people, one thread, one vote count.
               </p>
             </div>
@@ -360,7 +360,7 @@ export default function LandingPage({ onLaunchApp }) {
             </div>
             <div className="landing-city-card">
               <span className="landing-city-number">Real-time</span>
-              <p>Issues surface as they happen, not months later in a survey</p>
+              <p>Pulses surface as they happen, not months later in a survey</p>
             </div>
           </div>
         </div>

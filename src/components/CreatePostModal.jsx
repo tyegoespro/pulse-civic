@@ -168,7 +168,7 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
         </div>
 
         {/* Title */}
-        <label className="form-label">What's the issue?</label>
+        <label className="form-label">What's your Pulse?</label>
         <input
           value={title}
           onChange={e => setTitle(e.target.value)}
@@ -190,7 +190,7 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
               gap: 4
             }}>
               <Icon name="ui-lightning" size={13} />
-              Similar issues already posted:
+              Similar Pulses already posted:
             </div>
             {similarPosts.map(p => (
               <SimilarPostCard key={p.id} post={p} onMerge={() => onClose()} />
@@ -203,7 +203,7 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
         <textarea
           value={description}
           onChange={e => setDescription(e.target.value)}
-          placeholder={isState ? "Describe the statewide issue in detail..." : "Describe the issue in detail..."}
+          placeholder={isState ? "Describe your statewide Pulse in detail..." : "Describe your Pulse in detail..."}
           rows={4}
           className="form-input"
           style={{ marginBottom: 16 }}
@@ -253,7 +253,7 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
                 Tap to add photos or videos
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                Visual evidence helps verify issues · Max 4 files
+                Visual evidence helps verify Pulses · Max 4 files
               </div>
             </>
           ) : (

@@ -28,12 +28,12 @@ export default function DemoBanner({ onLearnMore, onGetStarted }) {
             </span>
             <h2 className="demo-banner-title">
               Your city's pulse.{' '}
-              <span className="demo-banner-gradient">Real residents. Real issues. Real change.</span>
+              <span className="demo-banner-gradient">Real residents. Real Pulses. Real change.</span>
             </h2>
           </div>
           <p className="demo-banner-subtitle">
             This is a live demo of Pulse — a verified civic engagement platform where every voice is verified 
-            and every vote counts. Explore real issues, see consensus form, and discover how your city could work differently.
+            and every vote counts. Explore real Pulses, see consensus form, and discover how your city could work differently.
           </p>
           <div className="demo-banner-actions">
             <button className="demo-banner-cta" onClick={handleGetStarted}>
