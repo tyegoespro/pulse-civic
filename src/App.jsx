@@ -211,6 +211,7 @@ export default function App() {
     setTimeout(() => {
       setActiveTab(newTab)
       setViewingProfile(null)
+      window.scrollTo({ top: 0, behavior: 'auto' })
       if (newTab === 'activity') {
         setActivityBadge(0)
       }
