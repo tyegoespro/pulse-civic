@@ -898,13 +898,12 @@ export const SEED_POSTS = [
     votes: 218,
     userVote: 0,
     comments: [
-      { id: 'q5c1', author: 'OshkoshNative', authorId: 'oshkoshnative', text: "Wagner's. Family-owned, hasn't changed the recipe in 40 years, and that's exactly the point.", votes: 287, userVote: 0, timestamp: Date.now() - 120000000 },
-      { id: 'q5c2', author: 'Natalie K.', authorId: 'natalie', text: 'Slice of Sicily. The garlic crust is unmatched in this town.', votes: 178, userVote: 0, timestamp: Date.now() - 110000000 },
-      { id: 'q5c3', author: 'Marcus T.', authorId: 'marcus', text: "Polito's after 11pm. Different rules apply.", votes: 156, userVote: 0, timestamp: Date.now() - 80000000 },
-      { id: 'q5c4', author: 'Jamie L.', authorId: 'jamie', text: "Wagner's for nostalgia, Brick Oven for a date, Polito's for emergencies. Best pizza is contextual.", votes: 142, userVote: 0, timestamp: Date.now() - 55000000 },
-      { id: 'q5c5', author: 'CommuteDad', authorId: 'commutedad', text: "Mark's East Side. It's a bar, sure, but the pizza is what brings me back.", votes: 121, userVote: 0, timestamp: Date.now() - 95000000 },
-      { id: 'q5c6', author: 'BusRider22', authorId: 'busrider22', text: "Brick Oven Bistro. Real wood-fired oven, better than half of what Madison's got.", votes: 89, userVote: 0, timestamp: Date.now() - 70000000 },
-      { id: 'q5c7', author: 'ArtLover', authorId: 'artlover', text: "New York's Best is genuinely good and underrated. People sleep on it.", votes: 54, userVote: 0, timestamp: Date.now() - 60000000 }
+      { id: 'q5c1', author: 'OshkoshNative', authorId: 'oshkoshnative', text: "Dr. Benzies. If you know, you know — and if you don't, the line out the door on a Friday should tell you.", votes: 287, userVote: 0, timestamp: Date.now() - 120000000 },
+      { id: 'q5c2', author: 'Marcus T.', authorId: 'marcus', text: "Polito's after 11pm. Different rules apply.", votes: 156, userVote: 0, timestamp: Date.now() - 80000000 },
+      { id: 'q5c3', author: 'CommuteDad', authorId: 'commutedad', text: "Mark's East Side. It's a bar, sure, but the pizza is what brings me back.", votes: 121, userVote: 0, timestamp: Date.now() - 95000000 },
+      { id: 'q5c4', author: 'Jamie L.', authorId: 'jamie', text: "Dr. Benzies for the pie itself, Polito's for late night, Mark's for a beer with it. Best pizza is contextual.", votes: 142, userVote: 0, timestamp: Date.now() - 55000000 },
+      { id: 'q5c5', author: 'BusRider22', authorId: 'busrider22', text: 'Honestly, Benzies hasn\'t missed in years. Hard to argue with consistency.', votes: 98, userVote: 0, timestamp: Date.now() - 70000000 },
+      { id: 'q5c6', author: 'ArtLover', authorId: 'artlover', text: "Hot take: Polito's is fine but it's the bar food of pizza. Benzies is the actual pizza.", votes: 73, userVote: 0, timestamp: Date.now() - 60000000 }
     ],
     incognito: false,
     author: 'Marcus T.',
