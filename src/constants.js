@@ -888,6 +888,35 @@ export const SEED_POSTS = [
     lng: -88.544
   },
   {
+    id: 'q5',
+    type: 'question',
+    title: "What's the best pizza in Oshkosh?",
+    description: 'Settling this once and for all. Drop your pick in the answers — the top-voted reply becomes the community Verdict.',
+    category: 'business',
+    location: 'Oshkosh',
+    scope: 'local',
+    votes: 218,
+    userVote: 0,
+    comments: [
+      { id: 'q5c1', author: 'OshkoshNative', authorId: 'oshkoshnative', text: "Wagner's. Family-owned, hasn't changed the recipe in 40 years, and that's exactly the point.", votes: 287, userVote: 0, timestamp: Date.now() - 120000000 },
+      { id: 'q5c2', author: 'Natalie K.', authorId: 'natalie', text: 'Slice of Sicily. The garlic crust is unmatched in this town.', votes: 178, userVote: 0, timestamp: Date.now() - 110000000 },
+      { id: 'q5c3', author: 'Marcus T.', authorId: 'marcus', text: "Polito's after 11pm. Different rules apply.", votes: 156, userVote: 0, timestamp: Date.now() - 80000000 },
+      { id: 'q5c4', author: 'Jamie L.', authorId: 'jamie', text: "Wagner's for nostalgia, Brick Oven for a date, Polito's for emergencies. Best pizza is contextual.", votes: 142, userVote: 0, timestamp: Date.now() - 55000000 },
+      { id: 'q5c5', author: 'CommuteDad', authorId: 'commutedad', text: "Mark's East Side. It's a bar, sure, but the pizza is what brings me back.", votes: 121, userVote: 0, timestamp: Date.now() - 95000000 },
+      { id: 'q5c6', author: 'BusRider22', authorId: 'busrider22', text: "Brick Oven Bistro. Real wood-fired oven, better than half of what Madison's got.", votes: 89, userVote: 0, timestamp: Date.now() - 70000000 },
+      { id: 'q5c7', author: 'ArtLover', authorId: 'artlover', text: "New York's Best is genuinely good and underrated. People sleep on it.", votes: 54, userVote: 0, timestamp: Date.now() - 60000000 }
+    ],
+    incognito: false,
+    author: 'Marcus T.',
+    authorId: 'marcus',
+    authorVerified: true,
+    createdAt: '6d ago',
+    createdAtTs: Date.now() - 518400000,
+    userId: 'marcus',
+    lat: 44.024,
+    lng: -88.543
+  },
+  {
     id: 'q4',
     type: 'question',
     title: 'Should the downtown farmers market stay on Saturdays or move to Sunday mornings?',
