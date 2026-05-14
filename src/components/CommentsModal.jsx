@@ -1,16 +1,32 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { suggestPoliteComment, isGeminiConfigured } from '../lib/gemini'
 import Icon from './Icon'
 
-export default function CommentsModal({ post, onClose, onAddComment, incognito, onAuthorClick }) {
+export default function CommentsModal({ post, onClose, onAddComment, onVoteComment, incognito, onAuthorClick }) {
   const [text, setText] = useState('')
   const [polishing, setPolishing] = useState(false)
   const [polishResult, setPolishResult] = useState(null)
   const endRef = useRef(null)
+  const isQuestion = post.type === 'question'
+  const accent = post.scope === 'state' ? '#D97706' : '#6366F1'
+
+  // For Question Pulses, sort answers by votes (desc). For Statements, keep chronological.
+  const sortedComments = useMemo(() => {
+    if (!post.comments) return []
+    if (!isQuestion) return post.comments
+    return [...post.comments].sort((a, b) => (b.votes || 0) - (a.votes || 0))
+  }, [post.comments, isQuestion])
+
+  const topVoteCount = isQuestion && sortedComments[0] ? (sortedComments[0].votes || 0) : 0
+  const runnerVoteCount = isQuestion && sortedComments[1] ? (sortedComments[1].votes || 0) : 0
+  const hasVerdict = topVoteCount >= 30 && topVoteCount >= runnerVoteCount * 1.5
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [post.comments])
+    // Don't auto-scroll to bottom for Question Pulses — top answer is the focus.
+    if (!isQuestion) {
+      endRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [post.comments, isQuestion])
 
   const handleSend = () => {
     if (!text.trim()) return
@@ -63,9 +79,13 @@ export default function CommentsModal({ post, onClose, onAddComment, incognito, 
           flexShrink: 0
         }}>
           <div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Discussion</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              {isQuestion ? 'Answers' : 'Discussion'}
+            </h3>
             <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-              {post.comments?.length || 0} comments
+              {isQuestion
+                ? `${post.comments?.length || 0} ${(post.comments?.length || 0) === 1 ? 'answer' : 'answers'} · ranked by votes`
+                : `${post.comments?.length || 0} comments`}
             </span>
           </div>
           <button className="modal-close" onClick={onClose}>✕</button>
@@ -73,6 +93,22 @@ export default function CommentsModal({ post, onClose, onAddComment, incognito, 
 
         {/* Original Post Context */}
         <div className="comments-header-post" style={{ margin: '16px 24px 0', flexShrink: 0 }}>
+          {isQuestion && (
+            <div style={{
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: '0.06em',
+              color: accent,
+              textTransform: 'uppercase',
+              marginBottom: 4,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4
+            }}>
+              <Icon name="ui-comments" size={10} />
+              Question Pulse
+            </div>
+          )}
           <p>"{post.title}"</p>
         </div>
 
@@ -83,45 +119,151 @@ export default function CommentsModal({ post, onClose, onAddComment, incognito, 
               <div className="comments-empty-icon" style={{ display: 'inline-flex', justifyContent: 'center', opacity: 0.5 }}>
                 <Icon name="ui-comments" size={36} />
               </div>
-              <p style={{ fontWeight: 500 }}>No comments yet.</p>
-              <p style={{ fontSize: 12, marginTop: 4 }}>Be the first to share your thoughts!</p>
+              <p style={{ fontWeight: 500 }}>
+                {isQuestion ? 'No answers yet.' : 'No comments yet.'}
+              </p>
+              <p style={{ fontSize: 12, marginTop: 4 }}>
+                {isQuestion
+                  ? 'Be the first to suggest an answer — the top-voted one becomes the community Verdict.'
+                  : 'Be the first to share your thoughts!'}
+              </p>
             </div>
           ) : (
-            post.comments.map(comment => (
-              <div key={comment.id} className="comment-bubble">
-                <div className="comment-avatar" style={
-                  comment.incognito ? {
-                    background: 'rgba(139, 92, 246, 0.15)',
-                    color: '#A78BFA',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  } : {}
-                }>
-                  {comment.incognito ? <Icon name="ui-incognito" size={16} /> : comment.author[0].toUpperCase()}
-                </div>
-                <div>
-                  <div className="comment-body">
-                    <p>{comment.text}</p>
-                  </div>
-                  <span className="comment-time">
-                    {comment.incognito ? (
-                      <><span style={{ color: '#A78BFA' }}>Anonymous</span> · </>
-                    ) : (
-                      <><span
-                        className={comment.authorId && onAuthorClick ? 'author-link' : ''}
-                        onClick={() => {
-                          if (comment.authorId && onAuthorClick) {
-                            onAuthorClick(comment.authorId)
-                          }
+            sortedComments.map((comment, idx) => {
+              const isTopAnswer = isQuestion && idx === 0 && (comment.votes || 0) > 0
+              return (
+                <div
+                  key={comment.id}
+                  className="comment-bubble"
+                  style={isTopAnswer ? {
+                    background: `${accent}0d`,
+                    border: `1px solid ${accent}33`,
+                    borderRadius: 14,
+                    padding: 12,
+                    marginBottom: 12
+                  } : {}}
+                >
+                  {/* Vote column for Question Pulses */}
+                  {isQuestion && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 2,
+                        flexShrink: 0,
+                        paddingTop: 4
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={() => onVoteComment && onVoteComment(post.id, comment.id, 1)}
+                        aria-label="Upvote answer"
+                        style={{
+                          width: 28,
+                          height: 24,
+                          borderRadius: 6,
+                          border: 'none',
+                          background: comment.userVote === 1 ? `${accent}22` : 'transparent',
+                          color: comment.userVote === 1 ? accent : 'var(--text-muted)',
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          fontWeight: 700,
+                          fontFamily: 'var(--font)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.15s ease'
                         }}
-                      >{comment.author}</span> · </>
+                      >
+                        ▲
+                      </button>
+                      <span style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: (comment.votes || 0) > 0 ? accent : 'var(--text-muted)',
+                        minWidth: 24,
+                        textAlign: 'center'
+                      }}>
+                        {comment.votes || 0}
+                      </span>
+                      <button
+                        onClick={() => onVoteComment && onVoteComment(post.id, comment.id, -1)}
+                        aria-label="Downvote answer"
+                        style={{
+                          width: 28,
+                          height: 24,
+                          borderRadius: 6,
+                          border: 'none',
+                          background: comment.userVote === -1 ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                          color: comment.userVote === -1 ? '#EF4444' : 'var(--text-muted)',
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          fontWeight: 700,
+                          fontFamily: 'var(--font)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        ▼
+                      </button>
+                    </div>
+                  )}
+
+                  {!isQuestion && (
+                    <div className="comment-avatar" style={
+                      comment.incognito ? {
+                        background: 'rgba(139, 92, 246, 0.15)',
+                        color: '#A78BFA',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      } : {}
+                    }>
+                      {comment.incognito ? <Icon name="ui-incognito" size={16} /> : comment.author[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {isTopAnswer && (
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        fontSize: 10,
+                        fontWeight: 800,
+                        letterSpacing: '0.06em',
+                        color: accent,
+                        textTransform: 'uppercase',
+                        marginBottom: 4
+                      }}>
+                        <Icon name="ui-lightbulb" size={11} />
+                        {hasVerdict ? 'Verdict' : 'Leading answer'}
+                      </div>
                     )}
-                    {new Date(comment.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                    <div className="comment-body">
+                      <p>{comment.text}</p>
+                    </div>
+                    <span className="comment-time">
+                      {comment.incognito ? (
+                        <><span style={{ color: '#A78BFA' }}>Anonymous</span> · </>
+                      ) : (
+                        <><span
+                          className={comment.authorId && onAuthorClick ? 'author-link' : ''}
+                          onClick={() => {
+                            if (comment.authorId && onAuthorClick) {
+                              onAuthorClick(comment.authorId)
+                            }
+                          }}
+                        >{comment.author}</span> · </>
+                      )}
+                      {new Date(comment.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
           <div ref={endRef} />
         </div>
@@ -226,7 +368,7 @@ export default function CommentsModal({ post, onClose, onAddComment, incognito, 
               value={text}
               onChange={e => { setText(e.target.value); setPolishResult(null) }}
               onKeyDown={handleKeyDown}
-              placeholder="Share your perspective..."
+              placeholder={isQuestion ? 'Suggest an answer...' : 'Share your perspective...'}
               rows={1}
             />
             {/* Polish Button */}

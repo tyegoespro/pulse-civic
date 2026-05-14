@@ -8,6 +8,7 @@ import LeafletMap from './LeafletMap'
 import Icon from './Icon'
 
 export default function CreatePostModal({ onClose, onSubmit, existingPosts, incognito, scope = 'local' }) {
+  const [type, setType] = useState('statement')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState(null)
@@ -29,6 +30,9 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
 
   const activeCategories = scope === 'state' ? STATE_CATEGORIES : CATEGORIES
   const isState = scope === 'state'
+  const isQuestion = type === 'question'
+  const accentColor = isState ? '#D97706' : 'var(--indigo)'
+  const accentColorRaw = isState ? '#D97706' : '#6366F1'
 
   // Real-time duplicate detection (keyword)
   useEffect(() => {
@@ -41,8 +45,12 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
     }
   }, [title, existingPosts, scope])
 
-  // Debounced AI impact analysis
+  // Debounced AI impact analysis (skip for Question Pulses — they aggregate via comment voting, not impact scores)
   useEffect(() => {
+    if (isQuestion) {
+      setImpact(null)
+      return
+    }
     if (!isGeminiConfigured()) return
     if (!title || title.length < 15 || !category) {
       setImpact(null)
@@ -64,7 +72,7 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
     }, 1500)
 
     return () => clearTimeout(debounceRef.current)
-  }, [title, description, category])
+  }, [title, description, category, isQuestion])
 
   // Reverse geocode the dropped pin → auto-fill location text
   useEffect(() => {
@@ -113,7 +121,7 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
   const handleSubmit = () => {
     if (!canSubmit) return
     onSubmit({
-      title, description, category, location, impact, media, scope,
+      title, description, category, location, impact, media, scope, type,
       lat: pinLat,
       lng: pinLng
     })
@@ -158,6 +166,71 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
           </div>
         )}
 
+        {/* Type Selector — Statement vs Question */}
+        <label className="form-label">Type</label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+          {[
+            {
+              id: 'statement',
+              icon: 'ui-megaphone',
+              label: 'Speak',
+              sub: 'Share a position or observation'
+            },
+            {
+              id: 'question',
+              icon: 'ui-comments',
+              label: 'Ask',
+              sub: 'Let the community decide'
+            }
+          ].map(opt => {
+            const selected = type === opt.id
+            return (
+              <button
+                key={opt.id}
+                onClick={() => setType(opt.id)}
+                style={{
+                  textAlign: 'left',
+                  padding: '14px 14px',
+                  borderRadius: 12,
+                  border: selected
+                    ? `1.5px solid ${accentColorRaw}`
+                    : '1px solid var(--border)',
+                  background: selected
+                    ? `${accentColorRaw}14`
+                    : 'rgba(255,255,255,0.02)',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font)',
+                  transition: 'all 0.18s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4
+                }}
+              >
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: selected ? accentColorRaw : 'var(--text-primary)'
+                }}>
+                  <Icon name={opt.icon} size={16} />
+                  {opt.label}
+                </div>
+                <div style={{
+                  fontSize: 11,
+                  color: 'var(--text-muted)',
+                  fontWeight: 500,
+                  lineHeight: 1.35
+                }}>
+                  {opt.sub}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
         {/* Category Selection */}
         <label className="form-label">Category</label>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
@@ -186,11 +259,23 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
         </div>
 
         {/* Title */}
-        <label className="form-label">What's your Pulse?</label>
+        <label className="form-label">
+          {isQuestion
+            ? "What's the question?"
+            : "What's your Pulse?"}
+        </label>
         <input
           value={title}
           onChange={e => setTitle(e.target.value)}
-          placeholder={isState ? "e.g. Wisconsin school funding needs reform..." : "e.g. Potholes on Main Street..."}
+          placeholder={
+            isQuestion
+              ? (isState
+                  ? "e.g. Which state forest needs the next trail investment?"
+                  : "e.g. What color should the flowers on Main St be?")
+              : (isState
+                  ? "e.g. Wisconsin school funding needs reform..."
+                  : "e.g. Potholes on Main Street...")
+          }
           className="form-input"
           style={{ fontSize: 15, marginBottom: 8 }}
         />
@@ -217,20 +302,53 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
         )}
 
         {/* Description */}
-        <label className="form-label" style={{ marginTop: 12 }}>Details</label>
+        <label className="form-label" style={{ marginTop: 12 }}>
+          {isQuestion ? 'Context (optional)' : 'Details'}
+        </label>
         <textarea
           value={description}
           onChange={e => setDescription(e.target.value)}
-          placeholder={isState ? "Describe your statewide Pulse in detail..." : "Describe your Pulse in detail..."}
+          placeholder={
+            isQuestion
+              ? "Why are you asking? Any constraints the community should know about?"
+              : (isState
+                  ? "Describe your statewide Pulse in detail..."
+                  : "Describe your Pulse in detail...")
+          }
           rows={4}
           className="form-input"
           style={{ marginBottom: 16 }}
         />
 
+        {/* How it works — Question Pulse only */}
+        {isQuestion && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: '12px 14px',
+            marginBottom: 16,
+            borderRadius: 12,
+            background: `${accentColorRaw}0F`,
+            border: `1px solid ${accentColorRaw}33`,
+            fontSize: 12,
+            color: 'var(--text-secondary)',
+            lineHeight: 1.5
+          }}>
+            <span style={{ color: accentColorRaw, flexShrink: 0, marginTop: 1 }}>
+              <Icon name="ui-lightbulb" size={14} />
+            </span>
+            <div>
+              <span style={{ fontWeight: 700, color: accentColorRaw }}>How Question Pulses work: </span>
+              Anyone can post an answer in the comments. Answers get upvoted, and the top-voted reply becomes the community's <strong>Verdict</strong>.
+            </div>
+          </div>
+        )}
+
         {/* Media Upload */}
         <label className="form-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <Icon name="ui-camera" size={14} />
-          Evidence (photos/videos)
+          {isQuestion ? 'Reference photos (optional)' : 'Evidence (photos/videos)'}
         </label>
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
@@ -271,7 +389,9 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
                 Tap to add photos or videos
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                Visual evidence helps verify your Pulse · Max 4 files
+                {isQuestion
+                  ? 'Helps people answer with context · Max 4 files'
+                  : 'Visual evidence helps verify your Pulse · Max 4 files'}
               </div>
             </>
           ) : (
@@ -558,7 +678,12 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
           {incognito ? (
             <>
               <Icon name="ui-incognito" size={16} />
-              Post Incognito
+              {isQuestion ? 'Ask Incognito' : 'Post Incognito'}
+            </>
+          ) : isQuestion ? (
+            <>
+              <Icon name="ui-comments" size={16} />
+              {isState ? 'Ask Wisconsin' : 'Ask the Community'}
             </>
           ) : isState ? (
             <>

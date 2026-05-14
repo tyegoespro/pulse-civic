@@ -237,7 +237,7 @@ export default function App() {
     if (activeTab !== 'activity') setActivityBadge(b => b + 1)
   }
 
-  const handleCreatePost = ({ title, description, category, location, impact, media, scope: postScope, lat, lng }) => {
+  const handleCreatePost = ({ title, description, category, location, impact, media, scope: postScope, lat, lng, type }) => {
     // Quota gate: free users get FREE_INCOGNITO_LIMIT incognito POSTS per month.
     if (incognito && !proState.isPro && proState.usage >= FREE_INCOGNITO_LIMIT) {
       setProModalReason(`You've used all ${FREE_INCOGNITO_LIMIT} free incognito posts this month. Go Pro for unlimited.`)
@@ -249,6 +249,7 @@ export default function App() {
     const now = Date.now()
     const newPost = {
       id: now.toString(),
+      type: type || 'statement',
       title,
       description,
       category,
@@ -283,6 +284,7 @@ export default function App() {
   const handleAddComment = (postId, text) => {
     setPosts(prev => prev.map(p => {
       if (p.id !== postId) return p
+      const isQuestion = p.type === 'question'
       return {
         ...p,
         comments: [
@@ -290,11 +292,38 @@ export default function App() {
           {
             id: Date.now().toString(),
             author: incognito ? 'Anonymous' : 'You', // uses global incognito
+            authorId: incognito ? null : 'me',
             text,
             timestamp: Date.now(),
-            incognito // uses global incognito state
+            incognito, // uses global incognito state
+            // Question Pulse answers auto-upvote their author's vote
+            votes: isQuestion ? 1 : 0,
+            userVote: isQuestion ? 1 : 0
           }
         ]
+      }
+    }))
+    if (activeTab !== 'activity') setActivityBadge(b => b + 1)
+  }
+
+  const handleVoteComment = (postId, commentId, direction) => {
+    setPosts(prev => prev.map(p => {
+      if (p.id !== postId) return p
+      // Same scope-aware gating as post voting
+      if (p.scope !== 'state' && !canVoteOnPost(p.lat, p.lng)) return p
+      return {
+        ...p,
+        comments: (p.comments || []).map(c => {
+          if (c.id !== commentId) return c
+          const currentVote = c.userVote || 0
+          const currentVotes = c.votes || 0
+          const newVote = currentVote === direction ? 0 : direction
+          return {
+            ...c,
+            userVote: newVote,
+            votes: currentVotes + (newVote - currentVote)
+          }
+        })
       }
     }))
     if (activeTab !== 'activity') setActivityBadge(b => b + 1)
@@ -488,6 +517,7 @@ export default function App() {
           post={commentPost}
           onClose={() => setCommentPostId(null)}
           onAddComment={handleAddComment}
+          onVoteComment={handleVoteComment}
           incognito={incognito}
           onAuthorClick={(authorId) => {
             setCommentPostId(null)
@@ -519,6 +549,7 @@ export default function App() {
           post={detailPost}
           onClose={() => { setDetailPostId(null); setDetailPostData(null) }}
           onVote={handleVote}
+          onVoteComment={handleVoteComment}
           onCommentClick={handleDetailComment}
           onAuthorClick={(authorId) => {
             setDetailPostId(null)

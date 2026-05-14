@@ -10,6 +10,31 @@ export default function PostCard({ post, onVote, onCommentClick, onAuthorClick, 
   const voteClass = post.userVote === 1 ? 'up' : post.userVote === -1 ? 'down' : 'neutral'
   const distance = useMemo(() => post.scope === 'state' ? 0 : getDistanceToPost(post.lat, post.lng), [post.lat, post.lng, post.scope])
   const canVote = useMemo(() => post.scope === 'state' ? canVoteOnStatePost() : canVoteOnPost(post.lat, post.lng), [post.lat, post.lng, post.scope])
+  const isQuestion = post.type === 'question'
+  const accent = post.scope === 'state' ? '#D97706' : '#6366F1'
+
+  // Compute top-voted answer (Verdict) and runner-up
+  const { topAnswer, runnerUp, totalAnswers } = useMemo(() => {
+    if (!isQuestion || !post.comments || post.comments.length === 0) {
+      return { topAnswer: null, runnerUp: null, totalAnswers: 0 }
+    }
+    const sorted = [...post.comments].sort((a, b) => (b.votes || 0) - (a.votes || 0))
+    return {
+      topAnswer: sorted[0],
+      runnerUp: sorted[1] || null,
+      totalAnswers: sorted.length
+    }
+  }, [isQuestion, post.comments])
+
+  // Verdict label logic — "Verdict" if there's clear consensus, "Leading" otherwise
+  const verdictLabel = useMemo(() => {
+    if (!topAnswer) return null
+    const topVotes = topAnswer.votes || 0
+    const runnerVotes = runnerUp?.votes || 0
+    if (topVotes >= 30 && topVotes >= runnerVotes * 1.5) return 'Verdict'
+    if (topVotes > 0) return 'Leading'
+    return null
+  }, [topAnswer, runnerUp])
 
   return (
     <div className={`post-card ${compact ? 'compact' : ''}`} onClick={() => onPostClick && onPostClick(post.id)}>
@@ -80,6 +105,24 @@ export default function PostCard({ post, onVote, onCommentClick, onAuthorClick, 
                 STATE
               </span>
             )}
+            {isQuestion && (
+              <span style={{
+                fontSize: 10,
+                color: accent,
+                fontWeight: 700,
+                background: `${accent}1a`,
+                border: `1px solid ${accent}40`,
+                padding: '1px 6px',
+                borderRadius: 4,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+                letterSpacing: '0.04em'
+              }}>
+                <Icon name="ui-comments" size={9} />
+                QUESTION
+              </span>
+            )}
             {post.incognito && (
               <span className="post-incognito" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                 <Icon name="ui-incognito" size={11} />
@@ -103,8 +146,102 @@ export default function PostCard({ post, onVote, onCommentClick, onAuthorClick, 
             )}
           </h3>
 
-          {!compact && post.description && (
+          {!compact && !isQuestion && post.description && (
             <p className="post-description">{post.description}</p>
+          )}
+
+          {/* Verdict block — Question Pulses only */}
+          {!compact && isQuestion && (
+            <div
+              onClick={(e) => {
+                e.stopPropagation()
+                if (onCommentClick) onCommentClick(post.id)
+              }}
+              style={{
+                marginTop: 4,
+                marginBottom: 12,
+                padding: '12px 14px',
+                borderRadius: 12,
+                background: topAnswer ? `${accent}10` : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${topAnswer ? `${accent}33` : 'var(--border)'}`,
+                cursor: onCommentClick ? 'pointer' : 'default'
+              }}
+            >
+              {topAnswer ? (
+                <>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: 6
+                  }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      fontSize: 10,
+                      fontWeight: 800,
+                      letterSpacing: '0.06em',
+                      color: accent,
+                      textTransform: 'uppercase'
+                    }}>
+                      <Icon name="ui-lightbulb" size={11} />
+                      {verdictLabel}
+                    </span>
+                    <span style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: accent,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 3
+                    }}>
+                      ▲ {topAnswer.votes || 0}
+                    </span>
+                  </div>
+                  <p style={{
+                    fontSize: 13,
+                    color: 'var(--text-primary)',
+                    margin: 0,
+                    lineHeight: 1.45,
+                    fontWeight: 500,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden'
+                  }}>
+                    "{topAnswer.text}"
+                  </p>
+                  <div style={{
+                    marginTop: 6,
+                    fontSize: 11,
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span>
+                      — {topAnswer.incognito ? 'Anonymous' : topAnswer.author}
+                      {totalAnswers > 1 && ` · ${totalAnswers} answers`}
+                    </span>
+                    <span style={{ color: accent, fontWeight: 600 }}>
+                      See all →
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div style={{
+                  fontSize: 12,
+                  color: 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}>
+                  <Icon name="ui-comments" size={13} />
+                  No answers yet — be the first to weigh in.
+                </div>
+              )}
+            </div>
           )}
 
           {/* Media Gallery */}

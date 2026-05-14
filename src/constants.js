@@ -808,6 +808,109 @@ export const SEED_POSTS = [
     userId: 'marcus',
     lat: 44.020,
     lng: -88.537
+  },
+  // ─── QUESTION PULSES (community decides) ─────────────────────────────────
+  {
+    id: 'q1',
+    type: 'question',
+    title: 'What color theme should the new flower beds on Main Street feature this spring?',
+    description: 'Public Works has the budget approved and is asking residents to weigh in. The top-voted answer will be the consensus recommendation sent to City Hall.',
+    category: 'parks',
+    location: 'Main Street',
+    scope: 'local',
+    votes: 89,
+    userVote: 0,
+    comments: [
+      { id: 'q1c1', author: 'Natalie K.', authorId: 'natalie', text: 'Wildflower mix — pollinator-friendly, supports our bees, low maintenance.', votes: 124, userVote: 0, timestamp: Date.now() - 72000000 },
+      { id: 'q1c2', author: 'OshkoshNative', authorId: 'oshkoshnative', text: 'Blue and gold — Oshkosh colors. City pride right on Main.', votes: 47, userVote: 0, timestamp: Date.now() - 86400000 },
+      { id: 'q1c3', author: 'Jamie L.', authorId: 'jamie', text: 'All white — classic, photogenic, works against any backdrop.', votes: 31, userVote: 0, timestamp: Date.now() - 50000000 },
+      { id: 'q1c4', author: 'ArtLover', authorId: 'artlover', text: 'Sunset palette — orange, red, yellow. Stands out from a block away.', votes: 18, userVote: 0, timestamp: Date.now() - 40000000 }
+    ],
+    incognito: false,
+    author: 'Jamie L.',
+    authorId: 'jamie',
+    authorVerified: true,
+    createdAt: '2d ago',
+    createdAtTs: Date.now() - 172800000,
+    userId: 'jamie',
+    lat: 44.025,
+    lng: -88.544
+  },
+  {
+    id: 'q2',
+    type: 'question',
+    title: 'What should we name the new pocket park opening on 9th Ave?',
+    description: 'The new park between Oregon and Jackson opens this fall. The Parks Department is taking community submissions for the name.',
+    category: 'parks',
+    location: '9th Ave',
+    scope: 'local',
+    votes: 134,
+    userVote: 0,
+    comments: [
+      { id: 'q2c1', author: 'Desiree W.', authorId: 'desiree', text: 'Marian Memorial Park — name it after Marian Schultz, the neighborhood advocate who passed last year. She fought for this lot for twenty years.', votes: 178, userVote: 0, timestamp: Date.now() - 90000000 },
+      { id: 'q2c2', author: 'Marcus T.', authorId: 'marcus', text: 'Lakeside Commons — simple, evergreen, ties to the city identity.', votes: 56, userVote: 0, timestamp: Date.now() - 100000000 },
+      { id: 'q2c3', author: 'OshkoshNative', authorId: 'oshkoshnative', text: 'Founders Green — honors the city heritage without picking one name.', votes: 42, userVote: 0, timestamp: Date.now() - 80000000 },
+      { id: 'q2c4', author: 'CommuteDad', authorId: 'commutedad', text: 'Just call it 9th Avenue Park. Easy to find, easy to remember.', votes: 21, userVote: 0, timestamp: Date.now() - 70000000 }
+    ],
+    incognito: false,
+    author: 'Marcus T.',
+    authorId: 'marcus',
+    authorVerified: true,
+    createdAt: '3d ago',
+    createdAtTs: Date.now() - 259200000,
+    userId: 'marcus',
+    lat: 44.024,
+    lng: -88.541
+  },
+  {
+    id: 'q3',
+    type: 'question',
+    title: 'Where should the next dog park be built — north side or south side?',
+    description: 'Fuechsl is consistently overcrowded. Parks Dept has funding for one new dog park and is asking residents which neighborhood needs it most.',
+    category: 'parks',
+    location: 'Citywide',
+    scope: 'local',
+    votes: 102,
+    userVote: 0,
+    comments: [
+      { id: 'q3c1', author: 'DeShawn R.', authorId: 'deshawn', text: 'North side — Fuechsl already covers the center and south. Nothing exists past Murdock.', votes: 87, userVote: 0, timestamp: Date.now() - 60000000 },
+      { id: 'q3c2', author: 'Desiree W.', authorId: 'desiree', text: 'South side — closer to the highest-density apartments where dog owners actually live.', votes: 64, userVote: 0, timestamp: Date.now() - 50000000 },
+      { id: 'q3c3', author: 'Natalie K.', authorId: 'natalie', text: 'Honestly both. Fuechsl is unusable on weekends. We need at least one more, period.', votes: 39, userVote: 0, timestamp: Date.now() - 40000000 }
+    ],
+    incognito: false,
+    author: 'Desiree W.',
+    authorId: 'desiree',
+    authorVerified: true,
+    createdAt: '4d ago',
+    createdAtTs: Date.now() - 345600000,
+    userId: 'desiree',
+    lat: 44.024,
+    lng: -88.544
+  },
+  {
+    id: 'q4',
+    type: 'question',
+    title: 'Should the downtown farmers market stay on Saturdays or move to Sunday mornings?',
+    description: 'Vendors are split. Saturday traffic competes with downtown events; Sunday opens family time. The market board is putting it to the community.',
+    category: 'business',
+    location: 'Downtown Oshkosh',
+    scope: 'local',
+    votes: 76,
+    userVote: 0,
+    comments: [
+      { id: 'q4c1', author: 'Natalie K.', authorId: 'natalie', text: 'Keep Saturday. Foot traffic from downtown events is what makes the market what it is.', votes: 92, userVote: 0, timestamp: Date.now() - 30000000 },
+      { id: 'q4c2', author: 'CommuteDad', authorId: 'commutedad', text: 'Move to Sunday. Saturday mornings are already overcommitted for most families.', votes: 38, userVote: 0, timestamp: Date.now() - 25000000 },
+      { id: 'q4c3', author: 'BusRider22', authorId: 'busrider22', text: 'Run it both days during peak season. Vendors win, residents win.', votes: 54, userVote: 0, timestamp: Date.now() - 20000000 }
+    ],
+    incognito: false,
+    author: 'Natalie K.',
+    authorId: 'natalie',
+    authorVerified: true,
+    createdAt: '5d ago',
+    createdAtTs: Date.now() - 432000000,
+    userId: 'natalie',
+    lat: 44.025,
+    lng: -88.543
   }
 ]
 
@@ -1177,6 +1280,58 @@ export const STATE_SEED_POSTS = [
     authorVerified: true,
     createdAt: '2w ago',
     userId: 'natalie',
+    lat: null,
+    lng: null
+  },
+  // ─── STATE QUESTION PULSES (Wisconsin community decides) ─────────────────
+  {
+    id: 'sq1',
+    type: 'question',
+    title: 'Which state-owned forest deserves the next major trail investment?',
+    description: 'The WI DNR has $3M earmarked for trail upgrades. Asking residents statewide which property would deliver the most use and economic return.',
+    category: 'environment',
+    location: 'Statewide',
+    scope: 'state',
+    votes: 412,
+    userVote: 0,
+    comments: [
+      { id: 'sq1c1', author: 'Natalie K.', authorId: 'natalie', text: 'Northern Highland — those trails are the heart of the Northwoods tourism economy and they\'re falling apart.', votes: 218, userVote: 0, timestamp: Date.now() - 70000000 },
+      { id: 'sq1c2', author: 'Marcus T.', authorId: 'marcus', text: 'Kettle Moraine — it absorbs the most volume from Milwaukee and Madison. Biggest ROI per dollar.', votes: 134, userVote: 0, timestamp: Date.now() - 80000000 },
+      { id: 'sq1c3', author: 'OshkoshNative', authorId: 'oshkoshnative', text: 'Black River — the most underfunded and underused. Invest where the gap is biggest.', votes: 67, userVote: 0, timestamp: Date.now() - 60000000 },
+      { id: 'sq1c4', author: 'DeShawn R.', authorId: 'deshawn', text: 'Point Beach — it serves the entire eastern shore. Trails there are basically gravel.', votes: 41, userVote: 0, timestamp: Date.now() - 55000000 }
+    ],
+    incognito: false,
+    author: 'Natalie K.',
+    authorId: 'natalie',
+    authorVerified: true,
+    createdAt: '5d ago',
+    createdAtTs: Date.now() - 432000000,
+    userId: 'natalie',
+    lat: null,
+    lng: null
+  },
+  {
+    id: 'sq2',
+    type: 'question',
+    title: 'What should Wisconsin\'s next state license plate design feature?',
+    description: 'The DOT is refreshing the standard plate for 2027. Residents are being asked what should represent the state on every car on the road.',
+    category: 'other-state',
+    location: 'Statewide',
+    scope: 'state',
+    votes: 287,
+    userVote: 0,
+    comments: [
+      { id: 'sq2c1', author: 'Jamie L.', authorId: 'jamie', text: 'The Driftless Area landscape — most distinct geography we have, and nothing else has it.', votes: 156, userVote: 0, timestamp: Date.now() - 50000000 },
+      { id: 'sq2c2', author: 'CommuteDad', authorId: 'commutedad', text: 'A simple modern badger silhouette. Clean, iconic, doesn\'t go out of style.', votes: 198, userVote: 0, timestamp: Date.now() - 45000000 },
+      { id: 'sq2c3', author: 'BusRider22', authorId: 'busrider22', text: 'Lake Michigan shoreline. The Great Lakes are the most important resource we have.', votes: 87, userVote: 0, timestamp: Date.now() - 40000000 }
+    ],
+    incognito: false,
+    author: 'Jamie L.',
+    authorId: 'jamie',
+    authorVerified: true,
+    createdAt: '6d ago',
+    createdAtTs: Date.now() - 518400000,
+    userId: 'jamie',
     lat: null,
     lng: null
   }

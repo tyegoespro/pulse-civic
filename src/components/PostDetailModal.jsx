@@ -36,7 +36,7 @@ function LocationMap({ lat, lng, location, onExploreClick }) {
   )
 }
 
-export default function PostDetailModal({ post, onClose, onVote, onCommentClick, onAuthorClick, onExploreLocation, isWatched, onToggleWatch, onCategoryClick }) {
+export default function PostDetailModal({ post, onClose, onVote, onVoteComment, onCommentClick, onAuthorClick, onExploreLocation, isWatched, onToggleWatch, onCategoryClick }) {
   const [commentText, setCommentText] = useState('')
   const [lightboxIndex, setLightboxIndex] = useState(null)
   const allCategories = post.scope === 'state' ? STATE_CATEGORIES : CATEGORIES
@@ -44,6 +44,18 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
   const voteClass = post.userVote === 1 ? 'up' : post.userVote === -1 ? 'down' : 'neutral'
   const distance = useMemo(() => post.scope === 'state' ? 0 : getDistanceToPost(post.lat, post.lng), [post.lat, post.lng, post.scope])
   const canVote = useMemo(() => post.scope === 'state' ? true : canVoteOnPost(post.lat, post.lng), [post.lat, post.lng, post.scope])
+  const isQuestion = post.type === 'question'
+  const accent = post.scope === 'state' ? '#D97706' : '#6366F1'
+
+  const sortedComments = useMemo(() => {
+    if (!post.comments) return []
+    if (!isQuestion) return post.comments
+    return [...post.comments].sort((a, b) => (b.votes || 0) - (a.votes || 0))
+  }, [post.comments, isQuestion])
+
+  const topVotes = isQuestion && sortedComments[0] ? (sortedComments[0].votes || 0) : 0
+  const runnerVotes = isQuestion && sortedComments[1] ? (sortedComments[1].votes || 0) : 0
+  const hasVerdict = topVotes >= 30 && topVotes >= runnerVotes * 1.5
 
   const handleExplore = () => {
     if (onExploreLocation) {
@@ -422,34 +434,127 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
         <div className="post-detail-comments">
           <div className="post-detail-comments-header">
             <Icon name="ui-comments" size={14} />
-            Comments ({post.comments?.length || 0})
+            {isQuestion
+              ? `Answers (${post.comments?.length || 0}) · ranked by votes`
+              : `Comments (${post.comments?.length || 0})`}
           </div>
 
-          {post.comments && post.comments.length > 0 && (
+          {sortedComments.length > 0 && (
             <div className="post-detail-comments-list">
-              {post.comments.map(c => (
-                <div key={c.id} className="post-detail-comment">
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    {c.incognito ? (
-                      <>
-                        <Icon name="ui-incognito" size={11} />
-                        <span style={{ color: '#A78BFA' }}>Anonymous</span>
-                      </>
-                    ) : (
-                      <span
-                        className={c.authorId && onAuthorClick ? 'author-link' : ''}
-                        onClick={() => c.authorId && onAuthorClick && onAuthorClick(c.authorId)}
-                        style={{ cursor: c.authorId && onAuthorClick ? 'pointer' : 'default' }}
-                      >
-                        {c.author}
-                      </span>
-                    )}
+              {sortedComments.map((c, idx) => {
+                const isTopAnswer = isQuestion && idx === 0 && (c.votes || 0) > 0
+                return (
+                  <div
+                    key={c.id}
+                    className="post-detail-comment"
+                    style={isTopAnswer ? {
+                      background: `${accent}0d`,
+                      border: `1px solid ${accent}33`,
+                      borderRadius: 12,
+                      padding: 12
+                    } : {}}
+                  >
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      {/* Vote column for Question Pulses */}
+                      {isQuestion && (
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: 2,
+                          flexShrink: 0
+                        }}>
+                          <button
+                            onClick={() => onVoteComment && onVoteComment(post.id, c.id, 1)}
+                            aria-label="Upvote answer"
+                            style={{
+                              width: 26,
+                              height: 22,
+                              borderRadius: 6,
+                              border: 'none',
+                              background: c.userVote === 1 ? `${accent}22` : 'rgba(255,255,255,0.04)',
+                              color: c.userVote === 1 ? accent : 'var(--text-muted)',
+                              cursor: 'pointer',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              fontFamily: 'var(--font)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >▲</button>
+                          <span style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: (c.votes || 0) > 0 ? accent : 'var(--text-muted)',
+                            minWidth: 22,
+                            textAlign: 'center'
+                          }}>
+                            {c.votes || 0}
+                          </span>
+                          <button
+                            onClick={() => onVoteComment && onVoteComment(post.id, c.id, -1)}
+                            aria-label="Downvote answer"
+                            style={{
+                              width: 26,
+                              height: 22,
+                              borderRadius: 6,
+                              border: 'none',
+                              background: c.userVote === -1 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.04)',
+                              color: c.userVote === -1 ? '#EF4444' : 'var(--text-muted)',
+                              cursor: 'pointer',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              fontFamily: 'var(--font)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >▼</button>
+                        </div>
+                      )}
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        {isTopAnswer && (
+                          <div style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            fontSize: 10,
+                            fontWeight: 800,
+                            letterSpacing: '0.06em',
+                            color: accent,
+                            textTransform: 'uppercase',
+                            marginBottom: 4
+                          }}>
+                            <Icon name="ui-lightbulb" size={11} />
+                            {hasVerdict ? 'Verdict' : 'Leading answer'}
+                          </div>
+                        )}
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {c.incognito ? (
+                            <>
+                              <Icon name="ui-incognito" size={11} />
+                              <span style={{ color: '#A78BFA' }}>Anonymous</span>
+                            </>
+                          ) : (
+                            <span
+                              className={c.authorId && onAuthorClick ? 'author-link' : ''}
+                              onClick={() => c.authorId && onAuthorClick && onAuthorClick(c.authorId)}
+                              style={{ cursor: c.authorId && onAuthorClick ? 'pointer' : 'default' }}
+                            >
+                              {c.author}
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0 0', lineHeight: 1.4 }}>
+                          {c.text}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0 0', lineHeight: 1.4 }}>
-                    {c.text}
-                  </p>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
 
@@ -459,7 +564,7 @@ export default function PostDetailModal({ post, onClose, onVote, onCommentClick,
               type="text"
               value={commentText}
               onChange={e => setCommentText(e.target.value)}
-              placeholder="Add a comment..."
+              placeholder={isQuestion ? 'Suggest an answer...' : 'Add a comment...'}
               className="form-input"
               style={{ flex: 1, fontSize: 13, padding: '10px 14px' }}
               onKeyDown={e => {
