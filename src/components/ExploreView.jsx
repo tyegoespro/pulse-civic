@@ -10,6 +10,23 @@ function latLngToXY(lat, lng, bounds, width, height) {
   return { x: Math.max(10, Math.min(width - 10, x)), y: Math.max(10, Math.min(height - 10, y)) }
 }
 
+// Leading answer + consensus score for a post.
+// For Statement Pulses: score = post votes.
+// For Question Pulses: score = post votes + top-answer votes (rewards strong consensus).
+function getTopAnswer(post) {
+  if (post.type !== 'question' || !post.comments || post.comments.length === 0) return null
+  return post.comments.reduce(
+    (max, c) => ((c.votes || 0) > (max?.votes || 0) ? c : max),
+    null
+  )
+}
+
+function getConsensusScore(post) {
+  const baseVotes = post.votes || 0
+  const topAnswer = getTopAnswer(post)
+  return baseVotes + (topAnswer?.votes || 0)
+}
+
 function PostPin({ post, x, y, isSelected, onClick, categories }) {
   const cat = categories.find(c => c.id === post.category)
   const size = Math.min(18 + (post.votes / 20), 36)
@@ -212,18 +229,27 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
   const mapWidth = 600
   const mapHeight = 420
 
-  const filteredPosts = useMemo(() =>
-    activePosts
+  const filteredPosts = useMemo(() => {
+    const q = search.toLowerCase()
+    return activePosts
       .filter(p => filterCategory === 'all' || p.category === filterCategory)
       .filter(p => {
         if (!search) return true
-        const q = search.toLowerCase()
-        return p.title.toLowerCase().includes(q) ||
-               p.location.toLowerCase().includes(q) ||
-               p.description?.toLowerCase().includes(q)
-      }),
-    [activePosts, search, filterCategory]
-  )
+        // Search also looks inside Question Pulse answers — typing "pizza" should
+        // catch a Question whose top answer mentions pizza.
+        if (
+          p.title.toLowerCase().includes(q) ||
+          p.location.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q)
+        ) return true
+        if (p.type === 'question' && Array.isArray(p.comments)) {
+          return p.comments.some(c => c.text?.toLowerCase().includes(q))
+        }
+        return false
+      })
+      // Rank by consensus: combines post votes with leading-answer votes for Questions.
+      .sort((a, b) => getConsensusScore(b) - getConsensusScore(a))
+  }, [activePosts, search, filterCategory])
 
   const heatmapGradients = useMemo(() => {
     if (isState) return [] // State map doesn't use pin-level heatmap
@@ -628,12 +654,107 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
               }}
             >✕</button>
           </div>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
-            {selectedPost.title}
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+            {selectedPost.type === 'question' && (
+              <span style={{
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: '0.06em',
+                color: isState ? '#D97706' : '#6366F1',
+                background: isState ? 'rgba(217, 119, 6, 0.12)' : 'rgba(99, 102, 241, 0.14)',
+                border: `1px solid ${isState ? 'rgba(217, 119, 6, 0.3)' : 'rgba(99, 102, 241, 0.3)'}`,
+                padding: '2px 7px',
+                borderRadius: 4,
+                whiteSpace: 'nowrap'
+              }}>
+                QUESTION
+              </span>
+            )}
+            <span>{selectedPost.title}</span>
           </h3>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 12px 0' }}>
             {selectedPost.description}
           </p>
+
+          {/* Verdict — Question Pulses only */}
+          {selectedPost.type === 'question' && (() => {
+            const topAnswer = getTopAnswer(selectedPost)
+            const accent = isState ? '#D97706' : '#6366F1'
+            const totalAnswers = selectedPost.comments?.length || 0
+            const runner = totalAnswers > 1
+              ? [...selectedPost.comments].sort((a, b) => (b.votes || 0) - (a.votes || 0))[1]
+              : null
+            const hasVerdict = topAnswer && (topAnswer.votes || 0) >= 30 && (topAnswer.votes || 0) >= (runner?.votes || 0) * 1.5
+            return (
+              <div style={{
+                padding: '12px 14px',
+                borderRadius: 12,
+                background: topAnswer ? `${accent}10` : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${topAnswer ? `${accent}33` : 'var(--border)'}`,
+                marginBottom: 12
+              }}>
+                {topAnswer ? (
+                  <>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: 6
+                    }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        fontSize: 10,
+                        fontWeight: 800,
+                        letterSpacing: '0.06em',
+                        color: accent,
+                        textTransform: 'uppercase'
+                      }}>
+                        <Icon name="ui-lightbulb" size={11} />
+                        {hasVerdict ? 'Verdict' : 'Leading'}
+                      </span>
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: accent
+                      }}>
+                        ▲ {topAnswer.votes || 0}
+                      </span>
+                    </div>
+                    <p style={{
+                      fontSize: 13,
+                      color: 'var(--text-primary)',
+                      margin: 0,
+                      lineHeight: 1.45,
+                      fontWeight: 500
+                    }}>
+                      "{topAnswer.text}"
+                    </p>
+                    <div style={{
+                      marginTop: 6,
+                      fontSize: 11,
+                      color: 'var(--text-muted)'
+                    }}>
+                      — {topAnswer.incognito ? 'Anonymous' : topAnswer.author}
+                      {totalAnswers > 1 && ` · ${totalAnswers} answers total`}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{
+                    fontSize: 12,
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}>
+                    <Icon name="ui-comments" size={13} />
+                    No answers yet — open Details to weigh in.
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           {/* Media preview */}
           {selectedPost.media && selectedPost.media.length > 0 && (
@@ -734,6 +855,9 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
       )}
       {filteredPosts.map(post => {
         const cat = activeCategories.find(c => c.id === post.category)
+        const isQuestion = post.type === 'question'
+        const topAnswer = getTopAnswer(post)
+        const accent = post.scope === 'state' ? '#D97706' : '#6366F1'
         return (
           <div
             key={post.id}
@@ -749,7 +873,7 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
               cursor: 'pointer',
               borderColor: selectedPost?.id === post.id ? (isState ? 'rgba(217,119,6,0.4)' : 'rgba(99,102,241,0.4)') : undefined,
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               gap: 12
             }}
           >
@@ -762,31 +886,73 @@ export default function ExploreView({ posts, onVote, scope = 'local', onPostClic
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
-              color: cat?.color
+              color: cat?.color,
+              marginTop: 2
             }}>
               {cat?.icon && <Icon name={cat.icon} size={18} />}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}>
-                {post.title}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                {isQuestion && (
+                  <span style={{
+                    fontSize: 9,
+                    fontWeight: 800,
+                    letterSpacing: '0.06em',
+                    color: accent,
+                    background: `${accent}1a`,
+                    border: `1px solid ${accent}40`,
+                    padding: '1px 5px',
+                    borderRadius: 3,
+                    flexShrink: 0
+                  }}>
+                    ?
+                  </span>
+                )}
+                <div style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  flex: 1,
+                  minWidth: 0
+                }}>
+                  {post.title}
+                </div>
               </div>
+              {isQuestion && topAnswer ? (
+                <div style={{
+                  fontSize: 12,
+                  color: 'var(--text-secondary)',
+                  marginTop: 4,
+                  marginBottom: 2,
+                  padding: '6px 8px',
+                  borderRadius: 8,
+                  background: `${accent}0d`,
+                  border: `1px solid ${accent}22`,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 1,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}>
+                  <span style={{ color: accent, fontWeight: 700, marginRight: 4 }}>▲ {topAnswer.votes || 0}</span>
+                  {topAnswer.text}
+                </div>
+              ) : null}
               <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 <Icon name="ui-location" size={10} /> {post.location} · {post.votes} votes
+                {isQuestion && (post.comments?.length || 0) > 0 && (
+                  <span> · {post.comments.length} {post.comments.length === 1 ? 'answer' : 'answers'}</span>
+                )}
               </div>
             </div>
             {selectedPost?.id === post.id && onPostClick ? (
-              <span style={{ fontSize: 11, color: 'var(--text-accent)', fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: 11, color: 'var(--text-accent)', fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', marginTop: 12 }}>
                 Details →
               </span>
             ) : post.media && post.media.length > 0 ? (
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 3, marginTop: 12 }}>
                 <Icon name="ui-camera" size={11} /> {post.media.length}
               </span>
             ) : null}
