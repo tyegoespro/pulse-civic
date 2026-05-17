@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import Icon from './Icon'
 import VoteButton from './VoteButton'
 import LeafletMap from './LeafletMap'
@@ -6,6 +6,7 @@ import QuestionBadge from './QuestionBadge'
 import CommentVoteButton from './CommentVoteButton'
 import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import { getDistanceToPost, canVoteOnPost, formatDistance } from '../lib/proximity'
+import { computeWatchedDelta, formatTimeSince } from '../lib/watchedDelta'
 
 // Real map showing the post's location
 function LocationMap({ lat, lng, location, onExploreClick }) {
@@ -38,7 +39,7 @@ function LocationMap({ lat, lng, location, onExploreClick }) {
   )
 }
 
-export default function PostDetailModal({ post, onClose, onVote, onVoteComment, onCommentClick, onAuthorClick, onExploreLocation, isWatched, onToggleWatch, onCategoryClick }) {
+export default function PostDetailModal({ post, watchedSnapshot, onClose, onVote, onVoteComment, onCommentClick, onAuthorClick, onExploreLocation, isWatched, onToggleWatch, onCategoryClick }) {
   const [commentText, setCommentText] = useState('')
   const [lightboxIndex, setLightboxIndex] = useState(null)
   const allCategories = post.scope === 'state' ? STATE_CATEGORIES : CATEGORIES
@@ -48,6 +49,14 @@ export default function PostDetailModal({ post, onClose, onVote, onVoteComment, 
   const canVote = useMemo(() => post.scope === 'state' ? true : canVoteOnPost(post.lat, post.lng), [post.lat, post.lng, post.scope])
   const isQuestion = post.type === 'question'
   const accent = post.scope === 'state' ? '#D97706' : '#6366F1'
+
+  // Freeze the "since you last checked" delta at mount so the banner doesn't
+  // jump as the user votes/comments inside the modal (their own actions
+  // would otherwise show up as deltas).
+  const initialDeltaRef = useRef(
+    isWatched ? computeWatchedDelta(post, watchedSnapshot) : null
+  )
+  const initialDelta = initialDeltaRef.current
 
   const sortedComments = useMemo(() => {
     if (!post.comments) return []
@@ -195,6 +204,86 @@ export default function PostDetailModal({ post, onClose, onVote, onVoteComment, 
             </span>
           )}
         </div>
+
+        {/* Since you last checked — shown for watched posts with non-zero delta */}
+        {isWatched && initialDelta?.hasChanges && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: '12px 14px',
+            borderRadius: 12,
+            background: `${accent}10`,
+            border: `1px solid ${accent}40`,
+            marginBottom: 16,
+            animation: 'slide-up 0.3s ease'
+          }}>
+            <span style={{ color: accent, flexShrink: 0, marginTop: 1 }}>
+              <Icon name="ui-eye" size={15} />
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: '0.06em',
+                color: accent,
+                textTransform: 'uppercase',
+                marginBottom: 6
+              }}>
+                Since you last checked · {formatTimeSince(initialDelta.snapshotTakenAt)}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {initialDelta.votesDelta !== 0 && (
+                  <span style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    padding: '3px 9px',
+                    borderRadius: 6,
+                    color: initialDelta.votesDelta > 0 ? '#22C55E' : '#EF4444',
+                    background: initialDelta.votesDelta > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    border: `1px solid ${initialDelta.votesDelta > 0 ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+                  }}>
+                    {initialDelta.votesDelta > 0 ? '▲' : '▼'} {Math.abs(initialDelta.votesDelta)} votes
+                  </span>
+                )}
+                {initialDelta.commentsDelta > 0 && (
+                  <span style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    padding: '3px 9px',
+                    borderRadius: 6,
+                    color: accent,
+                    background: `${accent}1a`,
+                    border: `1px solid ${accent}33`,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}>
+                    <Icon name="ui-comments" size={11} />
+                    +{initialDelta.commentsDelta} new {isQuestion ? (initialDelta.commentsDelta === 1 ? 'answer' : 'answers') : (initialDelta.commentsDelta === 1 ? 'comment' : 'comments')}
+                  </span>
+                )}
+                {initialDelta.verdictChanged && (
+                  <span style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    padding: '3px 9px',
+                    borderRadius: 6,
+                    color: '#F59E0B',
+                    background: 'rgba(245, 158, 11, 0.1)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}>
+                    <Icon name="ui-lightbulb" size={11} />
+                    Verdict shifted
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Voting — compact centered */}
         <div style={{

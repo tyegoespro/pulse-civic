@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import Icon from './Icon'
 import QuestionBadge from './QuestionBadge'
+import { computeWatchedDelta, formatTimeSince } from '../lib/watchedDelta'
 
 const CategoryInline = ({ cat }) => cat ? (
   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: cat.color }}>
@@ -17,7 +18,7 @@ const IncognitoInline = ({ size = 11 }) => (
   </span>
 )
 
-export default function ActivityScreen({ posts, watchedIds = [], onPostClick, scope = 'local' }) {
+export default function ActivityScreen({ posts, watchedIds = [], watchedSnapshots = {}, onPostClick, scope = 'local' }) {
   const activeCategories = scope === 'state' ? STATE_CATEGORIES : CATEGORIES
   const scopeLabel = scope === 'state' ? 'Wisconsin' : 'Oshkosh'
 
@@ -83,11 +84,17 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick, sc
           </div>
           {watchedPosts.map(p => {
             const cat = activeCategories.find(c => c.id === p.category)
+            const delta = computeWatchedDelta(p, watchedSnapshots[p.id])
+            const accent = p.scope === 'state' ? '#D97706' : '#6366F1'
             return (
               <div
                 key={p.id}
                 className="activity-item animate-slide-up"
-                style={{ cursor: onPostClick ? 'pointer' : 'default' }}
+                style={{
+                  cursor: onPostClick ? 'pointer' : 'default',
+                  borderColor: delta.hasChanges ? `${accent}66` : undefined,
+                  background: delta.hasChanges ? `${accent}08` : undefined
+                }}
                 onClick={() => onPostClick && onPostClick(p.id)}
               >
                 <div style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: 12, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -107,9 +114,83 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick, sc
                     <Icon name="ui-eye" size={9} />
                     Watching
                   </span>
+                  {delta.hasChanges && (
+                    <span style={{
+                      fontSize: 9,
+                      fontWeight: 800,
+                      color: accent,
+                      letterSpacing: '0.06em',
+                      marginLeft: 'auto',
+                      textTransform: 'uppercase'
+                    }}>
+                      NEW · {formatTimeSince(delta.snapshotTakenAt)}
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{p.title}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+
+                {/* Delta chips — only render when something has changed since last view */}
+                {delta.hasChanges && (
+                  <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 6,
+                    marginTop: 8
+                  }}>
+                    {delta.votesDelta !== 0 && (
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        color: delta.votesDelta > 0 ? '#22C55E' : '#EF4444',
+                        background: delta.votesDelta > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        border: `1px solid ${delta.votesDelta > 0 ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 3
+                      }}>
+                        {delta.votesDelta > 0 ? '▲' : '▼'} {Math.abs(delta.votesDelta)} votes
+                      </span>
+                    )}
+                    {delta.commentsDelta > 0 && (
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        color: accent,
+                        background: `${accent}1a`,
+                        border: `1px solid ${accent}33`,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 3
+                      }}>
+                        <Icon name="ui-comments" size={10} />
+                        +{delta.commentsDelta} {p.type === 'question' ? (delta.commentsDelta === 1 ? 'answer' : 'answers') : (delta.commentsDelta === 1 ? 'comment' : 'comments')}
+                      </span>
+                    )}
+                    {delta.verdictChanged && (
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        color: '#F59E0B',
+                        background: 'rgba(245, 158, 11, 0.1)',
+                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 3
+                      }}>
+                        <Icon name="ui-lightbulb" size={10} />
+                        Verdict shifted
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span>▲ {p.votes} votes</span>
                   <span>·</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>

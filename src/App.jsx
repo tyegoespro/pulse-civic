@@ -172,7 +172,44 @@ export default function App() {
     } catch { return [] }
   })
 
+  // Watched snapshots — frozen state at last view, used to compute "since you checked" deltas.
+  // Shape: { [postId]: { votes, commentCount, topCommentId, topCommentVotes, takenAt } }
+  const [watchedSnapshots, setWatchedSnapshots] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('pulse_watched_snapshots') || '{}')
+    } catch { return {} }
+  })
+
+  useEffect(() => {
+    localStorage.setItem('pulse_watched_snapshots', JSON.stringify(watchedSnapshots))
+  }, [watchedSnapshots])
+
+  const buildSnapshot = (post) => {
+    if (!post) return null
+    let topComment = null
+    if (post.type === 'question' && post.comments?.length) {
+      topComment = post.comments.reduce(
+        (max, c) => ((c.votes || 0) > (max?.votes || 0) ? c : max),
+        null
+      )
+    }
+    return {
+      votes: post.votes || 0,
+      commentCount: post.comments?.length || 0,
+      topCommentId: topComment?.id || null,
+      topCommentVotes: topComment?.votes || 0,
+      takenAt: Date.now()
+    }
+  }
+
+  const refreshWatchedSnapshot = (postId) => {
+    const post = posts.find(p => p.id === postId)
+    if (!post) return
+    setWatchedSnapshots(prev => ({ ...prev, [postId]: buildSnapshot(post) }))
+  }
+
   const toggleWatch = (postId) => {
+    const post = posts.find(p => p.id === postId)
     setWatchedIds(prev => {
       const next = prev.includes(postId)
         ? prev.filter(id => id !== postId)
@@ -180,6 +217,17 @@ export default function App() {
       localStorage.setItem('pulse_watched', JSON.stringify(next))
       if (!prev.includes(postId)) {
         setActivityBadge(b => b + 1)
+        // Starting to watch — take a snapshot so future deltas are relative to now.
+        if (post) {
+          setWatchedSnapshots(s => ({ ...s, [postId]: buildSnapshot(post) }))
+        }
+      } else {
+        // Stopped watching — drop the snapshot.
+        setWatchedSnapshots(s => {
+          const copy = { ...s }
+          delete copy[postId]
+          return copy
+        })
       }
       return next
     })
@@ -479,7 +527,13 @@ export default function App() {
 
         {/* Activity View */}
         {!viewingProfile && activeTab === 'activity' && (
-          <ActivityScreen posts={posts} watchedIds={watchedIds} scope={scope} onPostClick={(postId) => setDetailPostId(postId)} />
+          <ActivityScreen
+            posts={posts}
+            watchedIds={watchedIds}
+            watchedSnapshots={watchedSnapshots}
+            scope={scope}
+            onPostClick={(postId) => setDetailPostId(postId)}
+          />
         )}
         </div> {/* end tab-content */}
       </div>
@@ -547,11 +601,23 @@ export default function App() {
       {detailPostId && detailPost && (
         <PostDetailModal
           post={detailPost}
-          onClose={() => { setDetailPostId(null); setDetailPostData(null) }}
+          watchedSnapshot={watchedSnapshots[detailPostId]}
+          onClose={() => {
+            // Refresh the watched snapshot on close so the user's next visit
+            // shows only what's new since this view.
+            if (watchedIds.includes(detailPostId)) {
+              refreshWatchedSnapshot(detailPostId)
+            }
+            setDetailPostId(null)
+            setDetailPostData(null)
+          }}
           onVote={handleVote}
           onVoteComment={handleVoteComment}
           onCommentClick={handleDetailComment}
           onAuthorClick={(authorId) => {
+            if (watchedIds.includes(detailPostId)) {
+              refreshWatchedSnapshot(detailPostId)
+            }
             setDetailPostId(null)
             setViewingProfile(authorId)
           }}
@@ -559,6 +625,9 @@ export default function App() {
           isWatched={watchedIds.includes(detailPostId)}
           onToggleWatch={() => toggleWatch(detailPostId)}
           onCategoryClick={(categoryId) => {
+            if (watchedIds.includes(detailPostId)) {
+              refreshWatchedSnapshot(detailPostId)
+            }
             setDetailPostId(null)
             setFilter(categoryId)
             setActiveTab('feed')
