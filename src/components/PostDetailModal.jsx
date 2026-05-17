@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo } from 'react'
 import Icon from './Icon'
 import VoteButton from './VoteButton'
 import LeafletMap from './LeafletMap'
@@ -50,13 +50,10 @@ export default function PostDetailModal({ post, watchedSnapshot, onClose, onVote
   const isQuestion = post.type === 'question'
   const accent = post.scope === 'state' ? '#D97706' : '#6366F1'
 
-  // Freeze the "since you last checked" delta at mount so the banner doesn't
-  // jump as the user votes/comments inside the modal (their own actions
-  // would otherwise show up as deltas).
-  const initialDeltaRef = useRef(
-    isWatched ? computeWatchedDelta(post, watchedSnapshot) : null
-  )
-  const initialDelta = initialDeltaRef.current
+  // Cumulative delta: everything that's changed since the user started watching.
+  // Recomputes on every render so the banner reacts live as the user votes
+  // inside the modal.
+  const watchDelta = isWatched ? computeWatchedDelta(post, watchedSnapshot) : null
 
   const sortedComments = useMemo(() => {
     if (!post.comments) return []
@@ -206,7 +203,7 @@ export default function PostDetailModal({ post, watchedSnapshot, onClose, onVote
         </div>
 
         {/* Since you last checked — shown for watched posts with non-zero delta */}
-        {isWatched && initialDelta?.hasChanges && (
+        {isWatched && watchDelta?.hasChanges && (
           <div style={{
             display: 'flex',
             alignItems: 'flex-start',
@@ -230,23 +227,23 @@ export default function PostDetailModal({ post, watchedSnapshot, onClose, onVote
                 textTransform: 'uppercase',
                 marginBottom: 6
               }}>
-                Since you last checked · {formatTimeSince(initialDelta.snapshotTakenAt)}
+                Since you started watching · {formatTimeSince(watchDelta.snapshotTakenAt)}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {initialDelta.votesDelta !== 0 && (
+                {watchDelta.votesDelta !== 0 && (
                   <span style={{
                     fontSize: 12,
                     fontWeight: 700,
                     padding: '3px 9px',
                     borderRadius: 6,
-                    color: initialDelta.votesDelta > 0 ? '#22C55E' : '#EF4444',
-                    background: initialDelta.votesDelta > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                    border: `1px solid ${initialDelta.votesDelta > 0 ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+                    color: watchDelta.votesDelta > 0 ? '#22C55E' : '#EF4444',
+                    background: watchDelta.votesDelta > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    border: `1px solid ${watchDelta.votesDelta > 0 ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
                   }}>
-                    {initialDelta.votesDelta > 0 ? '▲' : '▼'} {Math.abs(initialDelta.votesDelta)} votes
+                    {watchDelta.votesDelta > 0 ? '▲' : '▼'} {Math.abs(watchDelta.votesDelta)} votes
                   </span>
                 )}
-                {initialDelta.commentsDelta > 0 && (
+                {watchDelta.commentsDelta > 0 && (
                   <span style={{
                     fontSize: 12,
                     fontWeight: 700,
@@ -260,10 +257,10 @@ export default function PostDetailModal({ post, watchedSnapshot, onClose, onVote
                     gap: 4
                   }}>
                     <Icon name="ui-comments" size={11} />
-                    +{initialDelta.commentsDelta} new {isQuestion ? (initialDelta.commentsDelta === 1 ? 'answer' : 'answers') : (initialDelta.commentsDelta === 1 ? 'comment' : 'comments')}
+                    +{watchDelta.commentsDelta} new {isQuestion ? (watchDelta.commentsDelta === 1 ? 'answer' : 'answers') : (watchDelta.commentsDelta === 1 ? 'comment' : 'comments')}
                   </span>
                 )}
-                {initialDelta.verdictChanged && (
+                {watchDelta.verdictChanged && (
                   <span style={{
                     fontSize: 12,
                     fontWeight: 700,

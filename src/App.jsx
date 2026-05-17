@@ -202,12 +202,6 @@ export default function App() {
     }
   }
 
-  const refreshWatchedSnapshot = (postId) => {
-    const post = posts.find(p => p.id === postId)
-    if (!post) return
-    setWatchedSnapshots(prev => ({ ...prev, [postId]: buildSnapshot(post) }))
-  }
-
   const toggleWatch = (postId) => {
     const post = posts.find(p => p.id === postId)
     setWatchedIds(prev => {
@@ -603,11 +597,6 @@ export default function App() {
           post={detailPost}
           watchedSnapshot={watchedSnapshots[detailPostId]}
           onClose={() => {
-            // Refresh the watched snapshot on close so the user's next visit
-            // shows only what's new since this view.
-            if (watchedIds.includes(detailPostId)) {
-              refreshWatchedSnapshot(detailPostId)
-            }
             setDetailPostId(null)
             setDetailPostData(null)
           }}
@@ -615,9 +604,6 @@ export default function App() {
           onVoteComment={handleVoteComment}
           onCommentClick={handleDetailComment}
           onAuthorClick={(authorId) => {
-            if (watchedIds.includes(detailPostId)) {
-              refreshWatchedSnapshot(detailPostId)
-            }
             setDetailPostId(null)
             setViewingProfile(authorId)
           }}
@@ -625,9 +611,6 @@ export default function App() {
           isWatched={watchedIds.includes(detailPostId)}
           onToggleWatch={() => toggleWatch(detailPostId)}
           onCategoryClick={(categoryId) => {
-            if (watchedIds.includes(detailPostId)) {
-              refreshWatchedSnapshot(detailPostId)
-            }
             setDetailPostId(null)
             setFilter(categoryId)
             setActiveTab('feed')

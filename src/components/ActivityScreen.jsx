@@ -123,7 +123,7 @@ export default function ActivityScreen({ posts, watchedIds = [], watchedSnapshot
                       marginLeft: 'auto',
                       textTransform: 'uppercase'
                     }}>
-                      NEW · {formatTimeSince(delta.snapshotTakenAt)}
+                      Since {formatTimeSince(delta.snapshotTakenAt)}
                     </span>
                   )}
                 </div>
