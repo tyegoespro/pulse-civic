@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import VoteButton from './VoteButton'
 import Icon from './Icon'
+import QuestionBadge from './QuestionBadge'
 import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import { getDistanceToPost, canVoteOnPost, canVoteOnStatePost, formatDistance } from '../lib/proximity'
 
@@ -105,24 +106,7 @@ export default function PostCard({ post, onVote, onCommentClick, onAuthorClick, 
                 STATE
               </span>
             )}
-            {isQuestion && (
-              <span style={{
-                fontSize: 10,
-                color: accent,
-                fontWeight: 700,
-                background: `${accent}1a`,
-                border: `1px solid ${accent}40`,
-                padding: '1px 6px',
-                borderRadius: 4,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 3,
-                letterSpacing: '0.04em'
-              }}>
-                <Icon name="ui-comments" size={9} />
-                QUESTION
-              </span>
-            )}
+            {isQuestion && <QuestionBadge scope={post.scope} size="md" />}
             {post.incognito && (
               <span className="post-incognito" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                 <Icon name="ui-incognito" size={11} />

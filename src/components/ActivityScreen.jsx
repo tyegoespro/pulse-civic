@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import Icon from './Icon'
+import QuestionBadge from './QuestionBadge'
 
 const CategoryInline = ({ cat }) => cat ? (
   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: cat.color }}>
@@ -89,8 +90,9 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick, sc
                 style={{ cursor: onPostClick ? 'pointer' : 'default' }}
                 onClick={() => onPostClick && onPostClick(p.id)}
               >
-                <div style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: 12, alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                   {cat && <CategoryInline cat={cat} />}
+                  {p.type === 'question' && <QuestionBadge scope={p.scope} size="sm" />}
                   <span style={{
                     fontSize: 10,
                     fontWeight: 600,
@@ -148,8 +150,9 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick, sc
                     style={{ cursor: onPostClick ? 'pointer' : 'default' }}
                     onClick={() => onPostClick && onPostClick(p.id)}
                   >
-                    <div style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: 12 }}>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                       <CategoryInline cat={cat} />
+                      {p.type === 'question' && <QuestionBadge scope={p.scope} size="sm" />}
                     </div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{p.title}</div>
                     <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4 }}>
@@ -225,9 +228,10 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick, sc
                       {p.userVote === 1 ? '▲' : '▼'}
                     </span>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
                         {cat?.icon && <Icon name={cat.icon} size={13} style={{ color: cat.color }} />}
                         {p.title}
+                        {p.type === 'question' && <QuestionBadge scope={p.scope} size="sm" />}
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
                         {p.votes} votes
@@ -289,8 +293,9 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick, sc
                   }}
                     onClick={() => onPostClick && onPostClick(p.id)}
                   >
-                    <div style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: 12 }}>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                       <CategoryInline cat={cat} />
+                      {p.type === 'question' && <QuestionBadge scope={p.scope} size="sm" />}
                       <IncognitoInline />
                     </div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{p.title}</div>

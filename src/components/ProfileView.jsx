@@ -1,7 +1,13 @@
 import { useState, useMemo } from 'react'
-import { CATEGORIES, SEED_USERS } from '../constants'
+import { CATEGORIES, STATE_CATEGORIES, SEED_USERS } from '../constants'
 import { CITIES, CITY_ISSUES } from '../lib/cities'
 import Icon from './Icon'
+import QuestionBadge from './QuestionBadge'
+
+const catFor = (post) => {
+  const set = post.scope === 'state' ? STATE_CATEGORIES : CATEGORIES
+  return set.find(c => c.id === post.category)
+}
 
 export default function ProfileView({ userId, posts, onBack, onVote, onCommentClick, onAuthorClick, onPostClick }) {
   const [activeTab, setActiveTab] = useState('posts')
@@ -57,7 +63,9 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
             ...c,
             postTitle: post.title,
             postId: post.id,
-            postCategory: post.category
+            postCategory: post.category,
+            postScope: post.scope,
+            postType: post.type
           })
         }
       })
@@ -205,13 +213,13 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
             </div>
           ) : (
             publicPosts.map(post => {
-              const cat = CATEGORIES.find(c => c.id === post.category)
+              const cat = catFor(post)
               return (
                 <div key={post.id} className="profile-post-card animate-slide-up"
                   style={{ cursor: onPostClick ? 'pointer' : 'default' }}
                   onClick={() => onPostClick && onPostClick(post.id)}
                 >
-                  <div className="profile-post-meta">
+                  <div className="profile-post-meta" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <span
                       className="post-category-tag"
                       style={{
@@ -226,6 +234,7 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
                       {cat?.icon && <Icon name={cat.icon} size={11} />}
                       {cat?.label}
                     </span>
+                    {post.type === 'question' && <QuestionBadge scope={post.scope} size="sm" />}
                     <span className="post-location" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                       <Icon name="ui-location" size={11} />
                       {post.location}
@@ -266,7 +275,8 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
             </div>
           ) : (
             publicComments.map(c => {
-              const cat = CATEGORIES.find(ct => ct.id === c.postCategory)
+              const catSet = c.postScope === 'state' ? STATE_CATEGORIES : CATEGORIES
+              const cat = catSet.find(ct => ct.id === c.postCategory)
               const clickable = onPostClick && c.postId
               return (
                 <div
@@ -305,7 +315,7 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
             </div>
           ) : (
             watchedPosts.map(post => {
-              const cat = CATEGORIES.find(c => c.id === post.category)
+              const cat = catFor(post)
               return (
                 <div
                   key={post.id}
@@ -313,7 +323,7 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
                   style={{ cursor: onPostClick ? 'pointer' : 'default' }}
                   onClick={() => onPostClick && onPostClick(post.id)}
                 >
-                  <div className="profile-post-meta">
+                  <div className="profile-post-meta" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <span
                       className="post-category-tag"
                       style={{
@@ -328,6 +338,7 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
                       {cat?.icon && <Icon name={cat.icon} size={11} />}
                       {cat?.label}
                     </span>
+                    {post.type === 'question' && <QuestionBadge scope={post.scope} size="sm" />}
                     <span style={{
                       fontSize: 10,
                       fontWeight: 600,

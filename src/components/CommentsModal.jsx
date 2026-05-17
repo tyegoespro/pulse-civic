@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { suggestPoliteComment, isGeminiConfigured } from '../lib/gemini'
 import Icon from './Icon'
+import CommentVoteButton from './CommentVoteButton'
 
 export default function CommentsModal({ post, onClose, onAddComment, onVoteComment, incognito, onAuthorClick }) {
   const [text, setText] = useState('')
@@ -150,65 +151,38 @@ export default function CommentsModal({ post, onClose, onAddComment, onVoteComme
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        gap: 2,
+                        gap: 4,
                         flexShrink: 0,
                         paddingTop: 4
                       }}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <button
+                      <CommentVoteButton
+                        direction="up"
+                        active={comment.userVote === 1}
+                        accent={accent}
                         onClick={() => onVoteComment && onVoteComment(post.id, comment.id, 1)}
-                        aria-label="Upvote answer"
-                        style={{
-                          width: 28,
-                          height: 24,
-                          borderRadius: 6,
-                          border: 'none',
-                          background: comment.userVote === 1 ? `${accent}22` : 'transparent',
-                          color: comment.userVote === 1 ? accent : 'var(--text-muted)',
-                          cursor: 'pointer',
-                          fontSize: 14,
-                          fontWeight: 700,
-                          fontFamily: 'var(--font)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        ▲
-                      </button>
+                      />
                       <span style={{
                         fontSize: 12,
-                        fontWeight: 700,
-                        color: (comment.votes || 0) > 0 ? accent : 'var(--text-muted)',
+                        fontWeight: 800,
+                        color: comment.userVote === 1
+                          ? accent
+                          : comment.userVote === -1
+                            ? '#EF4444'
+                            : ((comment.votes || 0) > 0 ? accent : 'var(--text-muted)'),
                         minWidth: 24,
-                        textAlign: 'center'
+                        textAlign: 'center',
+                        transition: 'color 0.15s ease'
                       }}>
                         {comment.votes || 0}
                       </span>
-                      <button
+                      <CommentVoteButton
+                        direction="down"
+                        active={comment.userVote === -1}
+                        accent={accent}
                         onClick={() => onVoteComment && onVoteComment(post.id, comment.id, -1)}
-                        aria-label="Downvote answer"
-                        style={{
-                          width: 28,
-                          height: 24,
-                          borderRadius: 6,
-                          border: 'none',
-                          background: comment.userVote === -1 ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
-                          color: comment.userVote === -1 ? '#EF4444' : 'var(--text-muted)',
-                          cursor: 'pointer',
-                          fontSize: 14,
-                          fontWeight: 700,
-                          fontFamily: 'var(--font)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        ▼
-                      </button>
+                      />
                     </div>
                   )}
 

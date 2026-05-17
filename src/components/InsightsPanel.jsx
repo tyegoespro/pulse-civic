@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import Icon from './Icon'
+import QuestionBadge from './QuestionBadge'
 
 export default function InsightsPanel({ posts, scope = 'local', onPostClick, onCategoryClick }) {
   const activeCategories = scope === 'state' ? STATE_CATEGORIES : CATEGORIES
@@ -200,6 +201,11 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
           }}>
             <Icon name="ui-trending" size={13} />
             Community Consensus
+            {topPost.type === 'question' && (
+              <span style={{ marginLeft: 'auto' }}>
+                <QuestionBadge scope={topPost.scope} size="md" />
+              </span>
+            )}
           </div>
           <div style={{
             fontSize: 15,
@@ -372,7 +378,8 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
                     marginTop: 2,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 6
+                    gap: 6,
+                    flexWrap: 'wrap'
                   }}>
                     <span style={{
                       display: 'inline-flex',
@@ -383,6 +390,7 @@ export default function InsightsPanel({ posts, scope = 'local', onPostClick, onC
                       {cat?.icon && <Icon name={cat.icon} size={10} />}
                       {cat?.label}
                     </span>
+                    {post.type === 'question' && <QuestionBadge scope={post.scope} size="sm" />}
                     <span>·</span>
                     <span>{post.location}</span>
                   </div>

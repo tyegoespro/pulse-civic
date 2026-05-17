@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react'
 import Icon from './Icon'
 import VoteButton from './VoteButton'
 import LeafletMap from './LeafletMap'
+import QuestionBadge from './QuestionBadge'
+import CommentVoteButton from './CommentVoteButton'
 import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import { getDistanceToPost, canVoteOnPost, formatDistance } from '../lib/proximity'
 
@@ -123,7 +125,7 @@ export default function PostDetailModal({ post, onClose, onVote, onVoteComment, 
             <span style={{ fontSize: 20 }}>‹</span>
             <span>Back</span>
           </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <span
               className="post-category-tag"
               onClick={() => onCategoryClick && onCategoryClick(post.category)}
@@ -141,6 +143,7 @@ export default function PostDetailModal({ post, onClose, onVote, onVoteComment, 
               {cat?.icon && <Icon name={cat.icon} size={12} />}
               {cat?.label}
             </span>
+            {isQuestion && <QuestionBadge scope={post.scope} size="md" />}
             {isWatched && (
               <span style={{
                 fontSize: 10,
@@ -461,56 +464,35 @@ export default function PostDetailModal({ post, onClose, onVote, onVoteComment, 
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
-                          gap: 2,
+                          gap: 4,
                           flexShrink: 0
                         }}>
-                          <button
+                          <CommentVoteButton
+                            direction="up"
+                            active={c.userVote === 1}
+                            accent={accent}
                             onClick={() => onVoteComment && onVoteComment(post.id, c.id, 1)}
-                            aria-label="Upvote answer"
-                            style={{
-                              width: 26,
-                              height: 22,
-                              borderRadius: 6,
-                              border: 'none',
-                              background: c.userVote === 1 ? `${accent}22` : 'rgba(255,255,255,0.04)',
-                              color: c.userVote === 1 ? accent : 'var(--text-muted)',
-                              cursor: 'pointer',
-                              fontSize: 12,
-                              fontWeight: 700,
-                              fontFamily: 'var(--font)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
-                          >▲</button>
+                          />
                           <span style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: (c.votes || 0) > 0 ? accent : 'var(--text-muted)',
-                            minWidth: 22,
-                            textAlign: 'center'
+                            fontSize: 12,
+                            fontWeight: 800,
+                            color: c.userVote === 1
+                              ? accent
+                              : c.userVote === -1
+                                ? '#EF4444'
+                                : ((c.votes || 0) > 0 ? accent : 'var(--text-muted)'),
+                            minWidth: 24,
+                            textAlign: 'center',
+                            transition: 'color 0.15s ease'
                           }}>
                             {c.votes || 0}
                           </span>
-                          <button
+                          <CommentVoteButton
+                            direction="down"
+                            active={c.userVote === -1}
+                            accent={accent}
                             onClick={() => onVoteComment && onVoteComment(post.id, c.id, -1)}
-                            aria-label="Downvote answer"
-                            style={{
-                              width: 26,
-                              height: 22,
-                              borderRadius: 6,
-                              border: 'none',
-                              background: c.userVote === -1 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.04)',
-                              color: c.userVote === -1 ? '#EF4444' : 'var(--text-muted)',
-                              cursor: 'pointer',
-                              fontSize: 12,
-                              fontWeight: 700,
-                              fontFamily: 'var(--font)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
-                          >▼</button>
+                          />
                         </div>
                       )}
 
