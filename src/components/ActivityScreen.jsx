@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { CATEGORIES } from '../constants'
+import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import Icon from './Icon'
 
 const CategoryInline = ({ cat }) => cat ? (
@@ -16,15 +16,21 @@ const IncognitoInline = ({ size = 11 }) => (
   </span>
 )
 
-export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) {
-  const myPosts = posts.filter(p => p.userId === 'me')
-  const myVoted = posts.filter(p => p.userVote !== 0)
+export default function ActivityScreen({ posts, watchedIds = [], onPostClick, scope = 'local' }) {
+  const activeCategories = scope === 'state' ? STATE_CATEGORIES : CATEGORIES
+  const scopeLabel = scope === 'state' ? 'Wisconsin' : 'Oshkosh'
+
+  // Activity is scope-scoped: toggling City/State in the header filters everything here.
+  const scopedPosts = useMemo(() => posts.filter(p => p.scope === scope), [posts, scope])
+
+  const myPosts = scopedPosts.filter(p => p.userId === 'me')
+  const myVoted = scopedPosts.filter(p => p.userVote !== 0)
     .sort((a, b) => (b.userVoteTimestamp || 0) - (a.userVoteTimestamp || 0))
 
-  // Extract all comments the user made across all posts
+  // Extract all comments the user made across all scoped posts
   const myComments = useMemo(() => {
     const comments = []
-    posts.forEach(post => {
+    scopedPosts.forEach(post => {
       (post.comments || []).forEach(c => {
         if (c.author === 'You' || c.author === 'Anonymous') {
           comments.push({ ...c, postTitle: post.title, postId: post.id, postCategory: post.category })
@@ -32,7 +38,7 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
       })
     })
     return comments.sort((a, b) => b.timestamp - a.timestamp)
-  }, [posts])
+  }, [scopedPosts])
 
   const regularComments = myComments.filter(c => !c.incognito)
   const incognitoComments = myComments.filter(c => c.incognito)
@@ -43,15 +49,17 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
 
   const hasAny = myPosts.length > 0 || myVoted.length > 0 || myComments.length > 0
   const watchedPosts = watchedIds
-    .map(id => posts.find(p => p.id === id))
+    .map(id => scopedPosts.find(p => p.id === id))
     .filter(Boolean)
 
   return (
     <div style={{ paddingBottom: 100 }}>
-      <h2 className="activity-header">Your Activity</h2>
+      <h2 className="activity-header">
+        Your {scopeLabel} Activity
+      </h2>
       <p className="activity-subtext" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
         <Icon name="ui-lock" size={12} />
-        Only visible to you — including all incognito activity.
+        Only visible to you — including all incognito activity. Toggle scope in the header to switch.
       </p>
 
       {/* ─── Watching ─── */}
@@ -73,7 +81,7 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
             Watching ({watchedPosts.length})
           </div>
           {watchedPosts.map(p => {
-            const cat = CATEGORIES.find(c => c.id === p.category)
+            const cat = activeCategories.find(c => c.id === p.category)
             return (
               <div
                 key={p.id}
@@ -134,7 +142,7 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
             <>
               <h3 className="activity-section-title">Your Posts ({regularPosts.length})</h3>
               {regularPosts.map(p => {
-                const cat = CATEGORIES.find(c => c.id === p.category)
+                const cat = activeCategories.find(c => c.id === p.category)
                 return (
                   <div key={p.id} className="activity-item animate-slide-up"
                     style={{ cursor: onPostClick ? 'pointer' : 'default' }}
@@ -160,7 +168,7 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
                 Your Comments ({regularComments.length})
               </h3>
               {regularComments.map(c => {
-                const cat = CATEGORIES.find(ct => ct.id === c.postCategory)
+                const cat = activeCategories.find(ct => ct.id === c.postCategory)
                 return (
                   <div key={c.id} className="activity-item animate-slide-up"
                     style={{ display: 'flex', gap: 12, cursor: onPostClick ? 'pointer' : 'default' }}
@@ -207,7 +215,7 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
                 Posts You Voted On ({regularVoted.length})
               </h3>
               {regularVoted.map(p => {
-                const cat = CATEGORIES.find(c => c.id === p.category)
+                const cat = activeCategories.find(c => c.id === p.category)
                 return (
                   <div key={p.id} className="activity-item activity-vote-item animate-slide-up"
                     style={{ cursor: onPostClick ? 'pointer' : 'default' }}
@@ -273,7 +281,7 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
                 Incognito Posts ({incognitoPosts.length})
               </h3>
               {incognitoPosts.map(p => {
-                const cat = CATEGORIES.find(c => c.id === p.category)
+                const cat = activeCategories.find(c => c.id === p.category)
                 return (
                   <div key={p.id} className="activity-item animate-slide-up" style={{
                     borderColor: 'rgba(139, 92, 246, 0.15)',
@@ -305,7 +313,7 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
                 Incognito Comments ({incognitoComments.length})
               </h3>
               {incognitoComments.map(c => {
-                const cat = CATEGORIES.find(ct => ct.id === c.postCategory)
+                const cat = activeCategories.find(ct => ct.id === c.postCategory)
                 return (
                   <div key={c.id} className="activity-item animate-slide-up" style={{
                     display: 'flex',
@@ -362,7 +370,7 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
                 Incognito Votes ({incognitoVoted.length})
               </h3>
               {incognitoVoted.map(p => {
-                const cat = CATEGORIES.find(c => c.id === p.category)
+                const cat = activeCategories.find(c => c.id === p.category)
                 return (
                   <div key={p.id} className="activity-item activity-vote-item animate-slide-up" style={{
                     borderColor: 'rgba(139, 92, 246, 0.15)',
@@ -399,7 +407,7 @@ export default function ActivityScreen({ posts, watchedIds = [], onPostClick }) 
       {!hasAny && (
         <div className="activity-empty">
           <div className="activity-empty-icon">🫥</div>
-          <div>No activity yet. Start voting or create a Pulse!</div>
+          <div>No {scopeLabel} activity yet. Vote, comment, or post a {scopeLabel} Pulse to see it here.</div>
         </div>
       )}
     </div>
