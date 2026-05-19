@@ -262,6 +262,7 @@ export default function App() {
   }
 
   const toggleWatch = async (postId) => {
+    if (configured && !user) { openAuth('Sign in to watch a Pulse'); return }
     if (liveMode) {
       const isWatching = watchedIds.includes(postId)
       try {
@@ -340,7 +341,12 @@ export default function App() {
   }
 
   const handleVote = async (postId, direction) => {
+    if (configured && !user) { openAuth('Sign in to vote on a Pulse'); return }
     if (liveMode) {
+      // Proximity gate for local Pulses — state-scope votes are open to all.
+      const target = posts.find(p => p.id === postId)
+      if (target && target.scope !== 'state' && !canVoteOnPost(target.lat, target.lng)) return
+
       // Optimistic update so the UI reacts immediately.
       let oldUserVote = 0
       setPosts(prev => prev.map(p => {
@@ -385,6 +391,7 @@ export default function App() {
   }
 
   const handleCreatePost = async ({ title, description, category, location, impact, media, scope: postScope, lat, lng, type }) => {
+    if (configured && !user) { openAuth('Sign in to post a Pulse'); return }
     // Quota gate: free users get FREE_INCOGNITO_LIMIT incognito POSTS per month.
     if (incognito && !proState.isPro && proState.usage >= FREE_INCOGNITO_LIMIT) {
       setProModalReason(`You've used all ${FREE_INCOGNITO_LIMIT} free incognito posts this month. Go Pro for unlimited.`)
@@ -461,6 +468,7 @@ export default function App() {
   }
 
   const handleAddComment = async (postId, text) => {
+    if (configured && !user) { openAuth('Sign in to reply'); return }
     if (liveMode) {
       const post = posts.find(p => p.id === postId)
       const isQuestion = post?.type === 'question'
@@ -510,7 +518,12 @@ export default function App() {
   }
 
   const handleVoteComment = async (postId, commentId, direction) => {
+    if (configured && !user) { openAuth('Sign in to vote on a reply'); return }
     if (liveMode) {
+      // Proximity gate — same rules as post voting.
+      const target = posts.find(p => p.id === postId)
+      if (target && target.scope !== 'state' && !canVoteOnPost(target.lat, target.lng)) return
+
       // Optimistic update
       let oldUserVote = 0
       setPosts(prev => prev.map(p => {
