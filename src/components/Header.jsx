@@ -153,7 +153,7 @@ export default function Header({
           {authReady && (user ? (
             <button
               onClick={onSignOut}
-              title={`Signed in as ${user.email || 'user'} — click to sign out`}
+              title={`Account · ${user.email || 'Signed in'}`}
               style={{
                 width: 36,
                 height: 36,

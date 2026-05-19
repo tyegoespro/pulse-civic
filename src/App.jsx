@@ -18,6 +18,7 @@ import PulseProModal from './components/PulseProModal'
 import PostDetailModal from './components/PostDetailModal'
 import OnboardingModal from './components/OnboardingModal'
 import AuthModal from './components/AuthModal'
+import AccountMenu from './components/AccountMenu'
 import { canVoteOnPost, canVoteOnStatePost } from './lib/proximity'
 import { useAuth } from './lib/auth'
 import {
@@ -168,6 +169,7 @@ export default function App() {
   const liveMode = !!(user && configured)
   const [showAuth, setShowAuth] = useState(false)
   const [authReason, setAuthReason] = useState(null)
+  const [showAccount, setShowAccount] = useState(false)
   const [liveLoading, setLiveLoading] = useState(false)
   const openAuth = (reason = null) => {
     setAuthReason(reason)
@@ -663,9 +665,7 @@ export default function App() {
           window.scrollTo({ top: 0, behavior: 'smooth' })
         }}
         onShowAuth={() => openAuth()}
-        onSignOut={() => {
-          if (window.confirm('Sign out of Pulse?')) signOut()
-        }}
+        onSignOut={() => setShowAccount(true)}
       />
 
       <div className="app-content">
@@ -862,6 +862,14 @@ export default function App() {
       {/* Auth Modal */}
       {showAuth && (
         <AuthModal onClose={closeAuth} reason={authReason} />
+      )}
+
+      {/* Account Menu */}
+      {showAccount && user && (
+        <AccountMenu
+          onClose={() => setShowAccount(false)}
+          onSignOut={() => signOut()}
+        />
       )}
     </div>
   )

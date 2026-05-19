@@ -66,11 +66,18 @@ export function AuthProvider({ children }) {
     return () => { cancelled = true }
   }, [user, configured])
 
+  const refreshProfile = async () => {
+    if (!configured || !user) return
+    const { data } = (await getProfile(user.id)) || {}
+    setProfile(data || null)
+  }
+
   const value = {
     user,
     profile,
     loading,
     configured,
+    refreshProfile,
     signInWithGoogle: () => sbSignInGoogle(),
     signInWithMagicLink: (email) => sbSignInMagic(email),
     signOut: () => sbSignOut(),
