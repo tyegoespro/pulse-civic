@@ -150,6 +150,19 @@ export default function App() {
   const [detailPostId, setDetailPostId] = useState(null)
   const [detailPostData, setDetailPostData] = useState(null)
 
+  // Deep-link from shared URL: ?post=<id> auto-opens that Pulse's detail view.
+  // Strip the param from the URL after handling so refresh doesn't re-trigger it.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const sharedId = params.get('post')
+    if (!sharedId) return
+    setDetailPostId(sharedId)
+    params.delete('post')
+    const newSearch = params.toString()
+    const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '') + window.location.hash
+    window.history.replaceState({}, '', newUrl)
+  }, [])
+
   // Auth — global gate to sign-in modal
   const { user, configured, signOut } = useAuth()
   const liveMode = !!(user && configured)

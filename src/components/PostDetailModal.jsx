@@ -374,19 +374,19 @@ export default function PostDetailModal({ post, watchedSnapshot, onClose, onVote
           <button
             className="watch-issue-btn"
             onClick={async () => {
+              const canonical = `${window.location.origin}/p/${post.id}`
               const shareData = {
                 title: post.title,
-                text: `Check out this pulse: "${post.title}" — ${post.location}`,
-                url: window.location.origin
+                text: post.location ? `${post.title} — ${post.location}` : post.title,
+                url: canonical
               }
               try {
                 if (navigator.share) {
                   await navigator.share(shareData)
                 } else {
-                  await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`)
-                  // Brief toast
+                  await navigator.clipboard.writeText(canonical)
                   const btn = document.getElementById('share-toast')
-                  if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Share' }, 1500) }
+                  if (btn) { btn.textContent = 'Link copied'; setTimeout(() => { btn.textContent = 'Share' }, 1500) }
                 }
               } catch {}
             }}
