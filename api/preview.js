@@ -35,11 +35,15 @@ export default async function handler(req) {
   const id = url.searchParams.get('id')
   const origin = `${url.protocol}//${url.host}`
 
-  // Diagnostic header so we can debug why a fallback was served without leaking the URL.
+  // Diagnostic header so we can debug why a fallback was served without leaking secrets.
   const dbg = {
     id_present: !!id,
     has_url: !!SUPABASE_URL,
+    url_len: SUPABASE_URL ? SUPABASE_URL.length : 0,
+    url_prefix: SUPABASE_URL ? SUPABASE_URL.slice(0, 8) : null,
+    url_suffix: SUPABASE_URL ? SUPABASE_URL.slice(-12) : null,
     has_key: !!SUPABASE_ANON_KEY,
+    key_len: SUPABASE_ANON_KEY ? SUPABASE_ANON_KEY.length : 0,
     fetch_status: null,
     fetch_error: null,
     row_count: null
