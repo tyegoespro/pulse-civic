@@ -19,6 +19,7 @@ import PostDetailModal from './components/PostDetailModal'
 import OnboardingModal from './components/OnboardingModal'
 import AuthModal from './components/AuthModal'
 import AccountMenu from './components/AccountMenu'
+import SettingsModal from './components/SettingsModal'
 import { canVoteOnPost, canVoteOnStatePost } from './lib/proximity'
 import { useAuth } from './lib/auth'
 import {
@@ -95,8 +96,10 @@ export default function App() {
   // Scope: 'local' or 'state'
   const [scope, setScope] = useState('local')
 
-  // Global Incognito Mode
-  const [incognito, setIncognito] = useState(false)
+  // Global Incognito Mode — initialized from the "default incognito" setting.
+  const [incognito, setIncognito] = useState(() => {
+    try { return localStorage.getItem('pulse_default_incognito') === 'true' } catch { return false }
+  })
 
   // Pulse Pro state — persisted to localStorage
   const [proState, setProState] = useState(loadProState)
@@ -170,6 +173,7 @@ export default function App() {
   const [showAuth, setShowAuth] = useState(false)
   const [authReason, setAuthReason] = useState(null)
   const [showAccount, setShowAccount] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const [liveLoading, setLiveLoading] = useState(false)
   const openAuth = (reason = null) => {
     setAuthReason(reason)
@@ -869,7 +873,13 @@ export default function App() {
         <AccountMenu
           onClose={() => setShowAccount(false)}
           onSignOut={() => signOut()}
+          onOpenSettings={() => setShowSettings(true)}
         />
+      )}
+
+      {/* Settings */}
+      {showSettings && (
+        <SettingsModal onClose={() => setShowSettings(false)} />
       )}
     </div>
   )
