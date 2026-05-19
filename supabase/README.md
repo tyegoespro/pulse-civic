@@ -1,8 +1,15 @@
 # Pulse Supabase Setup
 
+## Order of operations
+
+1. **`schema.sql`** — tables, RLS policies, triggers, RPC functions. Run first.
+2. **`seed.sql`** — seed Pulses + comments (the Oshkosh + Wisconsin demo data). Run after the schema. Optional but recommended so live mode isn't empty.
+
+Both files are idempotent — safe to re-run.
+
 ## Applying the schema
 
-`schema.sql` is idempotent — safe to run on a fresh project or on top of an existing one. Every `CREATE TABLE` uses `IF NOT EXISTS`, every `ALTER TABLE` checks for existing columns/constraints, and every policy/trigger is dropped-and-recreated so changes pick up cleanly.
+`schema.sql` is safe to run on a fresh project or on top of an existing one. Every `CREATE TABLE` uses `IF NOT EXISTS`, every `ALTER TABLE` checks for existing columns/constraints, and every policy/trigger is dropped-and-recreated so changes pick up cleanly.
 
 **To apply:**
 
@@ -11,6 +18,18 @@
 3. Click **Run**.
 
 You should see a stream of `Success. No rows returned` results.
+
+## Seeding demo data
+
+After the schema runs cleanly, paste `seed.sql` into a new SQL Editor query and run it.
+
+`seed.sql` is auto-generated from `src/constants.js` — re-generate any time the seed data in the app changes:
+
+```bash
+npm run seed:sql
+```
+
+It inserts 58 posts (38 Oshkosh local + 20 Wisconsin state) plus their comments using `seed_key` markers, so re-running the file does nothing on rows that already exist.
 
 ## What the schema gives you
 

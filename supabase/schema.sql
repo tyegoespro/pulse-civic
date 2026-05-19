@@ -83,6 +83,14 @@ ALTER TABLE posts ALTER COLUMN created_at TYPE timestamptz USING created_at AT T
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS type text NOT NULL DEFAULT 'statement';
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS scope text NOT NULL DEFAULT 'local';
 
+-- Optional rich content carried in the local app shape
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS media jsonb;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS impact jsonb;
+
+-- Seed-data marker columns (idempotent re-runs + author preservation)
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS seed_key text UNIQUE;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS seed_author text;
+
 -- Enforce valid values
 DO $$
 BEGIN
@@ -154,6 +162,10 @@ CREATE TABLE IF NOT EXISTS comments (
 );
 
 ALTER TABLE comments ALTER COLUMN created_at TYPE timestamptz USING created_at AT TIME ZONE 'UTC';
+
+-- Seed-data marker columns
+ALTER TABLE comments ADD COLUMN IF NOT EXISTS seed_key text UNIQUE;
+ALTER TABLE comments ADD COLUMN IF NOT EXISTS seed_author text;
 
 CREATE INDEX IF NOT EXISTS comments_post_idx ON comments (post_id, vote_count DESC);
 

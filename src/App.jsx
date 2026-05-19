@@ -17,7 +17,19 @@ import ProfileView from './components/ProfileView'
 import PulseProModal from './components/PulseProModal'
 import PostDetailModal from './components/PostDetailModal'
 import OnboardingModal from './components/OnboardingModal'
+import AuthModal from './components/AuthModal'
 import { canVoteOnPost, canVoteOnStatePost } from './lib/proximity'
+import { useAuth } from './lib/auth'
+import {
+  loadLivePosts,
+  loadLiveWatched,
+  liveVotePost,
+  liveVoteComment,
+  liveCreatePost,
+  liveAddComment,
+  liveStartWatching,
+  liveStopWatching
+} from './lib/posts'
 
 const FREE_INCOGNITO_LIMIT = 3
 const PRO_STORAGE_KEY = 'pulse-pro-state'
@@ -95,31 +107,14 @@ export default function App() {
   }, [proState])
 
 
-  // Persist posts: save overrides for seed posts + full user-created posts
+  // Persist posts: save overrides for seed posts + full user-created posts.
+  // Skipped in live mode — Supabase is the source of truth there.
   const seedIds = new Set([...SEED_POSTS, ...STATE_SEED_POSTS].map(p => p.id))
 
-  useEffect(() => {
-    const overrides = {}
-    const userPosts = []
-    posts.forEach(p => {
-      if (seedIds.has(p.id)) {
-        // Only store fields that differ from seed
-        if (p.userVote !== 0 || (p.comments && p.comments.length > (SEED_POSTS.concat(STATE_SEED_POSTS).find(s => s.id === p.id)?.comments?.length || 0))) {
-          overrides[p.id] = {
-            userVote: p.userVote,
-            votes: p.votes,
-            userVoteIncognito: p.userVoteIncognito,
-            comments: p.comments
-          }
-        }
-      } else {
-        userPosts.push(p)
-      }
-    })
-    localStorage.setItem(POSTS_STORAGE_KEY, JSON.stringify({ overrides, userPosts }))
-  }, [posts])
-
   const incognitoRemaining = Math.max(0, FREE_INCOGNITO_LIMIT - proState.usage)
+
+  // Persist posts to localStorage — demo-mode only.
+  // (Declared as an effect after liveMode is in scope; see further down.)
 
   const tryToggleIncognito = () => {
     // Toggle is free — quota only consumed when an incognito POST is submitted.
@@ -155,6 +150,69 @@ export default function App() {
   const [detailPostId, setDetailPostId] = useState(null)
   const [detailPostData, setDetailPostData] = useState(null)
 
+  // Auth — global gate to sign-in modal
+  const { user, configured, signOut } = useAuth()
+  const liveMode = !!(user && configured)
+  const [showAuth, setShowAuth] = useState(false)
+  const [authReason, setAuthReason] = useState(null)
+  const [liveLoading, setLiveLoading] = useState(false)
+  const openAuth = (reason = null) => {
+    setAuthReason(reason)
+    setShowAuth(true)
+  }
+  const closeAuth = () => {
+    setShowAuth(false)
+    setAuthReason(null)
+  }
+
+  // Refresh live data from Supabase. Safe to call any time — no-op in demo mode.
+  const refreshLive = async () => {
+    if (!liveMode) return
+    try {
+      setLiveLoading(true)
+      const [livePosts, liveWatched] = await Promise.all([
+        loadLivePosts(user.id),
+        loadLiveWatched(user.id)
+      ])
+      setPosts(livePosts)
+      setWatchedIds(liveWatched.ids)
+      setWatchedSnapshots(liveWatched.snapshots)
+    } catch (err) {
+      console.error('[Pulse] live refresh failed:', err)
+    } finally {
+      setLiveLoading(false)
+    }
+  }
+
+  // When liveMode flips on (sign-in completes), pull from Supabase.
+  useEffect(() => {
+    if (!liveMode) return
+    refreshLive()
+  }, [liveMode, user?.id])
+
+  // Demo-mode persistence: store overrides for seed posts + full user posts.
+  // In live mode this is skipped — Supabase is the source of truth.
+  useEffect(() => {
+    if (liveMode) return
+    const overrides = {}
+    const userPosts = []
+    posts.forEach(p => {
+      if (seedIds.has(p.id)) {
+        if (p.userVote !== 0 || (p.comments && p.comments.length > (SEED_POSTS.concat(STATE_SEED_POSTS).find(s => s.id === p.id)?.comments?.length || 0))) {
+          overrides[p.id] = {
+            userVote: p.userVote,
+            votes: p.votes,
+            userVoteIncognito: p.userVoteIncognito,
+            comments: p.comments
+          }
+        }
+      } else {
+        userPosts.push(p)
+      }
+    })
+    localStorage.setItem(POSTS_STORAGE_KEY, JSON.stringify({ overrides, userPosts }))
+  }, [posts, liveMode])
+
   // Onboarding — first visit only
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem('pulse_onboarded')
@@ -181,8 +239,9 @@ export default function App() {
   })
 
   useEffect(() => {
+    if (liveMode) return
     localStorage.setItem('pulse_watched_snapshots', JSON.stringify(watchedSnapshots))
-  }, [watchedSnapshots])
+  }, [watchedSnapshots, liveMode])
 
   const buildSnapshot = (post) => {
     if (!post) return null
@@ -202,7 +261,25 @@ export default function App() {
     }
   }
 
-  const toggleWatch = (postId) => {
+  const toggleWatch = async (postId) => {
+    if (liveMode) {
+      const isWatching = watchedIds.includes(postId)
+      try {
+        if (isWatching) {
+          await liveStopWatching(postId, user.id)
+        } else {
+          await liveStartWatching(postId, user.id)
+          setActivityBadge(b => b + 1)
+        }
+        const w = await loadLiveWatched(user.id)
+        setWatchedIds(w.ids)
+        setWatchedSnapshots(w.snapshots)
+      } catch (err) {
+        console.error('[Pulse] toggleWatch failed:', err)
+      }
+      return
+    }
+
     const post = posts.find(p => p.id === postId)
     setWatchedIds(prev => {
       const next = prev.includes(postId)
@@ -262,7 +339,35 @@ export default function App() {
     }, 80)
   }
 
-  const handleVote = (postId, direction) => {
+  const handleVote = async (postId, direction) => {
+    if (liveMode) {
+      // Optimistic update so the UI reacts immediately.
+      let oldUserVote = 0
+      setPosts(prev => prev.map(p => {
+        if (p.id !== postId) return p
+        oldUserVote = p.userVote || 0
+        const newVote = oldUserVote === direction ? 0 : direction
+        return {
+          ...p,
+          userVote: newVote,
+          votes: p.votes + (newVote - oldUserVote)
+        }
+      }))
+      if (activeTab !== 'activity') setActivityBadge(b => b + 1)
+      try {
+        await liveVotePost(postId, direction)
+      } catch (err) {
+        console.error('[Pulse] vote failed, rolling back:', err)
+        // Roll back the optimistic update.
+        setPosts(prev => prev.map(p => {
+          if (p.id !== postId) return p
+          const current = p.userVote || 0
+          return { ...p, userVote: oldUserVote, votes: p.votes + (oldUserVote - current) }
+        }))
+      }
+      return
+    }
+
     setPosts(prev => prev.map(p => {
       if (p.id !== postId) return p
       // State posts: no proximity check. Local posts: use proximity.
@@ -279,7 +384,7 @@ export default function App() {
     if (activeTab !== 'activity') setActivityBadge(b => b + 1)
   }
 
-  const handleCreatePost = ({ title, description, category, location, impact, media, scope: postScope, lat, lng, type }) => {
+  const handleCreatePost = async ({ title, description, category, location, impact, media, scope: postScope, lat, lng, type }) => {
     // Quota gate: free users get FREE_INCOGNITO_LIMIT incognito POSTS per month.
     if (incognito && !proState.isPro && proState.usage >= FREE_INCOGNITO_LIMIT) {
       setProModalReason(`You've used all ${FREE_INCOGNITO_LIMIT} free incognito posts this month. Go Pro for unlimited.`)
@@ -288,6 +393,38 @@ export default function App() {
     }
 
     const isState = postScope === 'state'
+    const resolvedLat = lat != null ? lat : (isState ? null : 44.024 + (Math.random() - 0.5) * 0.01)
+    const resolvedLng = lng != null ? lng : (isState ? null : -88.543 + (Math.random() - 0.5) * 0.01)
+
+    if (liveMode) {
+      try {
+        const created = await liveCreatePost({
+          type: type || 'statement',
+          title,
+          description,
+          category,
+          location,
+          scope: postScope || scope,
+          incognito,
+          media,
+          impact,
+          lat: resolvedLat,
+          lng: resolvedLng
+        }, user.id)
+        if (created) setPosts(prev => [created, ...prev])
+        if (incognito && !proState.isPro) {
+          setProState(prev => ({ ...prev, usage: prev.usage + 1, usageMonth: monthKey() }))
+        }
+        setShowCreate(false)
+        setActiveTab('feed')
+        setActivityBadge(b => b + 1)
+      } catch (err) {
+        console.error('[Pulse] createPost failed:', err)
+        alert('Could not publish your Pulse. Check console for details.')
+      }
+      return
+    }
+
     const now = Date.now()
     const newPost = {
       id: now.toString(),
@@ -308,8 +445,8 @@ export default function App() {
       userId: 'me',
       media: media || [],
       impact: impact || null,
-      lat: lat != null ? lat : (isState ? null : 44.024 + (Math.random() - 0.5) * 0.01),
-      lng: lng != null ? lng : (isState ? null : -88.543 + (Math.random() - 0.5) * 0.01)
+      lat: resolvedLat,
+      lng: resolvedLng
     }
     setPosts(prev => [newPost, ...prev])
 
@@ -323,7 +460,31 @@ export default function App() {
     setActivityBadge(b => b + 1)
   }
 
-  const handleAddComment = (postId, text) => {
+  const handleAddComment = async (postId, text) => {
+    if (liveMode) {
+      const post = posts.find(p => p.id === postId)
+      const isQuestion = post?.type === 'question'
+      try {
+        const newComment = await liveAddComment({
+          postId,
+          text,
+          userId: user.id,
+          incognito,
+          isQuestion
+        })
+        if (newComment) {
+          setPosts(prev => prev.map(p => {
+            if (p.id !== postId) return p
+            return { ...p, comments: [...(p.comments || []), newComment] }
+          }))
+        }
+        if (activeTab !== 'activity') setActivityBadge(b => b + 1)
+      } catch (err) {
+        console.error('[Pulse] addComment failed:', err)
+      }
+      return
+    }
+
     setPosts(prev => prev.map(p => {
       if (p.id !== postId) return p
       const isQuestion = p.type === 'question'
@@ -348,7 +509,42 @@ export default function App() {
     if (activeTab !== 'activity') setActivityBadge(b => b + 1)
   }
 
-  const handleVoteComment = (postId, commentId, direction) => {
+  const handleVoteComment = async (postId, commentId, direction) => {
+    if (liveMode) {
+      // Optimistic update
+      let oldUserVote = 0
+      setPosts(prev => prev.map(p => {
+        if (p.id !== postId) return p
+        return {
+          ...p,
+          comments: (p.comments || []).map(c => {
+            if (c.id !== commentId) return c
+            oldUserVote = c.userVote || 0
+            const newVote = oldUserVote === direction ? 0 : direction
+            return { ...c, userVote: newVote, votes: (c.votes || 0) + (newVote - oldUserVote) }
+          })
+        }
+      }))
+      if (activeTab !== 'activity') setActivityBadge(b => b + 1)
+      try {
+        await liveVoteComment(commentId, direction)
+      } catch (err) {
+        console.error('[Pulse] voteComment failed, rolling back:', err)
+        setPosts(prev => prev.map(p => {
+          if (p.id !== postId) return p
+          return {
+            ...p,
+            comments: (p.comments || []).map(c => {
+              if (c.id !== commentId) return c
+              const current = c.userVote || 0
+              return { ...c, userVote: oldUserVote, votes: (c.votes || 0) + (oldUserVote - current) }
+            })
+          }
+        }))
+      }
+      return
+    }
+
     setPosts(prev => prev.map(p => {
       if (p.id !== postId) return p
       // Same scope-aware gating as post voting
@@ -429,6 +625,10 @@ export default function App() {
           setViewingProfile(null)
           handleTabChange('activity')
           window.scrollTo({ top: 0, behavior: 'smooth' })
+        }}
+        onShowAuth={() => openAuth()}
+        onSignOut={() => {
+          if (window.confirm('Sign out of Pulse?')) signOut()
         }}
       />
 
@@ -621,6 +821,11 @@ export default function App() {
       {/* Onboarding — first visit */}
       {showOnboarding && (
         <OnboardingModal onComplete={handleOnboardingComplete} />
+      )}
+
+      {/* Auth Modal */}
+      {showAuth && (
+        <AuthModal onClose={closeAuth} reason={authReason} />
       )}
     </div>
   )

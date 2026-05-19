@@ -1,4 +1,5 @@
 import Icon from './Icon'
+import { useAuth } from '../lib/auth'
 
 export default function Header({
   onBrandClick,
@@ -11,8 +12,13 @@ export default function Header({
   onScopeChange,
   onInfoClick,
   activityBadge = 0,
-  onActivityClick
+  onActivityClick,
+  onShowAuth,
+  onSignOut
 }) {
+  const { user, configured } = useAuth()
+  const authReady = configured
+  const initials = user?.email ? user.email[0].toUpperCase() : ''
   return (
     <header className="app-header" style={incognito ? {
       background: 'rgba(139, 92, 246, 0.08)',
@@ -142,6 +148,54 @@ export default function Header({
               </div>
             )}
           </button>
+
+          {/* Auth — only render when Supabase is configured */}
+          {authReady && (user ? (
+            <button
+              onClick={onSignOut}
+              title={`Signed in as ${user.email || 'user'} — click to sign out`}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                border: '1px solid var(--border)',
+                background: 'linear-gradient(135deg, #FF3366, #C2185B)',
+                color: 'white',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 800,
+                fontSize: 13,
+                fontFamily: 'var(--font)'
+              }}
+            >
+              {initials || <Icon name="ui-verified" size={16} />}
+            </button>
+          ) : (
+            <button
+              onClick={onShowAuth}
+              style={{
+                height: 36,
+                padding: '0 12px',
+                borderRadius: 10,
+                background: 'rgba(255,51,102,0.12)',
+                border: '1px solid rgba(255,51,102,0.4)',
+                color: '#FF7C9E',
+                fontSize: 12,
+                fontWeight: 800,
+                letterSpacing: '0.03em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                fontFamily: 'var(--font)',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.2s ease'
+              }}
+              title="Sign in to Pulse"
+            >
+              Sign in
+            </button>
+          ))}
 
           {/* Pro Pill / Upgrade CTA */}
           {isPro ? (
