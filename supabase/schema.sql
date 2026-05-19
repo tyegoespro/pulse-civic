@@ -12,12 +12,16 @@ CREATE TABLE IF NOT EXISTS profiles (
   bio text,
   avatar text,
   is_verified boolean DEFAULT false,
-  verified_at timestamp,
+  verified_at timestamptz,
   city text DEFAULT 'Oshkosh',
   state text DEFAULT 'WI',
   is_pro boolean DEFAULT false,
-  created_at timestamp DEFAULT now()
+  created_at timestamptz DEFAULT now()
 );
+
+-- Migrate any pre-existing timestamp columns to timestamptz (idempotent).
+ALTER TABLE profiles ALTER COLUMN created_at TYPE timestamptz USING created_at AT TIME ZONE 'UTC';
+ALTER TABLE profiles ALTER COLUMN verified_at TYPE timestamptz USING verified_at AT TIME ZONE 'UTC';
 
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS bio text;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar text;
@@ -26,7 +30,11 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_pro boolean DEFAULT false;
 -- Auto-create a profile row whenever a new auth.users row appears.
 -- Pulls display_name from OAuth metadata (Google) or falls back to email prefix.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 BEGIN
   INSERT INTO public.profiles (id, display_name, avatar, is_verified)
   VALUES (
@@ -44,7 +52,7 @@ BEGIN
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
@@ -66,8 +74,10 @@ CREATE TABLE IF NOT EXISTS posts (
   is_incognito boolean DEFAULT false,
   vote_count int DEFAULT 0,
   comment_count int DEFAULT 0,
-  created_at timestamp DEFAULT now()
+  created_at timestamptz DEFAULT now()
 );
+
+ALTER TABLE posts ALTER COLUMN created_at TYPE timestamptz USING created_at AT TIME ZONE 'UTC';
 
 -- New columns for Question Pulses + State scope
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS type text NOT NULL DEFAULT 'statement';
@@ -97,14 +107,22 @@ CREATE TABLE IF NOT EXISTS votes (
   user_id uuid REFERENCES profiles(id) ON DELETE CASCADE,
   post_id uuid REFERENCES posts(id) ON DELETE CASCADE,
   direction int CHECK (direction IN (-1, 1)),
-  created_at timestamp DEFAULT now(),
+  created_at timestamptz DEFAULT now(),
   UNIQUE(user_id, post_id)
 );
 
+ALTER TABLE votes ALTER COLUMN created_at TYPE timestamptz USING created_at AT TIME ZONE 'UTC';
+
 -- Adjust vote_count on posts as votes are inserted/updated/deleted.
 -- Uses counter-style increments (not SUM recalc) so seeded vote counts survive.
+-- SECURITY DEFINER so the counter update succeeds regardless of the voter's
+-- direct RLS access to the posts table.
 CREATE OR REPLACE FUNCTION adjust_post_vote_count()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
     UPDATE posts SET vote_count = vote_count + NEW.direction WHERE id = NEW.post_id;
@@ -115,7 +133,7 @@ BEGIN
   END IF;
   RETURN COALESCE(NEW, OLD);
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 DROP TRIGGER IF EXISTS vote_count_trigger ON votes;
 CREATE TRIGGER vote_count_trigger
@@ -132,14 +150,20 @@ CREATE TABLE IF NOT EXISTS comments (
   text text NOT NULL,
   is_incognito boolean DEFAULT false,
   vote_count int DEFAULT 0,
-  created_at timestamp DEFAULT now()
+  created_at timestamptz DEFAULT now()
 );
+
+ALTER TABLE comments ALTER COLUMN created_at TYPE timestamptz USING created_at AT TIME ZONE 'UTC';
 
 CREATE INDEX IF NOT EXISTS comments_post_idx ON comments (post_id, vote_count DESC);
 
 -- Maintain posts.comment_count
 CREATE OR REPLACE FUNCTION adjust_post_comment_count()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
     UPDATE posts SET comment_count = comment_count + 1 WHERE id = NEW.post_id;
@@ -148,7 +172,7 @@ BEGIN
   END IF;
   RETURN COALESCE(NEW, OLD);
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 DROP TRIGGER IF EXISTS comment_count_trigger ON comments;
 CREATE TRIGGER comment_count_trigger
@@ -163,12 +187,18 @@ CREATE TABLE IF NOT EXISTS comment_votes (
   user_id uuid REFERENCES profiles(id) ON DELETE CASCADE,
   comment_id uuid REFERENCES comments(id) ON DELETE CASCADE,
   direction int CHECK (direction IN (-1, 1)),
-  created_at timestamp DEFAULT now(),
+  created_at timestamptz DEFAULT now(),
   UNIQUE(user_id, comment_id)
 );
 
+ALTER TABLE comment_votes ALTER COLUMN created_at TYPE timestamptz USING created_at AT TIME ZONE 'UTC';
+
 CREATE OR REPLACE FUNCTION adjust_comment_vote_count()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
     UPDATE comments SET vote_count = vote_count + NEW.direction WHERE id = NEW.comment_id;
@@ -179,12 +209,89 @@ BEGIN
   END IF;
   RETURN COALESCE(NEW, OLD);
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 DROP TRIGGER IF EXISTS comment_vote_count_trigger ON comment_votes;
 CREATE TRIGGER comment_vote_count_trigger
   AFTER INSERT OR UPDATE OR DELETE ON comment_votes
   FOR EACH ROW EXECUTE FUNCTION adjust_comment_vote_count();
+
+-- ----------------------------------------------------------------------------
+-- ATOMIC VOTE TOGGLE RPCs
+-- Eliminates SELECT-then-write races by serializing concurrent calls via
+-- FOR UPDATE row lock. Uses auth.uid() server-side so direction can't be
+-- spoofed for another user.
+-- Returns the resulting userVote (1, -1, or 0).
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.toggle_post_vote(p_post_id uuid, p_direction int)
+RETURNS int
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_existing int;
+  v_uid uuid := auth.uid();
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF p_direction NOT IN (-1, 1) THEN
+    RAISE EXCEPTION 'Invalid direction: %', p_direction;
+  END IF;
+
+  SELECT direction INTO v_existing
+  FROM votes
+  WHERE post_id = p_post_id AND user_id = v_uid
+  FOR UPDATE;
+
+  IF v_existing IS NULL THEN
+    INSERT INTO votes (post_id, user_id, direction) VALUES (p_post_id, v_uid, p_direction);
+    RETURN p_direction;
+  ELSIF v_existing = p_direction THEN
+    DELETE FROM votes WHERE post_id = p_post_id AND user_id = v_uid;
+    RETURN 0;
+  ELSE
+    UPDATE votes SET direction = p_direction WHERE post_id = p_post_id AND user_id = v_uid;
+    RETURN p_direction;
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.toggle_comment_vote(p_comment_id uuid, p_direction int)
+RETURNS int
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_existing int;
+  v_uid uuid := auth.uid();
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+  IF p_direction NOT IN (-1, 1) THEN
+    RAISE EXCEPTION 'Invalid direction: %', p_direction;
+  END IF;
+
+  SELECT direction INTO v_existing
+  FROM comment_votes
+  WHERE comment_id = p_comment_id AND user_id = v_uid
+  FOR UPDATE;
+
+  IF v_existing IS NULL THEN
+    INSERT INTO comment_votes (comment_id, user_id, direction) VALUES (p_comment_id, v_uid, p_direction);
+    RETURN p_direction;
+  ELSIF v_existing = p_direction THEN
+    DELETE FROM comment_votes WHERE comment_id = p_comment_id AND user_id = v_uid;
+    RETURN 0;
+  ELSE
+    UPDATE comment_votes SET direction = p_direction WHERE comment_id = p_comment_id AND user_id = v_uid;
+    RETURN p_direction;
+  END IF;
+END;
+$$;
 
 -- ----------------------------------------------------------------------------
 -- WATCHED — one row per (user, post). Carries the snapshot for delta display.
@@ -196,9 +303,11 @@ CREATE TABLE IF NOT EXISTS watched (
   snapshot_comment_count int NOT NULL DEFAULT 0,
   snapshot_top_comment_id uuid REFERENCES comments(id) ON DELETE SET NULL,
   snapshot_top_comment_votes int NOT NULL DEFAULT 0,
-  taken_at timestamp DEFAULT now(),
+  taken_at timestamptz DEFAULT now(),
   PRIMARY KEY (user_id, post_id)
 );
+
+ALTER TABLE watched ALTER COLUMN taken_at TYPE timestamptz USING taken_at AT TIME ZONE 'UTC';
 
 -- ============================================================================
 -- ROW LEVEL SECURITY

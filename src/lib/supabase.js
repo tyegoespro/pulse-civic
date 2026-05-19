@@ -79,25 +79,12 @@ export const deletePost = (postId) =>
 // VOTES (on posts)
 // ============================================================================
 
-// Toggle a vote: tap same direction = remove; opposite direction = flip; new = insert.
-// Trigger keeps posts.vote_count in sync.
-export const voteOnPost = async (postId, userId, direction) => {
-  if (!supabase) return null
-  const { data: existing } = await supabase
-    .from('votes')
-    .select('id, direction')
-    .eq('post_id', postId)
-    .eq('user_id', userId)
-    .maybeSingle()
-
-  if (existing) {
-    if (existing.direction === direction) {
-      return supabase.from('votes').delete().eq('id', existing.id)
-    }
-    return supabase.from('votes').update({ direction }).eq('id', existing.id)
-  }
-  return supabase.from('votes').insert([{ post_id: postId, user_id: userId, direction }])
-}
+// Atomic vote toggle via SQL function — tap same direction = remove, opposite
+// = flip, new = insert. RPC serializes concurrent calls (FOR UPDATE lock) so
+// rapid double-taps can't race. Returns { data: resultingUserVote, error }
+// where resultingUserVote is 1, -1, or 0.
+export const voteOnPost = (postId, direction) =>
+  supabase?.rpc('toggle_post_vote', { p_post_id: postId, p_direction: direction })
 
 // Fetch the current user's votes (used to rehydrate userVote UI state).
 export const fetchMyVotes = (userId) =>
@@ -123,23 +110,9 @@ export const deleteComment = (commentId) =>
 // COMMENT VOTES (Question Pulse answer voting)
 // ============================================================================
 
-export const voteOnComment = async (commentId, userId, direction) => {
-  if (!supabase) return null
-  const { data: existing } = await supabase
-    .from('comment_votes')
-    .select('id, direction')
-    .eq('comment_id', commentId)
-    .eq('user_id', userId)
-    .maybeSingle()
-
-  if (existing) {
-    if (existing.direction === direction) {
-      return supabase.from('comment_votes').delete().eq('id', existing.id)
-    }
-    return supabase.from('comment_votes').update({ direction }).eq('id', existing.id)
-  }
-  return supabase.from('comment_votes').insert([{ comment_id: commentId, user_id: userId, direction }])
-}
+// Atomic comment-vote toggle via SQL function. Returns { data: resultingUserVote, error }.
+export const voteOnComment = (commentId, direction) =>
+  supabase?.rpc('toggle_comment_vote', { p_comment_id: commentId, p_direction: direction })
 
 export const fetchMyCommentVotes = (userId) =>
   supabase?.from('comment_votes').select('comment_id, direction').eq('user_id', userId)
