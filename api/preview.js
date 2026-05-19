@@ -35,23 +35,9 @@ export default async function handler(req) {
   const id = url.searchParams.get('id')
   const origin = `${url.protocol}//${url.host}`
 
-  // Diagnostic header so we can debug why a fallback was served without leaking secrets.
-  const dbg = {
-    id_present: !!id,
-    has_url: !!SUPABASE_URL,
-    url_len: SUPABASE_URL ? SUPABASE_URL.length : 0,
-    url_prefix: SUPABASE_URL ? SUPABASE_URL.slice(0, 8) : null,
-    url_suffix: SUPABASE_URL ? SUPABASE_URL.slice(-12) : null,
-    has_key: !!SUPABASE_ANON_KEY,
-    key_len: SUPABASE_ANON_KEY ? SUPABASE_ANON_KEY.length : 0,
-    fetch_status: null,
-    fetch_error: null,
-    row_count: null
-  }
-
   if (!id || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return new Response(fallbackHtml(origin), {
-      headers: { 'content-type': 'text/html; charset=utf-8', 'x-pulse-debug': JSON.stringify(dbg) }
+      headers: { 'content-type': 'text/html; charset=utf-8' }
     })
   }
 
@@ -67,21 +53,17 @@ export default async function handler(req) {
         }
       }
     )
-    dbg.fetch_status = res.status
     if (res.ok) {
       const rows = await res.json()
-      dbg.row_count = Array.isArray(rows) ? rows.length : -1
       post = Array.isArray(rows) && rows.length ? rows[0] : null
-    } else {
-      dbg.fetch_error = await res.text().catch(() => 'unreadable')
     }
-  } catch (err) {
-    dbg.fetch_error = String(err?.message || err)
+  } catch {
+    // fall through to fallback
   }
 
   if (!post) {
     return new Response(fallbackHtml(origin), {
-      headers: { 'content-type': 'text/html; charset=utf-8', 'x-pulse-debug': JSON.stringify(dbg) }
+      headers: { 'content-type': 'text/html; charset=utf-8' }
     })
   }
 
