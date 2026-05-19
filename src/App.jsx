@@ -318,8 +318,18 @@ export default function App() {
     })
   }
 
-  // Activity badge — counts new actions since last Activity tab visit
-  const [activityBadge, setActivityBadge] = useState(0)
+  // Activity badge — counts new actions since last Activity tab visit.
+  // Persisted to localStorage so a refresh doesn't visually "consume" the badge.
+  const [activityBadge, setActivityBadge] = useState(() => {
+    try {
+      const v = parseInt(localStorage.getItem('pulse_activity_badge') || '0', 10)
+      return Number.isFinite(v) && v >= 0 ? v : 0
+    } catch { return 0 }
+  })
+
+  useEffect(() => {
+    localStorage.setItem('pulse_activity_badge', String(activityBadge))
+  }, [activityBadge])
 
   // --- Handlers ---
 
