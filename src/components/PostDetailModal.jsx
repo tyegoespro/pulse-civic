@@ -375,11 +375,9 @@ export default function PostDetailModal({ post, watchedSnapshot, onClose, onVote
             className="watch-issue-btn"
             onClick={async () => {
               const canonical = `${window.location.origin}/p/${post.id}`
-              const shareData = {
-                title: post.title,
-                text: post.location ? `${post.title} — ${post.location}` : post.title,
-                url: canonical
-              }
+              // Only pass `url` so iMessage/Slack render the rich preview card
+              // alone instead of appending a duplicate text line above it.
+              const shareData = { url: canonical }
               try {
                 if (navigator.share) {
                   await navigator.share(shareData)
