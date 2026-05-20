@@ -3656,3 +3656,10 @@ textarea.form-input {
 .create-leaflet-map .leaflet-container {
   cursor: crosshair !important;
 }
+/* AccountMenu — avatar upload spinner */
+@keyframes account-spin {
+  to { transform: rotate(360deg); }
+}
+.account-avatar-spinner {
+  animation: account-spin 0.8s linear infinite;
+}

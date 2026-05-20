@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Icon from './Icon'
 import { useAuth } from '../lib/auth'
-import { updateProfile } from '../lib/supabase'
+import { updateProfile, uploadAvatar } from '../lib/supabase'
 
 export default function AccountMenu({ onClose, onSignOut, onOpenSettings, onViewProfile }) {
   const { user, profile, refreshProfile } = useAuth()
@@ -10,6 +10,9 @@ export default function AccountMenu({ onClose, onSignOut, onOpenSettings, onView
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState(null)
   const [error, setError] = useState(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [avatarError, setAvatarError] = useState(null)
+  const fileInputRef = useRef(null)
   const initials = (displayName || profile?.display_name || user?.email || '?').slice(0, 1).toUpperCase()
   const dirty = (displayName !== (profile?.display_name || '')) || (bio !== (profile?.bio || ''))
 
@@ -60,6 +63,41 @@ export default function AccountMenu({ onClose, onSignOut, onOpenSettings, onView
     }
   }
 
+  const handleAvatarPick = () => fileInputRef.current?.click()
+
+  const handleAvatarFile = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow picking same file twice
+    if (!file || !user) return
+    setAvatarError(null)
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('Image must be under 5MB')
+      return
+    }
+    if (!file.type?.startsWith('image/')) {
+      setAvatarError('Only image files are allowed')
+      return
+    }
+    setUploadingAvatar(true)
+    try {
+      const { url, error: upErr } = await uploadAvatar(user.id, file)
+      if (upErr || !url) {
+        setAvatarError(upErr?.message || 'Upload failed')
+        return
+      }
+      const { error: dbErr } = await updateProfile(user.id, { avatar: url }) || {}
+      if (dbErr) {
+        setAvatarError(dbErr.message || 'Could not save avatar')
+        return
+      }
+      await refreshProfile?.()
+    } catch (err) {
+      setAvatarError(err?.message || 'Upload failed')
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
   const handleSignOut = () => {
     if (window.confirm('Sign out of Pulse?')) {
       onSignOut?.()
@@ -104,31 +142,81 @@ export default function AccountMenu({ onClose, onSignOut, onOpenSettings, onView
             }}
             aria-label="Close"
           >✕</button>
-          <div style={{
-            width: 64,
-            height: 64,
-            borderRadius: 32,
-            background: 'rgba(255,255,255,0.18)',
-            border: '2px solid rgba(255,255,255,0.5)',
-            margin: '0 auto 10px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 800,
-            fontSize: 26,
-            overflow: 'hidden'
-          }}>
-            {profile?.avatar && /^https?:\/\//.test(profile.avatar) ? (
-              <img
-                src={profile.avatar}
-                alt={profile.display_name || 'Profile photo'}
-                referrerPolicy="no-referrer"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              />
-            ) : (
-              initials
-            )}
+          <div style={{ position: 'relative', width: 72, height: 72, margin: '0 auto 10px' }}>
+            <button
+              type="button"
+              onClick={handleAvatarPick}
+              disabled={uploadingAvatar}
+              aria-label="Change profile photo"
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: 36,
+                background: 'rgba(255,255,255,0.18)',
+                border: '2px solid rgba(255,255,255,0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: 800,
+                fontSize: 28,
+                overflow: 'hidden',
+                padding: 0,
+                cursor: uploadingAvatar ? 'wait' : 'pointer',
+                opacity: uploadingAvatar ? 0.6 : 1,
+                transition: 'opacity 0.2s ease'
+              }}
+            >
+              {profile?.avatar && /^https?:\/\//.test(profile.avatar) ? (
+                <img
+                  src={profile.avatar}
+                  alt={profile.display_name || 'Profile photo'}
+                  referrerPolicy="no-referrer"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+              ) : (
+                initials
+              )}
+            </button>
+            {/* Camera badge */}
+            <div
+              onClick={handleAvatarPick}
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                right: 0,
+                width: 26,
+                height: 26,
+                borderRadius: 13,
+                background: 'white',
+                border: '2px solid #C2185B',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.25)'
+              }}
+              aria-hidden="true"
+            >
+              {uploadingAvatar ? (
+                <div className="account-avatar-spinner" style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: 6,
+                  border: '2px solid #C2185B',
+                  borderTopColor: 'transparent'
+                }} />
+              ) : (
+                <Icon name="ui-camera" size={12} style={{ color: '#C2185B' }} />
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarFile}
+              style={{ display: 'none' }}
+            />
           </div>
           <h2 id="account-menu-title" style={{
             margin: 0,
@@ -159,6 +247,20 @@ export default function AccountMenu({ onClose, onSignOut, onOpenSettings, onView
             }}>
               <Icon name="ui-verified" size={11} />
               Verified
+            </div>
+          )}
+          {avatarError && (
+            <div style={{
+              marginTop: 10,
+              padding: '6px 12px',
+              borderRadius: 10,
+              background: 'rgba(0,0,0,0.3)',
+              color: 'white',
+              fontSize: 11,
+              fontWeight: 600,
+              display: 'inline-block'
+            }}>
+              {avatarError}
             </div>
           )}
         </div>

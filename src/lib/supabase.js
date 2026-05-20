@@ -45,6 +45,22 @@ export const getProfile = (userId) =>
 export const updateProfile = (userId, fields) =>
   supabase?.from('profiles').update(fields).eq('id', userId)
 
+// Upload an avatar file to the public 'avatars' bucket under <userId>/<filename>.
+// Returns { url, error } where url is the public CDN URL. The caller is
+// responsible for then patching profiles.avatar with the returned url.
+export const uploadAvatar = async (userId, file) => {
+  if (!supabase || !file) return { url: null, error: new Error('No file') }
+  const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
+  // Cache-bust by timestamp so the same path returns the new image immediately.
+  const path = `${userId}/avatar-${Date.now()}.${ext}`
+  const { error } = await supabase.storage
+    .from('avatars')
+    .upload(path, file, { upsert: false, contentType: file.type || 'image/jpeg' })
+  if (error) return { url: null, error }
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+  return { url: data?.publicUrl || null, error: null }
+}
+
 // ============================================================================
 // POSTS
 // ============================================================================
