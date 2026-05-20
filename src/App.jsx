@@ -26,6 +26,9 @@ const PostDetailModal = lazy(() => import('./components/PostDetailModal'))
 const ExploreView = lazy(() => import('./components/ExploreView'))
 const InsightsPanel = lazy(() => import('./components/InsightsPanel'))
 const InfoPage = lazy(() => import('./components/InfoPage'))
+const LandingPage = lazy(() => import('./components/LandingPage'))
+
+const LANDING_SEEN_KEY = 'pulse_landing_seen'
 
 const LazyFallback = () => (
   <div style={{
@@ -182,6 +185,22 @@ export default function App() {
   // Post Detail View
   const [detailPostId, setDetailPostId] = useState(null)
   const [detailPostData, setDetailPostData] = useState(null)
+
+  // Landing page — shown on first visit when the user isn't already signed in
+  // and they didn't arrive via a deep-link to a specific Pulse. Once dismissed
+  // via "Open Pulse," we never show it again on this device.
+  const [showLanding, setShowLanding] = useState(() => {
+    try {
+      const seen = localStorage.getItem(LANDING_SEEN_KEY) === 'true'
+      const hasDeepLink = !!new URLSearchParams(window.location.search).get('post')
+      return !seen && !hasDeepLink
+    } catch { return false }
+  })
+
+  const dismissLanding = () => {
+    try { localStorage.setItem(LANDING_SEEN_KEY, 'true') } catch {}
+    setShowLanding(false)
+  }
 
   // Deep-link from shared URL: ?post=<id> auto-opens that Pulse's detail view.
   // Strip the param from the URL after handling so refresh doesn't re-trigger it.
@@ -829,6 +848,15 @@ export default function App() {
   }
 
   // --- Main App (shown immediately) ---
+
+  // Signed-in users skip the landing automatically (they've been here before).
+  if (showLanding && !user) {
+    return (
+      <Suspense fallback={<div style={{ minHeight: '100vh', background: '#0F0F1A' }} />}>
+        <LandingPage onLaunchApp={dismissLanding} />
+      </Suspense>
+    )
+  }
 
   return (
     <div className={`app-shell ${incognito ? 'incognito-mode' : ''}`}>
