@@ -16,9 +16,10 @@ export default function Header({
   onShowAuth,
   onSignOut
 }) {
-  const { user, configured } = useAuth()
+  const { user, profile, configured } = useAuth()
   const authReady = configured
-  const initials = user?.email ? user.email[0].toUpperCase() : ''
+  const initials = (profile?.display_name?.[0] || user?.email?.[0] || '?').toUpperCase()
+  const avatarUrl = profile?.avatar && /^https?:\/\//.test(profile.avatar) ? profile.avatar : null
   return (
     <header className="app-header" style={incognito ? {
       background: 'rgba(139, 92, 246, 0.08)',
@@ -159,7 +160,7 @@ export default function Header({
                 height: 36,
                 borderRadius: 18,
                 border: '1px solid var(--border)',
-                background: 'linear-gradient(135deg, #FF3366, #C2185B)',
+                background: avatarUrl ? 'transparent' : 'linear-gradient(135deg, #FF3366, #C2185B)',
                 color: 'white',
                 cursor: 'pointer',
                 display: 'flex',
@@ -167,10 +168,21 @@ export default function Header({
                 justifyContent: 'center',
                 fontWeight: 800,
                 fontSize: 13,
-                fontFamily: 'var(--font)'
+                fontFamily: 'var(--font)',
+                padding: 0,
+                overflow: 'hidden'
               }}
             >
-              {initials || <Icon name="ui-verified" size={16} />}
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={profile?.display_name || 'Account'}
+                  referrerPolicy="no-referrer"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+              ) : (
+                initials || <Icon name="ui-verified" size={16} />
+              )}
             </button>
           ) : (
             <button

@@ -116,9 +116,19 @@ export default function AccountMenu({ onClose, onSignOut, onOpenSettings, onView
             justifyContent: 'center',
             color: 'white',
             fontWeight: 800,
-            fontSize: 26
+            fontSize: 26,
+            overflow: 'hidden'
           }}>
-            {initials}
+            {profile?.avatar && /^https?:\/\//.test(profile.avatar) ? (
+              <img
+                src={profile.avatar}
+                alt={profile.display_name || 'Profile photo'}
+                referrerPolicy="no-referrer"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+            ) : (
+              initials
+            )}
           </div>
           <h2 id="account-menu-title" style={{
             margin: 0,

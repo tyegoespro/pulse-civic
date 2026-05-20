@@ -149,7 +149,22 @@ export default function ProfileView({
         <div className="profile-header-bg" />
         <div className="profile-avatar-wrapper">
           <div className="profile-avatar">
-            <span>{activeUser.avatar}</span>
+            {typeof activeUser.avatar === 'string' && /^https?:\/\//.test(activeUser.avatar) ? (
+              <img
+                src={activeUser.avatar}
+                alt={activeUser.displayName || 'Profile photo'}
+                referrerPolicy="no-referrer"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: 'inherit',
+                  objectFit: 'cover',
+                  display: 'block'
+                }}
+              />
+            ) : (
+              <span>{activeUser.avatar}</span>
+            )}
           </div>
         </div>
         <div className="profile-info">
