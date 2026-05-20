@@ -262,3 +262,37 @@ export const subscribeToNotifications = (userId, onInsert) => {
     .subscribe()
   return () => { try { supabase.removeChannel(channel) } catch {} }
 }
+
+// Subscribe to live changes on posts + comments tables. The feed uses this
+// to tick vote/comment counts and surface new replies without a refresh.
+//
+// onPostUpdate fires for each post UPDATE (anyone votes or comments) with
+// the new row. onCommentInsert fires for each new comment row.
+//
+// Returns an unsubscribe function. Caller must filter their own writes to
+// avoid double-applying optimistic state.
+export const subscribeToFeed = ({ onPostUpdate, onCommentInsert } = {}) => {
+  if (!supabase) return () => {}
+  const channel = supabase
+    .channel('feed-changes')
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'posts' },
+      (payload) => { try { onPostUpdate?.(payload.new) } catch {} }
+    )
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'comments' },
+      (payload) => { try { onCommentInsert?.(payload.new) } catch {} }
+    )
+    .subscribe()
+  return () => { try { supabase.removeChannel(channel) } catch {} }
+}
+
+// Fetch a single comment with its profile join — used after a realtime
+// INSERT event so we can render the new comment with its author display name.
+export const fetchCommentById = (commentId) =>
+  supabase?.from('comments')
+    .select('*, profiles!comments_user_id_fkey(display_name, avatar, is_verified)')
+    .eq('id', commentId)
+    .single()

@@ -36,7 +36,9 @@ import {
 import {
   getProfile as fetchSupabaseProfile,
   fetchMyNotifications,
-  subscribeToNotifications
+  subscribeToNotifications,
+  subscribeToFeed,
+  fetchCommentById
 } from './lib/supabase'
 
 const NOTIF_ENABLED_KEY = 'pulse_notifications_enabled'
@@ -256,6 +258,74 @@ export default function App() {
   }, [notificationsEnabled])
 
   const unreadNotifications = notifications.filter(n => !n.read_at).length
+
+  // Realtime feed updates — tick post vote/comment counts and surface new
+  // comments without a refresh. Skips events originating from the current
+  // user so optimistic UI doesn't double-apply.
+  useEffect(() => {
+    if (!liveMode) return
+    const myId = user.id
+
+    const unsub = subscribeToFeed({
+      onPostUpdate: (row) => {
+        setPosts(prev => prev.map(p => {
+          if (p.id !== row.id) return p
+          // Only adopt counts from the server. Leave userVote/comments alone —
+          // those reflect the current user and are managed locally.
+          return {
+            ...p,
+            votes: row.vote_count ?? p.votes,
+            // comment_count is computed; we keep p.comments as source of truth
+            // and let the comments INSERT handler push new items in.
+          }
+        }))
+      },
+      onCommentInsert: async (row) => {
+        if (row.user_id === myId) return // already in state via optimistic add
+        // Fetch the comment with profile join so the author renders correctly.
+        let comment = null
+        try {
+          const { data } = (await fetchCommentById(row.id)) || {}
+          if (data) {
+            const profile = data.profiles || null
+            const displayName = data.is_incognito
+              ? 'Anonymous'
+              : (profile?.display_name || data.seed_author || 'Anonymous')
+            comment = {
+              id: data.id,
+              author: displayName,
+              authorId: data.is_incognito ? null : (data.user_id || null),
+              text: data.text,
+              timestamp: new Date(data.created_at).getTime(),
+              incognito: !!data.is_incognito,
+              votes: data.vote_count || 0,
+              userVote: 0
+            }
+          }
+        } catch {
+          // Fall back to minimal data so the bubble still renders.
+          comment = {
+            id: row.id,
+            author: row.is_incognito ? 'Anonymous' : 'Someone',
+            authorId: null,
+            text: row.text,
+            timestamp: new Date(row.created_at).getTime(),
+            incognito: !!row.is_incognito,
+            votes: row.vote_count || 0,
+            userVote: 0
+          }
+        }
+        if (!comment) return
+        setPosts(prev => prev.map(p => {
+          if (p.id !== row.post_id) return p
+          if ((p.comments || []).some(c => c.id === comment.id)) return p
+          return { ...p, comments: [...(p.comments || []), comment] }
+        }))
+      }
+    })
+
+    return () => { try { unsub?.() } catch {} }
+  }, [liveMode, user?.id])
 
   // When viewing a live user's profile, fetch their Supabase profile row.
   // UUIDs contain hyphens — that distinguishes them from demo-seed string IDs
