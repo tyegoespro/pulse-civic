@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import Icon from './Icon'
 import { useAuth } from '../lib/auth'
-import { updateProfile } from '../lib/supabase'
+import { updateProfile, exportUserData, deleteMyAccount } from '../lib/supabase'
 import { CITIES } from '../lib/cities'
 
 const DEFAULT_INCOGNITO_KEY = 'pulse_default_incognito'
@@ -13,6 +13,12 @@ export default function SettingsModal({ onClose }) {
   })
   const [citySaving, setCitySaving] = useState(false)
   const [cityError, setCityError] = useState(null)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState(null)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
 
   // Esc to close + body scroll lock.
   useEffect(() => {
@@ -35,6 +41,58 @@ export default function SettingsModal({ onClose }) {
   const city = profile?.city || 'Oshkosh'
   const state = profile?.state || 'WI'
   const currentCityId = CITIES.find(c => c.name === city && c.state === state)?.id
+
+  const handleExport = async () => {
+    if (!user || exporting) return
+    setExportError(null)
+    setExporting(true)
+    try {
+      const { data, error } = await exportUserData(user.id)
+      if (error || !data) {
+        setExportError(error?.message || 'Could not export your data')
+        return
+      }
+      // Stream a JSON file to the user's downloads.
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `pulse-export-${user.id.slice(0, 8)}-${new Date().toISOString().slice(0, 10)}.json`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setExportError(err?.message || 'Could not export your data')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!user || deleting) return
+    setDeleteError(null)
+    setDeleting(true)
+    try {
+      const { ok, error } = await deleteMyAccount()
+      if (!ok) {
+        setDeleteError(error?.message || 'Could not delete account')
+        return
+      }
+      // Clear local app state and reload — the user's session is now invalid.
+      try {
+        localStorage.removeItem('pulse_watched')
+        localStorage.removeItem('pulse_watched_snapshots')
+        localStorage.removeItem('pulse_activity_badge')
+        localStorage.removeItem('pulse_posts_data')
+      } catch {}
+      window.location.href = '/'
+    } catch (err) {
+      setDeleteError(err?.message || 'Could not delete account')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const handleCityChange = async (cityId) => {
     if (!user) return
@@ -172,15 +230,150 @@ export default function SettingsModal({ onClose }) {
             />
             <Row
               title="Export my data"
-              description="Download everything Pulse has stored about you."
-              control={<ComingSoon />}
+              description={exportError || "Download everything Pulse has stored about you as a JSON file."}
+              control={
+                user ? (
+                  <ActionButton onClick={handleExport} loading={exporting}>
+                    {exporting ? 'Preparing…' : 'Download'}
+                  </ActionButton>
+                ) : (
+                  <ComingSoon />
+                )
+              }
             />
             <Row
               title="Delete my account"
-              description="Permanently remove your profile, Pulses, and activity."
-              control={<ComingSoon />}
+              description={deleteError || "Permanently remove your profile, Pulses, votes, comments, and watched list."}
+              control={
+                user ? (
+                  <ActionButton onClick={() => { setDeleteError(null); setDeleteConfirmText(''); setConfirmingDelete(true) }} loading={deleting} danger>
+                    Delete
+                  </ActionButton>
+                ) : (
+                  <ComingSoon />
+                )
+              }
             />
           </Section>
+
+          {confirmingDelete && (
+            <div
+              onClick={() => !deleting && setConfirmingDelete(false)}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0,0,0,0.7)',
+                backdropFilter: 'blur(6px)',
+                zIndex: 400,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 24
+              }}
+            >
+              <div
+                onClick={e => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                style={{
+                  width: '100%',
+                  maxWidth: 380,
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid rgba(239,68,68,0.4)',
+                  borderRadius: 16,
+                  padding: '22px 22px 20px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <div style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 10,
+                    background: 'rgba(239,68,68,0.15)',
+                    color: '#FCA5A5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 800,
+                    fontSize: 16
+                  }}>!</div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>Delete your account?</h3>
+                </div>
+                <p style={{ margin: '0 0 12px', fontSize: 13, lineHeight: 1.5, color: 'var(--text-secondary)' }}>
+                  This permanently removes your profile, every Pulse you've posted, every vote and comment, and your watching list. It can't be undone.
+                </p>
+                <p style={{ margin: '0 0 6px', fontSize: 12, color: 'var(--text-tertiary)' }}>
+                  Type <strong style={{ color: '#FCA5A5' }}>DELETE</strong> to confirm:
+                </p>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={e => setDeleteConfirmText(e.target.value)}
+                  disabled={deleting}
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    height: 40,
+                    padding: '0 12px',
+                    borderRadius: 10,
+                    border: '1px solid var(--border)',
+                    background: 'rgba(255,255,255,0.04)',
+                    color: 'var(--text-primary)',
+                    fontSize: 14,
+                    fontFamily: 'var(--font)',
+                    outline: 'none',
+                    letterSpacing: '0.06em'
+                  }}
+                />
+                {deleteError && (
+                  <div style={{
+                    marginTop: 10,
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    background: 'rgba(239,68,68,0.12)',
+                    border: '1px solid rgba(239,68,68,0.3)',
+                    color: '#FCA5A5',
+                    fontSize: 12
+                  }}>{deleteError}</div>
+                )}
+                <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                  <button
+                    onClick={() => setConfirmingDelete(false)}
+                    disabled={deleting}
+                    style={{
+                      flex: 1,
+                      height: 40,
+                      borderRadius: 10,
+                      background: 'rgba(255,255,255,0.06)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--border)',
+                      fontWeight: 700,
+                      fontSize: 13,
+                      cursor: deleting ? 'wait' : 'pointer',
+                      fontFamily: 'var(--font)'
+                    }}
+                  >Cancel</button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting || deleteConfirmText.trim().toUpperCase() !== 'DELETE'}
+                    style={{
+                      flex: 1,
+                      height: 40,
+                      borderRadius: 10,
+                      background: deleteConfirmText.trim().toUpperCase() === 'DELETE' ? '#EF4444' : 'rgba(239,68,68,0.25)',
+                      color: 'white',
+                      border: 'none',
+                      fontWeight: 800,
+                      fontSize: 13,
+                      cursor: deleteConfirmText.trim().toUpperCase() === 'DELETE' && !deleting ? 'pointer' : 'not-allowed',
+                      opacity: deleting ? 0.6 : 1,
+                      fontFamily: 'var(--font)'
+                    }}
+                  >{deleting ? 'Deleting…' : 'Delete forever'}</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ABOUT */}
           <Section title="About">
@@ -309,6 +502,34 @@ function Mono({ children }) {
 function LinkPlaceholder({ children }) {
   return (
     <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{children}</span>
+  )
+}
+
+function ActionButton({ onClick, loading, children, danger }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      style={{
+        height: 32,
+        padding: '0 14px',
+        borderRadius: 10,
+        background: danger ? 'rgba(239,68,68,0.12)' : 'rgba(255,51,102,0.12)',
+        border: `1px solid ${danger ? 'rgba(239,68,68,0.4)' : 'rgba(255,51,102,0.4)'}`,
+        color: danger ? '#FCA5A5' : '#FF7C9E',
+        fontSize: 12,
+        fontWeight: 800,
+        letterSpacing: '0.04em',
+        textTransform: 'uppercase',
+        cursor: loading ? 'wait' : 'pointer',
+        opacity: loading ? 0.6 : 1,
+        fontFamily: 'var(--font)',
+        whiteSpace: 'nowrap',
+        transition: 'all 0.2s ease'
+      }}
+    >
+      {children}
+    </button>
   )
 }
 

@@ -45,6 +45,56 @@ export const getProfile = (userId) =>
 export const updateProfile = (userId, fields) =>
   supabase?.from('profiles').update(fields).eq('id', userId)
 
+// Permanently delete the current user's account via the delete-account edge
+// function. The function verifies the caller's JWT then runs auth.admin.deleteUser
+// with the service role; FK cascades clean up the rest.
+export const deleteMyAccount = async () => {
+  if (!supabase) return { ok: false, error: new Error('Not configured') }
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) return { ok: false, error: new Error('Not signed in') }
+  try {
+    const { data, error } = await supabase.functions.invoke('delete-account', {
+      method: 'POST'
+    })
+    if (error) return { ok: false, error }
+    return { ok: !!data?.ok, error: null }
+  } catch (err) {
+    return { ok: false, error: err }
+  }
+}
+
+// Fetch everything stored about a user as one bundle, ready for download.
+// Profile + their posts + their votes + their comments + comment votes + watched.
+export const exportUserData = async (userId) => {
+  if (!supabase || !userId) return { data: null, error: new Error('Not configured') }
+  try {
+    const [profile, posts, votes, comments, commentVotes, watched] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', userId).single(),
+      supabase.from('posts').select('*').eq('user_id', userId),
+      supabase.from('votes').select('*').eq('user_id', userId),
+      supabase.from('comments').select('*').eq('user_id', userId),
+      supabase.from('comment_votes').select('*').eq('user_id', userId),
+      supabase.from('watched').select('*').eq('user_id', userId)
+    ])
+    return {
+      data: {
+        exported_at: new Date().toISOString(),
+        project: 'pulse-civic',
+        user_id: userId,
+        profile: profile.data || null,
+        posts: posts.data || [],
+        post_votes: votes.data || [],
+        comments: comments.data || [],
+        comment_votes: commentVotes.data || [],
+        watched: watched.data || []
+      },
+      error: null
+    }
+  } catch (err) {
+    return { data: null, error: err }
+  }
+}
+
 // Upload an avatar file to the public 'avatars' bucket under <userId>/<filename>.
 // Returns { url, error } where url is the public CDN URL. The caller is
 // responsible for then patching profiles.avatar with the returned url.
