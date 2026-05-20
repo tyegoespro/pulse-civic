@@ -281,13 +281,26 @@ export default function Header({
               Identity Hidden
             </span>
           ) : (
-            <>
-              <span className="verified" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                <Icon name="ui-verified" size={12} />
-                Verified
-              </span>
-              <span className="location">· {scope === 'state' ? 'Wisconsin' : 'Oshkosh, WI'}</span>
-            </>
+            (() => {
+              // State scope always reads "Wisconsin". For local scope, prefer
+              // the signed-in user's city/state from their profile; fall back
+              // to Oshkosh, WI for demo / signed-out visitors.
+              const isVerified = profile ? !!profile.is_verified : true
+              const city = profile?.city || 'Oshkosh'
+              const region = profile?.state || 'WI'
+              const locationLabel = scope === 'state' ? 'Wisconsin' : `${city}, ${region}`
+              return (
+                <>
+                  {isVerified && (
+                    <span className="verified" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                      <Icon name="ui-verified" size={12} />
+                      Verified
+                    </span>
+                  )}
+                  <span className="location">{isVerified ? '· ' : ''}{locationLabel}</span>
+                </>
+              )
+            })()
           )}
         </div>
       </div>
