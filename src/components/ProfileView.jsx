@@ -9,7 +9,18 @@ const catFor = (post) => {
   return set.find(c => c.id === post.category)
 }
 
-export default function ProfileView({ userId, posts, onBack, onVote, onCommentClick, onAuthorClick, onPostClick }) {
+export default function ProfileView({
+  userId,
+  posts,
+  liveProfile,
+  isOwnProfile,
+  watchedIds,
+  onBack,
+  onVote,
+  onCommentClick,
+  onAuthorClick,
+  onPostClick
+}) {
   const [activeTab, setActiveTab] = useState('posts')
   const user = SEED_USERS[userId]
 
@@ -31,7 +42,7 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
   )
 
   const cityUser = useMemo(() => {
-    if (user) return null
+    if (user || liveProfile) return null
     const firstPost = cityAuthorPosts[0]
     if (!firstPost) return null
     const city = CITIES.find(c => c.id === firstPost._cityId)
@@ -45,17 +56,36 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
       bio: null,
       isPro: false
     }
-  }, [user, cityAuthorPosts])
+  }, [user, liveProfile, cityAuthorPosts])
+
+  // Map a Supabase profile row to the local shape ProfileView already uses.
+  const liveUser = useMemo(() => {
+    if (!liveProfile) return null
+    const created = liveProfile.created_at ? new Date(liveProfile.created_at) : null
+    return {
+      displayName: liveProfile.display_name || 'Anonymous',
+      avatar: liveProfile.avatar || (liveProfile.display_name || '?').slice(0, 1).toUpperCase(),
+      city: liveProfile.city || 'Oshkosh',
+      state: liveProfile.state || 'WI',
+      isVerified: !!liveProfile.is_verified,
+      isPro: !!liveProfile.is_pro,
+      joinedAt: created
+        ? created.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        : 'Recently',
+      bio: liveProfile.bio || null
+    }
+  }, [liveProfile])
 
   // Derive public activity from all posts (local + city)
   const publicPosts = useMemo(() => {
     if (user) return posts.filter(p => p.authorId === userId && !p.incognito)
+    if (liveProfile) return posts.filter(p => p.authorId === userId && !p.incognito)
     return cityAuthorPosts
-  }, [posts, userId, user, cityAuthorPosts])
+  }, [posts, userId, user, liveProfile, cityAuthorPosts])
 
   const publicComments = useMemo(() => {
     const comments = []
-    const searchPosts = user ? posts : allCityPosts
+    const searchPosts = (user || liveProfile) ? posts : allCityPosts
     searchPosts.forEach(post => {
       (post.comments || []).forEach(c => {
         if (c.authorId === userId && !c.incognito) {
@@ -71,18 +101,26 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
       })
     })
     return comments.sort((a, b) => b.timestamp - a.timestamp)
-  }, [posts, allCityPosts, userId, user])
+  }, [posts, allCityPosts, userId, user, liveProfile])
 
   // Stats
   const totalUpvotes = publicPosts.reduce((sum, p) => sum + Math.max(0, p.votes), 0)
 
-  // Watched pulses — preserve the order of the watching list (newest first)
+  // Watched pulses — for seed users we read the static `watching` array;
+  // for the live signed-in user we pass `watchedIds` from Supabase; for
+  // other live users it's private (RLS) so we just hide it.
   const watchedPosts = useMemo(() => {
+    if (liveProfile && isOwnProfile) {
+      return (watchedIds || []).map(id => posts.find(p => p.id === id)).filter(Boolean)
+    }
+    if (liveProfile) return [] // viewing someone else's profile in live mode
     const ids = (user || cityUser)?.watching || []
     return ids.map(id => posts.find(p => p.id === id)).filter(Boolean)
-  }, [posts, user, cityUser])
+  }, [posts, user, cityUser, liveProfile, isOwnProfile, watchedIds])
 
-  const activeUser = user || cityUser
+  const watchingTabVisible = !liveProfile || isOwnProfile
+
+  const activeUser = user || liveUser || cityUser
 
   if (!activeUser) {
     return (
@@ -193,14 +231,16 @@ export default function ProfileView({ userId, posts, onBack, onVote, onCommentCl
           <Icon name="ui-comments" size={14} />
           Comments ({publicComments.length})
         </button>
-        <button
-          className={`profile-tab ${activeTab === 'watching' ? 'active' : ''}`}
-          onClick={() => setActiveTab('watching')}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-        >
-          <Icon name="ui-eye" size={14} />
-          Watching ({watchedPosts.length})
-        </button>
+        {watchingTabVisible && (
+          <button
+            className={`profile-tab ${activeTab === 'watching' ? 'active' : ''}`}
+            onClick={() => setActiveTab('watching')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            <Icon name="ui-eye" size={14} />
+            Watching ({watchedPosts.length})
+          </button>
+        )}
       </div>
 
       {/* Posts Tab */}

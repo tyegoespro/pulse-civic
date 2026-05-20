@@ -39,6 +39,8 @@ const rowToComment = (row, userVote) => {
   return {
     id: row.id,
     author: displayName,
+    // Incognito comments aren't tappable; non-incognito ones expose user_id so
+    // the existing authorId-based profile click flow works in live mode too.
     authorId: row.is_incognito ? null : (row.user_id || null),
     text: row.text,
     timestamp: new Date(row.created_at).getTime(),
@@ -66,7 +68,11 @@ const rowToPost = (row, userVote, comments) => {
     comments: comments || [],
     incognito: !!row.is_incognito,
     author: displayName,
-    authorVerified: profile?.is_verified ?? true, // seed posts assumed verified
+    // authorId is the click-through target for the author chip. Incognito
+    // posts shouldn't link to anyone; seed posts have no user_id so they
+    // also stay non-clickable (matches demo-mode behavior).
+    authorId: row.is_incognito ? null : (row.user_id || null),
+    authorVerified: profile?.is_verified ?? true,
     authorAvatar: profile?.avatar || null,
     createdAt: formatRelative(row.created_at),
     createdAtTs: new Date(row.created_at).getTime(),

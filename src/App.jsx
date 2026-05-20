@@ -32,6 +32,7 @@ import {
   liveStartWatching,
   liveStopWatching
 } from './lib/posts'
+import { getProfile as fetchSupabaseProfile } from './lib/supabase'
 
 const FREE_INCOGNITO_LIMIT = 3
 const PRO_STORAGE_KEY = 'pulse-pro-state'
@@ -142,6 +143,10 @@ export default function App() {
 
   // Profile Viewing
   const [viewingProfile, setViewingProfile] = useState(null)
+  // The fetched Supabase profile row when viewing a live user. Null in demo
+  // mode or while a fetch is in flight. The fetch effect is mounted further
+  // down, after liveMode is in scope.
+  const [viewingLiveProfile, setViewingLiveProfile] = useState(null)
 
   useEffect(() => {
     if (viewingProfile) window.scrollTo({ top: 0, behavior: 'auto' })
@@ -208,6 +213,21 @@ export default function App() {
     if (!liveMode) return
     refreshLive()
   }, [liveMode, user?.id])
+
+  // When viewing a live user's profile, fetch their Supabase profile row.
+  // UUIDs contain hyphens — that distinguishes them from demo-seed string IDs
+  // like "marcus" so we don't pointlessly hit Supabase for seeded authors.
+  useEffect(() => {
+    if (!viewingProfile || !liveMode || !viewingProfile.includes?.('-')) {
+      setViewingLiveProfile(null)
+      return
+    }
+    let cancelled = false
+    fetchSupabaseProfile(viewingProfile)?.then(({ data }) => {
+      if (!cancelled) setViewingLiveProfile(data || null)
+    })
+    return () => { cancelled = true }
+  }, [viewingProfile, liveMode])
 
   // Demo-mode persistence: store overrides for seed posts + full user posts.
   // In live mode this is skipped — Supabase is the source of truth.
@@ -686,6 +706,9 @@ export default function App() {
           <ProfileView
             userId={viewingProfile}
             posts={posts}
+            liveProfile={viewingLiveProfile}
+            isOwnProfile={!!(user && viewingProfile === user.id)}
+            watchedIds={watchedIds}
             onBack={() => setViewingProfile(null)}
             onVote={handleVote}
             onCommentClick={setCommentPostId}
@@ -874,6 +897,7 @@ export default function App() {
           onClose={() => setShowAccount(false)}
           onSignOut={() => signOut()}
           onOpenSettings={() => setShowSettings(true)}
+          onViewProfile={() => setViewingProfile(user.id)}
         />
       )}
 

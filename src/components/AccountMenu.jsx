@@ -3,7 +3,7 @@ import Icon from './Icon'
 import { useAuth } from '../lib/auth'
 import { updateProfile } from '../lib/supabase'
 
-export default function AccountMenu({ onClose, onSignOut, onOpenSettings }) {
+export default function AccountMenu({ onClose, onSignOut, onOpenSettings, onViewProfile }) {
   const { user, profile, refreshProfile } = useAuth()
   const [displayName, setDisplayName] = useState(profile?.display_name || '')
   const [bio, setBio] = useState(profile?.bio || '')
@@ -264,6 +264,31 @@ export default function AccountMenu({ onClose, onSignOut, onOpenSettings }) {
         <div style={{ height: 1, background: 'var(--border)', margin: '0 22px' }} />
 
         <div style={{ padding: '14px 22px 22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {onViewProfile && (
+            <button
+              onClick={() => { onViewProfile(); onClose?.() }}
+              style={{
+                width: '100%',
+                height: 42,
+                borderRadius: 12,
+                background: 'rgba(255,255,255,0.04)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border)',
+                fontWeight: 700,
+                fontSize: 14,
+                cursor: 'pointer',
+                fontFamily: 'var(--font)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <Icon name="ui-feed" size={14} />
+              View public profile
+            </button>
+          )}
           <button
             onClick={() => { onOpenSettings?.(); onClose?.() }}
             style={{
