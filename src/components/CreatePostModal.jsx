@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { CATEGORIES, STATE_CATEGORIES } from '../constants'
 import { findSimilarPosts } from '../lib/similarity'
 import { analyzePostImpact, isGeminiConfigured } from '../lib/gemini'
-import { reverseGeocode } from '../lib/geocoding'
+import { reverseGeocode, forwardGeocode } from '../lib/geocoding'
 import SimilarPostCard from './SimilarPostCard'
 import LeafletMap from './LeafletMap'
 import Icon from './Icon'
@@ -20,7 +20,12 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
   const [pinLng, setPinLng] = useState(null)
   const [locationAutoFilled, setLocationAutoFilled] = useState(true)
   const [geocoding, setGeocoding] = useState(false)
+  const [forwardGeocoding, setForwardGeocoding] = useState(false)
   const geocodeTimeoutRef = useRef(null)
+  const forwardGeocodeTimeoutRef = useRef(null)
+  // True for one render after a forward geocode moves the pin, so the reverse
+  // geocode effect doesn't immediately overwrite the user's typed text.
+  const skipNextReverseRef = useRef(false)
   const fileInputRef = useRef(null)
 
   // AI Impact Analysis state
@@ -74,9 +79,15 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
     return () => clearTimeout(debounceRef.current)
   }, [title, description, category, isQuestion])
 
-  // Reverse geocode the dropped pin → auto-fill location text
+  // Reverse geocode the dropped pin → auto-fill location text. Skipped if the
+  // user typed an address (locationAutoFilled=false) or if a forward geocode
+  // just placed the pin programmatically.
   useEffect(() => {
     if (pinLat == null || pinLng == null) return
+    if (skipNextReverseRef.current) {
+      skipNextReverseRef.current = false
+      return
+    }
     if (!locationAutoFilled) return
     clearTimeout(geocodeTimeoutRef.current)
     setGeocoding(true)
@@ -87,6 +98,31 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
     }, 600)
     return () => clearTimeout(geocodeTimeoutRef.current)
   }, [pinLat, pinLng, locationAutoFilled])
+
+  // Forward geocode user-typed location → drop the pin where they typed.
+  // Only runs in local scope (state Pulses have no map). Biases to Oshkosh so
+  // "Main St" resolves locally instead of jumping continents.
+  useEffect(() => {
+    if (isState) return
+    if (locationAutoFilled) return // user hasn't typed; nothing to forward-geocode
+    const q = location.trim()
+    clearTimeout(forwardGeocodeTimeoutRef.current)
+    if (q.length < 4) {
+      setForwardGeocoding(false)
+      return
+    }
+    setForwardGeocoding(true)
+    forwardGeocodeTimeoutRef.current = setTimeout(async () => {
+      const hit = await forwardGeocode(q, { lat: 44.024, lng: -88.543 })
+      if (hit) {
+        skipNextReverseRef.current = true
+        setPinLat(hit.lat)
+        setPinLng(hit.lng)
+      }
+      setForwardGeocoding(false)
+    }, 700)
+    return () => clearTimeout(forwardGeocodeTimeoutRef.current)
+  }, [location, locationAutoFilled, isState])
 
   const canSubmit = title && category && location
 
@@ -574,9 +610,11 @@ export default function CreatePostModal({ onClose, onSubmit, existingPosts, inco
           placeholder={
             geocoding
               ? 'Finding location…'
-              : isState
-                ? 'e.g. Statewide, Madison, WI…'
-                : 'Drop a pin or type — e.g. Main St & 9th Ave'
+              : forwardGeocoding
+                ? 'Placing pin…'
+                : isState
+                  ? 'e.g. Statewide, Madison, WI…'
+                  : 'Type an address or cross street, or drop a pin'
           }
           className="form-input"
           style={{ marginBottom: 8 }}
