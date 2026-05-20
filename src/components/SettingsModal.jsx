@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react'
 import Icon from './Icon'
 import { useAuth } from '../lib/auth'
+import { updateProfile } from '../lib/supabase'
+import { CITIES } from '../lib/cities'
 
 const DEFAULT_INCOGNITO_KEY = 'pulse_default_incognito'
 
 export default function SettingsModal({ onClose }) {
-  const { user, profile } = useAuth()
+  const { user, profile, refreshProfile } = useAuth()
   const [defaultIncognito, setDefaultIncognito] = useState(() => {
     try { return localStorage.getItem(DEFAULT_INCOGNITO_KEY) === 'true' } catch { return false }
   })
+  const [citySaving, setCitySaving] = useState(false)
+  const [cityError, setCityError] = useState(null)
 
   // Esc to close + body scroll lock.
   useEffect(() => {
@@ -30,6 +34,27 @@ export default function SettingsModal({ onClose }) {
 
   const city = profile?.city || 'Oshkosh'
   const state = profile?.state || 'WI'
+  const currentCityId = CITIES.find(c => c.name === city && c.state === state)?.id
+
+  const handleCityChange = async (cityId) => {
+    if (!user) return
+    const next = CITIES.find(c => c.id === cityId)
+    if (!next || (next.name === city && next.state === state)) return
+    setCityError(null)
+    setCitySaving(true)
+    try {
+      const res = await updateProfile(user.id, { city: next.name, state: next.state })
+      if (res?.error) {
+        setCityError(res.error.message || 'Could not switch city')
+      } else {
+        await refreshProfile?.()
+      }
+    } catch (err) {
+      setCityError(err?.message || 'Could not switch city')
+    } finally {
+      setCitySaving(false)
+    }
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -109,8 +134,18 @@ export default function SettingsModal({ onClose }) {
           <Section title="Location">
             <Row
               title="Your city"
-              description={`${city}, ${state}`}
-              control={<ComingSoon label="Switch city" />}
+              description={cityError || `Pulses you post and your profile location reflect this city.`}
+              control={
+                user ? (
+                  <CitySelect
+                    value={currentCityId}
+                    disabled={citySaving}
+                    onChange={handleCityChange}
+                  />
+                ) : (
+                  <Mono>{city}, {state}</Mono>
+                )
+              }
             />
           </Section>
 
@@ -274,5 +309,40 @@ function Mono({ children }) {
 function LinkPlaceholder({ children }) {
   return (
     <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{children}</span>
+  )
+}
+
+function CitySelect({ value, onChange, disabled }) {
+  return (
+    <select
+      value={value || ''}
+      onChange={e => onChange(e.target.value)}
+      disabled={disabled}
+      style={{
+        height: 34,
+        padding: '0 28px 0 12px',
+        borderRadius: 10,
+        border: '1px solid var(--border)',
+        background: 'rgba(255,255,255,0.06)',
+        color: 'var(--text-primary)',
+        fontSize: 13,
+        fontWeight: 600,
+        fontFamily: 'var(--font)',
+        cursor: disabled ? 'wait' : 'pointer',
+        appearance: 'none',
+        WebkitAppearance: 'none',
+        backgroundImage: 'url("data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%276%27 viewBox=%270 0 10 6%27 fill=%27none%27><path d=%27M1 1l4 4 4-4%27 stroke=%27%23E5E7EB%27 stroke-width=%271.5%27 stroke-linecap=%27round%27/></svg>")',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'right 10px center',
+        opacity: disabled ? 0.6 : 1
+      }}
+    >
+      {!value && <option value="">Pick a city…</option>}
+      {CITIES.map(c => (
+        <option key={c.id} value={c.id} style={{ background: '#1A1A2E', color: '#E5E7EB' }}>
+          {c.label}
+        </option>
+      ))}
+    </select>
   )
 }
