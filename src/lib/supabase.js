@@ -45,6 +45,79 @@ export const getProfile = (userId) =>
 export const updateProfile = (userId, fields) =>
   supabase?.from('profiles').update(fields).eq('id', userId)
 
+// ============================================================================
+// WEB PUSH SUBSCRIPTIONS
+// ============================================================================
+
+const urlBase64ToUint8Array = (base64String) => {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const raw = atob(base64)
+  const out = new Uint8Array(raw.length)
+  for (let i = 0; i < raw.length; ++i) out[i] = raw.charCodeAt(i)
+  return out
+}
+
+// Returns the active PushSubscription if the browser is already subscribed.
+export const getActivePushSubscription = async () => {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null
+  const reg = await navigator.serviceWorker.getRegistration()
+  if (!reg) return null
+  return reg.pushManager.getSubscription()
+}
+
+// Subscribe to push using the project's VAPID public key, then upsert the row
+// into push_subscriptions so the server can target this device later.
+export const subscribeToPush = async (userId, vapidPublicKey) => {
+  if (!supabase || !userId) return { error: new Error('Not configured') }
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return { error: new Error('Push isn\'t supported on this browser') }
+  }
+  if (!vapidPublicKey) {
+    return { error: new Error('VAPID public key missing — set VITE_VAPID_PUBLIC_KEY') }
+  }
+  const reg = await navigator.serviceWorker.ready
+  let sub = await reg.pushManager.getSubscription()
+  if (!sub) {
+    try {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+      })
+    } catch (err) {
+      return { error: err }
+    }
+  }
+  const json = sub.toJSON()
+  const { error } = await supabase.from('push_subscriptions').upsert([{
+    user_id: userId,
+    endpoint: json.endpoint,
+    p256dh: json.keys?.p256dh || '',
+    auth: json.keys?.auth || '',
+    user_agent: navigator.userAgent || null,
+    last_used_at: new Date().toISOString()
+  }], { onConflict: 'endpoint' })
+  return { error, subscription: sub }
+}
+
+// Unsubscribe both browser-side and DB-side. Idempotent.
+export const unsubscribeFromPush = async () => {
+  try {
+    const reg = await navigator.serviceWorker.getRegistration()
+    const sub = await reg?.pushManager.getSubscription()
+    if (sub) {
+      const endpoint = sub.endpoint
+      await sub.unsubscribe().catch(() => {})
+      if (supabase && endpoint) {
+        await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint)
+      }
+    }
+    return { error: null }
+  } catch (err) {
+    return { error: err }
+  }
+}
+
 // Submit a phone + ZIP verification request. Auto-approves under the current
 // placeholder trigger — at launch this gets gated on Twilio SMS OTP success.
 export const submitVerification = ({ userId, phone, zip, city, state }) =>

@@ -1,9 +1,18 @@
 import { useState, useEffect } from 'react'
 import Icon from './Icon'
 import { useAuth } from '../lib/auth'
-import { updateProfile, exportUserData, deleteMyAccount } from '../lib/supabase'
+import {
+  updateProfile,
+  exportUserData,
+  deleteMyAccount,
+  subscribeToPush,
+  unsubscribeFromPush,
+  getActivePushSubscription
+} from '../lib/supabase'
 import { CITIES } from '../lib/cities'
 import LegalModal from './LegalModal'
+
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY
 
 const DEFAULT_INCOGNITO_KEY = 'pulse_default_incognito'
 
@@ -21,6 +30,13 @@ export default function SettingsModal({ onClose, notificationsEnabled = true, on
   const [deleteError, setDeleteError] = useState(null)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [legalDoc, setLegalDoc] = useState(null) // 'privacy' | 'terms' | null
+  const [pushSubscribed, setPushSubscribed] = useState(false)
+  const [pushBusy, setPushBusy] = useState(false)
+  const [pushError, setPushError] = useState(null)
+  const pushSupported = typeof window !== 'undefined'
+    && 'serviceWorker' in navigator
+    && 'PushManager' in window
+    && !!VAPID_PUBLIC_KEY
 
   // Esc to close + body scroll lock.
   useEffect(() => {
@@ -43,6 +59,53 @@ export default function SettingsModal({ onClose, notificationsEnabled = true, on
   const city = profile?.city || 'Oshkosh'
   const state = profile?.state || 'WI'
   const currentCityId = CITIES.find(c => c.name === city && c.state === state)?.id
+
+  // Initial push subscription status on mount.
+  useEffect(() => {
+    if (!pushSupported) return
+    let cancelled = false
+    getActivePushSubscription().then(sub => {
+      if (!cancelled) setPushSubscribed(!!sub)
+    })
+    return () => { cancelled = true }
+  }, [pushSupported])
+
+  const handleTogglePush = async () => {
+    if (!user || !pushSupported || pushBusy) return
+    setPushError(null)
+    setPushBusy(true)
+    try {
+      if (pushSubscribed) {
+        const { error } = await unsubscribeFromPush()
+        if (error) {
+          setPushError(error.message || 'Could not unsubscribe')
+        } else {
+          setPushSubscribed(false)
+        }
+      } else {
+        // Ask the OS for permission first; subscribe only if granted.
+        if (Notification.permission !== 'granted') {
+          const perm = await Notification.requestPermission()
+          if (perm !== 'granted') {
+            setPushError(perm === 'denied'
+              ? 'Push permission denied — enable it in browser settings, then try again.'
+              : 'Push permission was dismissed.')
+            return
+          }
+        }
+        const { error } = await subscribeToPush(user.id, VAPID_PUBLIC_KEY)
+        if (error) {
+          setPushError(error.message || 'Could not subscribe')
+        } else {
+          setPushSubscribed(true)
+        }
+      }
+    } catch (err) {
+      setPushError(err?.message || 'Push toggle failed')
+    } finally {
+      setPushBusy(false)
+    }
+  }
 
   const handleExport = async () => {
     if (!user || exporting) return
@@ -184,15 +247,34 @@ export default function SettingsModal({ onClose, notificationsEnabled = true, on
               control={<Toggle checked={defaultIncognito} onChange={toggleDefaultIncognito} />}
             />
             <Row
-              title="Notifications"
+              title="In-app notifications"
               description={
                 user
-                  ? "In-app alerts when someone comments on Pulses you've posted or are watching. Push and email coming later."
+                  ? "Real-time alerts inside the app when someone comments on Pulses you've posted or are watching."
                   : "Sign in to receive notifications."
               }
               control={
                 user && onToggleNotifications ? (
                   <Toggle checked={notificationsEnabled} onChange={() => onToggleNotifications(!notificationsEnabled)} />
+                ) : (
+                  <ComingSoon />
+                )
+              }
+            />
+            <Row
+              title="Push notifications"
+              description={
+                !user
+                  ? "Sign in to receive push notifications."
+                  : !pushSupported
+                    ? "This browser doesn't support push, or VAPID isn't configured."
+                    : pushError
+                      ? pushError
+                      : "Get an OS-level notification even when Pulse is closed."
+              }
+              control={
+                user && pushSupported ? (
+                  <Toggle checked={pushSubscribed} onChange={handleTogglePush} />
                 ) : (
                   <ComingSoon />
                 )

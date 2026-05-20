@@ -11,3 +11,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </AuthProvider>
   </React.StrictMode>
 )
+
+// Register the service worker so the PWA installs cleanly and Web Push works.
+// Skipped on dev so HMR isn't fighting cached responses.
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => {
+      console.warn('[Pulse] service worker registration failed:', err)
+    })
+  })
+}
