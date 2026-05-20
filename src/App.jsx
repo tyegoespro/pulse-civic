@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { SEED_POSTS, STATE_SEED_POSTS, CATEGORIES, STATE_CATEGORIES } from './constants'
 import iconSprite from './icons/sprite.svg?raw'
 import Icon from './components/Icon'
@@ -6,21 +6,34 @@ import Header from './components/Header'
 import TabBar from './components/TabBar'
 import CategoryFilter from './components/CategoryFilter'
 import PostCard from './components/PostCard'
-import CreatePostModal from './components/CreatePostModal'
 import ActivityScreen from './components/ActivityScreen'
 import CommentsModal from './components/CommentsModal'
-import InsightsPanel from './components/InsightsPanel'
-import ExploreView from './components/ExploreView'
 import DemoBanner from './components/DemoBanner'
-import InfoPage from './components/InfoPage'
 import ProfileView from './components/ProfileView'
 import PulseProModal from './components/PulseProModal'
-import PostDetailModal from './components/PostDetailModal'
 import OnboardingModal from './components/OnboardingModal'
 import AuthModal from './components/AuthModal'
 import AccountMenu from './components/AccountMenu'
 import SettingsModal from './components/SettingsModal'
 import NotificationsPanel from './components/NotificationsPanel'
+
+// Lazy chunks — these pull Leaflet or large per-tab views that aren't needed
+// for the initial paint. Keeps the main bundle lean for first contentful
+// render on mobile.
+const CreatePostModal = lazy(() => import('./components/CreatePostModal'))
+const PostDetailModal = lazy(() => import('./components/PostDetailModal'))
+const ExploreView = lazy(() => import('./components/ExploreView'))
+const InsightsPanel = lazy(() => import('./components/InsightsPanel'))
+const InfoPage = lazy(() => import('./components/InfoPage'))
+
+const LazyFallback = () => (
+  <div style={{
+    padding: 40,
+    textAlign: 'center',
+    color: 'var(--text-tertiary)',
+    fontSize: 13
+  }}>Loading…</div>
+)
 import { canVoteOnPost, canVoteOnStatePost } from './lib/proximity'
 import { useAuth } from './lib/auth'
 import {
@@ -38,7 +51,8 @@ import {
   fetchMyNotifications,
   subscribeToNotifications,
   subscribeToFeed,
-  fetchCommentById
+  fetchCommentById,
+  uploadPostMedia
 } from './lib/supabase'
 
 const NOTIF_ENABLED_KEY = 'pulse_notifications_enabled'
@@ -262,11 +276,17 @@ export default function App() {
   // Realtime feed updates — tick post vote/comment counts and surface new
   // comments without a refresh. Skips events originating from the current
   // user so optimistic UI doesn't double-apply.
+  const [realtimeLive, setRealtimeLive] = useState(false)
+
   useEffect(() => {
-    if (!liveMode) return
+    if (!liveMode) {
+      setRealtimeLive(false)
+      return
+    }
     const myId = user.id
 
     const unsub = subscribeToFeed({
+      onStatus: (status) => setRealtimeLive(status === 'SUBSCRIBED'),
       onPostUpdate: (row) => {
         setPosts(prev => prev.map(p => {
           if (p.id !== row.id) return p
@@ -295,6 +315,7 @@ export default function App() {
               id: data.id,
               author: displayName,
               authorId: data.is_incognito ? null : (data.user_id || null),
+              authorAvatar: data.is_incognito ? null : (profile?.avatar || null),
               text: data.text,
               timestamp: new Date(data.created_at).getTime(),
               incognito: !!data.is_incognito,
@@ -567,6 +588,25 @@ export default function App() {
 
     if (liveMode) {
       try {
+        // Upload any locally-picked media files to Supabase Storage first, then
+        // hand the resulting CDN URLs to liveCreatePost. Items already carrying
+        // a remote URL (e.g. seeded media or re-submits) pass through.
+        let uploadedMedia = []
+        if (Array.isArray(media) && media.length) {
+          for (const m of media) {
+            if (m?.file && !/^https?:\/\//.test(m?.preview || '')) {
+              const { url, error: upErr } = await uploadPostMedia(user.id, m.file)
+              if (upErr || !url) {
+                console.error('[Pulse] post media upload failed:', upErr)
+                continue
+              }
+              uploadedMedia.push({ type: m.type || 'image', preview: url })
+            } else if (m?.preview && /^https?:\/\//.test(m.preview)) {
+              uploadedMedia.push({ type: m.type || 'image', preview: m.preview })
+            }
+          }
+        }
+
         const created = await liveCreatePost({
           type: type || 'statement',
           title,
@@ -575,7 +615,7 @@ export default function App() {
           location,
           scope: postScope || scope,
           incognito,
-          media,
+          media: uploadedMedia,
           impact,
           lat: resolvedLat,
           lng: resolvedLng
@@ -806,6 +846,7 @@ export default function App() {
         onShowNotifications={() => setShowNotifications(true)}
         notificationsUnread={unreadNotifications}
         notificationsEnabled={notificationsEnabled}
+        realtimeLive={realtimeLive}
       />
 
       <div className="app-content">
@@ -874,28 +915,32 @@ export default function App() {
 
         {/* Explore / Heatmap View */}
         {!viewingProfile && activeTab === 'explore' && (
-          <ExploreView posts={scopedPosts} onVote={handleVote} scope={scope} onPostClick={(postOrId) => {
-            if (typeof postOrId === 'object') {
-              setDetailPostData(postOrId)
-              setDetailPostId(postOrId.id)
-            } else {
-              setDetailPostData(null)
-              setDetailPostId(postOrId)
-            }
-          }} />
+          <Suspense fallback={<LazyFallback />}>
+            <ExploreView posts={scopedPosts} onVote={handleVote} scope={scope} onPostClick={(postOrId) => {
+              if (typeof postOrId === 'object') {
+                setDetailPostData(postOrId)
+                setDetailPostId(postOrId.id)
+              } else {
+                setDetailPostData(null)
+                setDetailPostId(postOrId)
+              }
+            }} />
+          </Suspense>
         )}
 
         {/* Insights View */}
         {!viewingProfile && activeTab === 'insights' && (
-          <InsightsPanel
-            posts={scopedPosts}
-            scope={scope}
-            onPostClick={(postId) => setDetailPostId(postId)}
-            onCategoryClick={(catId) => {
-              setFilter(catId)
-              setActiveTab('feed')
-            }}
-          />
+          <Suspense fallback={<LazyFallback />}>
+            <InsightsPanel
+              posts={scopedPosts}
+              scope={scope}
+              onPostClick={(postId) => setDetailPostId(postId)}
+              onCategoryClick={(catId) => {
+                setFilter(catId)
+                setActiveTab('feed')
+              }}
+            />
+          </Suspense>
         )}
 
         {/* Activity View */}
@@ -929,13 +974,15 @@ export default function App() {
 
       {/* Create Post Modal */}
       {showCreate && (
-        <CreatePostModal
-          onClose={() => setShowCreate(false)}
-          onSubmit={handleCreatePost}
-          existingPosts={posts}
-          incognito={incognito}
-          scope={scope}
-        />
+        <Suspense fallback={<LazyFallback />}>
+          <CreatePostModal
+            onClose={() => setShowCreate(false)}
+            onSubmit={handleCreatePost}
+            existingPosts={posts}
+            incognito={incognito}
+            scope={scope}
+          />
+        </Suspense>
       )}
 
       {/* Comments Modal */}
@@ -955,10 +1002,12 @@ export default function App() {
 
       {/* Info Page Modal */}
       {showInfoPage && (
-        <InfoPage
-          onClose={() => setShowInfoPage(false)}
-          onLaunchApp={() => setShowInfoPage(false)}
-        />
+        <Suspense fallback={<LazyFallback />}>
+          <InfoPage
+            onClose={() => setShowInfoPage(false)}
+            onLaunchApp={() => setShowInfoPage(false)}
+          />
+        </Suspense>
       )}
 
       {/* Pulse Pro Upgrade Modal */}
@@ -972,7 +1021,8 @@ export default function App() {
 
       {/* Post Detail Modal */}
       {detailPostId && detailPost && (
-        <PostDetailModal
+        <Suspense fallback={<LazyFallback />}>
+          <PostDetailModal
           post={detailPost}
           watchedSnapshot={watchedSnapshots[detailPostId]}
           onClose={() => {
@@ -994,7 +1044,8 @@ export default function App() {
             setFilter(categoryId)
             setActiveTab('feed')
           }}
-        />
+          />
+        </Suspense>
       )}
 
       {/* Onboarding — first visit */}

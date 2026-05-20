@@ -95,6 +95,20 @@ export const exportUserData = async (userId) => {
   }
 }
 
+// Upload a single media file (image or short video) attached to a Pulse.
+// Returns { url, error } where url is the public CDN URL.
+export const uploadPostMedia = async (userId, file) => {
+  if (!supabase || !file) return { url: null, error: new Error('No file') }
+  const ext = (file.name?.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin'
+  const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const { error } = await supabase.storage
+    .from('post-media')
+    .upload(path, file, { upsert: false, contentType: file.type || 'application/octet-stream' })
+  if (error) return { url: null, error }
+  const { data } = supabase.storage.from('post-media').getPublicUrl(path)
+  return { url: data?.publicUrl || null, error: null }
+}
+
 // Upload an avatar file to the public 'avatars' bucket under <userId>/<filename>.
 // Returns { url, error } where url is the public CDN URL. The caller is
 // responsible for then patching profiles.avatar with the returned url.
@@ -271,7 +285,7 @@ export const subscribeToNotifications = (userId, onInsert) => {
 //
 // Returns an unsubscribe function. Caller must filter their own writes to
 // avoid double-applying optimistic state.
-export const subscribeToFeed = ({ onPostUpdate, onCommentInsert } = {}) => {
+export const subscribeToFeed = ({ onPostUpdate, onCommentInsert, onStatus } = {}) => {
   if (!supabase) return () => {}
   const channel = supabase
     .channel('feed-changes')
@@ -285,7 +299,7 @@ export const subscribeToFeed = ({ onPostUpdate, onCommentInsert } = {}) => {
       { event: 'INSERT', schema: 'public', table: 'comments' },
       (payload) => { try { onCommentInsert?.(payload.new) } catch {} }
     )
-    .subscribe()
+    .subscribe((status) => { try { onStatus?.(status) } catch {} })
   return () => { try { supabase.removeChannel(channel) } catch {} }
 }
 

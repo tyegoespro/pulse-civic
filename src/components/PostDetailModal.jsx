@@ -597,20 +597,47 @@ export default function PostDetailModal({ post, watchedSnapshot, onClose, onVote
                             {hasVerdict ? 'Verdict' : 'Leading answer'}
                           </div>
                         )}
-                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
                           {c.incognito ? (
                             <>
                               <Icon name="ui-incognito" size={11} />
                               <span style={{ color: '#A78BFA' }}>Anonymous</span>
                             </>
                           ) : (
-                            <span
-                              className={c.authorId && onAuthorClick ? 'author-link' : ''}
-                              onClick={() => c.authorId && onAuthorClick && onAuthorClick(c.authorId)}
-                              style={{ cursor: c.authorId && onAuthorClick ? 'pointer' : 'default' }}
-                            >
-                              {c.author}
-                            </span>
+                            <>
+                              <span style={{
+                                width: 20,
+                                height: 20,
+                                borderRadius: 10,
+                                background: 'linear-gradient(135deg, #FF3366, #C2185B)',
+                                color: 'white',
+                                fontSize: 10,
+                                fontWeight: 800,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                overflow: 'hidden',
+                                flexShrink: 0
+                              }}>
+                                {c.authorAvatar && /^https?:\/\//.test(c.authorAvatar) ? (
+                                  <img
+                                    src={c.authorAvatar}
+                                    alt={c.author || 'Author'}
+                                    referrerPolicy="no-referrer"
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                  />
+                                ) : (
+                                  (c.author?.[0] || '?').toUpperCase()
+                                )}
+                              </span>
+                              <span
+                                className={c.authorId && onAuthorClick ? 'author-link' : ''}
+                                onClick={() => c.authorId && onAuthorClick && onAuthorClick(c.authorId)}
+                                style={{ cursor: c.authorId && onAuthorClick ? 'pointer' : 'default' }}
+                              >
+                                {c.author}
+                              </span>
+                            </>
                           )}
                         </div>
                         <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0 0', lineHeight: 1.4 }}>

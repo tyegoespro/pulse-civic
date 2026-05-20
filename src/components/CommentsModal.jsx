@@ -194,9 +194,20 @@ export default function CommentsModal({ post, onClose, onAddComment, onVoteComme
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
-                      } : {}
+                      } : { overflow: 'hidden' }
                     }>
-                      {comment.incognito ? <Icon name="ui-incognito" size={16} /> : comment.author[0].toUpperCase()}
+                      {comment.incognito ? (
+                        <Icon name="ui-incognito" size={16} />
+                      ) : comment.authorAvatar && /^https?:\/\//.test(comment.authorAvatar) ? (
+                        <img
+                          src={comment.authorAvatar}
+                          alt={comment.author || 'Author'}
+                          referrerPolicy="no-referrer"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        />
+                      ) : (
+                        comment.author?.[0]?.toUpperCase() || '?'
+                      )}
                     </div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>

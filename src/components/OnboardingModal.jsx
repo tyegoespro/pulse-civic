@@ -1,34 +1,52 @@
 import { useState } from 'react'
 import Icon from './Icon'
+import { useAuth } from '../lib/auth'
 
-const STEPS = [
+const buildSteps = ({ city, state, signedIn }) => [
   {
     title: 'Welcome to Pulse',
     subtitle: 'Your city. Your voice. Verified.',
-    body: 'Pulse is a civic platform where verified residents post, discuss, and vote on the voices that shape their neighborhoods.',
+    body: 'Pulse is where neighbors weigh in on what\'s happening in their city — and the consensus is visible in real time.',
     icon: 'ui-brand-pulse',
     accent: '#FF3366'
   },
   {
-    title: 'How It Works',
-    subtitle: 'Three simple actions that drive change.',
+    title: 'Two ways to be heard',
+    subtitle: 'Statement Pulses and Question Pulses.',
     bullets: [
-      { icon: 'ui-feed', text: 'Post a Pulse — flag a problem, drop a compliment, or share an observation', color: '#6366F1' },
-      { icon: 'ui-trending', text: 'Vote on what matters — your vote carries equal weight', color: '#22C55E' },
-      { icon: 'ui-eye', text: 'Watch voices to stay updated on outcomes', color: '#3B82F6' }
+      { icon: 'ui-megaphone', text: 'Speak — flag a problem, share a compliment, or report what you\'re seeing.', color: '#FF3366' },
+      { icon: 'ui-lightbulb', text: 'Ask — pose a question to the community; the top-voted answer becomes the Verdict.', color: '#F59E0B' },
+      { icon: 'ui-trending', text: 'Vote — every vote carries equal weight, and counts tick up live.', color: '#22C55E' }
     ]
   },
   {
-    title: 'Your Community',
-    subtitle: 'Pulse starts local.',
-    body: 'You\'re connected to Oshkosh, WI — a real community with real voices. Everything you see is within your proximity.',
-    icon: 'ui-location',
-    accent: '#22C55E',
-    footer: 'More cities launching soon.'
+    title: 'Watch, share, stay in it',
+    subtitle: 'Pulses you care about stay close.',
+    bullets: [
+      { icon: 'ui-eye', text: 'Watch a Pulse to get notified when someone replies or the consensus shifts.', color: '#3B82F6' },
+      { icon: 'ui-activity', text: 'In-app notifications when comments land on your Pulses or ones you\'re watching.', color: '#A855F7' },
+      { icon: 'ui-megaphone', text: 'Share any Pulse — it links to a rich preview in iMessage, Slack, anywhere.', color: '#EC4899' }
+    ]
+  },
+  {
+    title: signedIn ? `Welcome to ${city || 'your city'}` : 'Your community',
+    subtitle: signedIn ? `You\'re live in ${city}, ${state}.` : 'Pulse starts local.',
+    body: signedIn
+      ? 'Posts, votes, and comments all sync to the live community — and updates tick in without a refresh.'
+      : 'Sign in to post, vote, and watch Pulses. Or browse around as a guest first — your view of the city is read-only until you sign in.',
+    icon: signedIn ? 'ui-location' : 'ui-lock',
+    accent: signedIn ? '#22C55E' : '#FF3366',
+    footer: signedIn ? null : 'More cities launching soon.'
   }
 ]
 
 export default function OnboardingModal({ onComplete }) {
+  const { user, profile, configured } = useAuth()
+  const signedIn = !!(user && configured)
+  const city = profile?.city || 'Oshkosh'
+  const state = profile?.state || 'WI'
+  const STEPS = buildSteps({ city, state, signedIn })
+
   const [step, setStep] = useState(0)
   const [slideDir, setSlideDir] = useState('none')
   const current = STEPS[step]
@@ -70,7 +88,6 @@ export default function OnboardingModal({ onComplete }) {
           className={`onboarding-content ${slideDir === 'left' ? 'slide-enter-left' : slideDir === 'right' ? 'slide-enter-right' : ''}`}
           key={step}
         >
-          {/* Icon */}
           {current.icon && (
             <div className="onboarding-icon" style={{ color: current.accent || '#6366F1' }}>
               <Icon name={current.icon} size={48} />
@@ -122,7 +139,7 @@ export default function OnboardingModal({ onComplete }) {
             <div />
           )}
           <button className="onboarding-next" onClick={goNext}>
-            {isLast ? 'Get Started' : 'Next →'}
+            {isLast ? (signedIn ? 'Jump in' : 'Get started') : 'Next →'}
           </button>
         </div>
       </div>

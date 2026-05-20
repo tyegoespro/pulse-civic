@@ -42,6 +42,7 @@ const rowToComment = (row, userVote) => {
     // Incognito comments aren't tappable; non-incognito ones expose user_id so
     // the existing authorId-based profile click flow works in live mode too.
     authorId: row.is_incognito ? null : (row.user_id || null),
+    authorAvatar: row.is_incognito ? null : (profile?.avatar || null),
     text: row.text,
     timestamp: new Date(row.created_at).getTime(),
     incognito: !!row.is_incognito,

@@ -17,7 +17,8 @@ export default function Header({
   onSignOut,
   onShowNotifications,
   notificationsUnread = 0,
-  notificationsEnabled = true
+  notificationsEnabled = true,
+  realtimeLive = false
 }) {
   const { user, profile, configured } = useAuth()
   const authReady = configured
@@ -34,9 +35,17 @@ export default function Header({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: incognito ? '#C4B5FD' : '#FF3366'
+            color: incognito ? '#C4B5FD' : '#FF3366',
+            position: 'relative'
           }}>
             <Icon name={incognito ? 'ui-incognito' : 'ui-brand-pulse'} size={26} />
+            {realtimeLive && !incognito && (
+              <span
+                title="Live — updates are streaming in real time"
+                className="pulse-realtime-dot"
+                aria-label="Live"
+              />
+            )}
           </span>
           <h1 className="app-brand-name">{incognito ? 'Incognito' : 'Pulse'}</h1>
         </div>
