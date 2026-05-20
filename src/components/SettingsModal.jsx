@@ -3,6 +3,7 @@ import Icon from './Icon'
 import { useAuth } from '../lib/auth'
 import { updateProfile, exportUserData, deleteMyAccount } from '../lib/supabase'
 import { CITIES } from '../lib/cities'
+import LegalModal from './LegalModal'
 
 const DEFAULT_INCOGNITO_KEY = 'pulse_default_incognito'
 
@@ -19,6 +20,7 @@ export default function SettingsModal({ onClose }) {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState(null)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [legalDoc, setLegalDoc] = useState(null) // 'privacy' | 'terms' | null
 
   // Esc to close + body scroll lock.
   useEffect(() => {
@@ -380,16 +382,42 @@ export default function SettingsModal({ onClose }) {
             <Row title="App version" control={<Mono>v1.0.0</Mono>} />
             <Row
               title="Privacy policy"
-              control={<LinkPlaceholder>Coming soon</LinkPlaceholder>}
+              control={<LinkAction onClick={() => setLegalDoc('privacy')}>Read</LinkAction>}
             />
             <Row
               title="Terms of service"
-              control={<LinkPlaceholder>Coming soon</LinkPlaceholder>}
+              control={<LinkAction onClick={() => setLegalDoc('terms')}>Read</LinkAction>}
             />
           </Section>
         </div>
+
+        {legalDoc && (
+          <LegalModal kind={legalDoc} onClose={() => setLegalDoc(null)} />
+        )}
       </div>
     </div>
+  )
+}
+
+function LinkAction({ onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        fontSize: 12,
+        fontWeight: 700,
+        letterSpacing: '0.04em',
+        textTransform: 'uppercase',
+        color: '#FF7C9E',
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        fontFamily: 'var(--font)',
+        padding: '4px 4px'
+      }}
+    >
+      {children}
+    </button>
   )
 }
 
