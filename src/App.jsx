@@ -16,6 +16,7 @@ import AuthModal from './components/AuthModal'
 import AccountMenu from './components/AccountMenu'
 import SettingsModal from './components/SettingsModal'
 import NotificationsPanel from './components/NotificationsPanel'
+import VerificationModal from './components/VerificationModal'
 
 // Lazy chunks — these pull Leaflet or large per-tab views that aren't needed
 // for the initial paint. Keeps the main bundle lean for first contentful
@@ -196,10 +197,13 @@ export default function App() {
   }, [])
 
   // Auth — global gate to sign-in modal
-  const { user, configured, signOut } = useAuth()
+  const { user, profile, configured, signOut } = useAuth()
   const liveMode = !!(user && configured)
+  const isVerified = !!(profile?.is_verified)
   const [showAuth, setShowAuth] = useState(false)
   const [authReason, setAuthReason] = useState(null)
+  const [showVerify, setShowVerify] = useState(false)
+  const [verifyReason, setVerifyReason] = useState(null)
   const [showAccount, setShowAccount] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
@@ -218,6 +222,20 @@ export default function App() {
   const closeAuth = () => {
     setShowAuth(false)
     setAuthReason(null)
+  }
+  const openVerify = (reason = null) => {
+    setVerifyReason(reason)
+    setShowVerify(true)
+  }
+
+  // Centralized interaction gate. Returns true if the user can act, false (and
+  // opens the relevant modal) if they're blocked. Demo mode (no Supabase) is
+  // always permitted — it's all local state.
+  const requireVerifiedAction = (verb = 'do this') => {
+    if (!configured) return true // demo mode is wide open
+    if (!user) { openAuth(`Sign in to ${verb}`); return false }
+    if (!isVerified) { openVerify(`Verify your phone + ZIP to ${verb} on Pulse.`); return false }
+    return true
   }
 
   // Refresh live data from Supabase. Safe to call any time — no-op in demo mode.
@@ -435,7 +453,7 @@ export default function App() {
   }
 
   const toggleWatch = async (postId) => {
-    if (configured && !user) { openAuth('Sign in to watch a Pulse'); return }
+    if (!requireVerifiedAction('watch a Pulse')) return
     if (liveMode) {
       const isWatching = watchedIds.includes(postId)
       try {
@@ -524,7 +542,7 @@ export default function App() {
   }
 
   const handleVote = async (postId, direction) => {
-    if (configured && !user) { openAuth('Sign in to vote on a Pulse'); return }
+    if (!requireVerifiedAction('vote on a Pulse')) return
     if (liveMode) {
       // Proximity gate for local Pulses — state-scope votes are open to all.
       const target = posts.find(p => p.id === postId)
@@ -574,7 +592,7 @@ export default function App() {
   }
 
   const handleCreatePost = async ({ title, description, category, location, impact, media, scope: postScope, lat, lng, type }) => {
-    if (configured && !user) { openAuth('Sign in to post a Pulse'); return }
+    if (!requireVerifiedAction('post a Pulse')) return
     // Quota gate: free users get FREE_INCOGNITO_LIMIT incognito POSTS per month.
     if (incognito && !proState.isPro && proState.usage >= FREE_INCOGNITO_LIMIT) {
       setProModalReason(`You've used all ${FREE_INCOGNITO_LIMIT} free incognito posts this month. Go Pro for unlimited.`)
@@ -670,7 +688,7 @@ export default function App() {
   }
 
   const handleAddComment = async (postId, text) => {
-    if (configured && !user) { openAuth('Sign in to reply'); return }
+    if (!requireVerifiedAction('reply')) return
     if (liveMode) {
       const post = posts.find(p => p.id === postId)
       const isQuestion = post?.type === 'question'
@@ -720,7 +738,7 @@ export default function App() {
   }
 
   const handleVoteComment = async (postId, commentId, direction) => {
-    if (configured && !user) { openAuth('Sign in to vote on a reply'); return }
+    if (!requireVerifiedAction('vote on a reply')) return
     if (liveMode) {
       // Proximity gate — same rules as post voting.
       const target = posts.find(p => p.id === postId)
@@ -847,6 +865,7 @@ export default function App() {
         notificationsUnread={unreadNotifications}
         notificationsEnabled={notificationsEnabled}
         realtimeLive={realtimeLive}
+        onShowVerify={() => openVerify('Verify your phone + ZIP to interact on Pulse.')}
       />
 
       <div className="app-content">
@@ -959,7 +978,10 @@ export default function App() {
       {/* FAB */}
       <button
         className="fab"
-        onClick={() => setShowCreate(true)}
+        onClick={() => {
+          if (!requireVerifiedAction('post a Pulse')) return
+          setShowCreate(true)
+        }}
         style={incognito ? {
           background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
           boxShadow: '0 4px 20px rgba(139, 92, 246, 0.4)'
@@ -1058,6 +1080,14 @@ export default function App() {
         <AuthModal onClose={closeAuth} reason={authReason} />
       )}
 
+      {/* Verification Modal */}
+      {showVerify && user && (
+        <VerificationModal
+          onClose={() => { setShowVerify(false); setVerifyReason(null) }}
+          reason={verifyReason}
+        />
+      )}
+
       {/* Account Menu */}
       {showAccount && user && (
         <AccountMenu
@@ -1074,6 +1104,7 @@ export default function App() {
           onClose={() => setShowSettings(false)}
           notificationsEnabled={notificationsEnabled}
           onToggleNotifications={setNotificationsEnabled}
+          onShowVerify={() => openVerify('Verify your phone + ZIP to interact on Pulse.')}
         />
       )}
 

@@ -18,7 +18,8 @@ export default function Header({
   onShowNotifications,
   notificationsUnread = 0,
   notificationsEnabled = true,
-  realtimeLive = false
+  realtimeLive = false,
+  onShowVerify
 }) {
   const { user, profile, configured } = useAuth()
   const authReady = configured
@@ -342,19 +343,45 @@ export default function Header({
               // State scope always reads "Wisconsin". For local scope, prefer
               // the signed-in user's city/state from their profile; fall back
               // to Oshkosh, WI for demo / signed-out visitors.
-              const isVerified = profile ? !!profile.is_verified : true
+              const signedIn = !!user
+              const profileVerified = profile ? !!profile.is_verified : !signedIn // demo defaults to verified-looking
               const city = profile?.city || 'Oshkosh'
               const region = profile?.state || 'WI'
               const locationLabel = scope === 'state' ? 'Wisconsin' : `${city}, ${region}`
+              if (signedIn && !profileVerified) {
+                return (
+                  <button
+                    onClick={onShowVerify}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#FCD34D',
+                      background: 'rgba(245,158,11,0.12)',
+                      border: '1px solid rgba(245,158,11,0.4)',
+                      padding: '3px 10px',
+                      borderRadius: 10,
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font)'
+                    }}
+                    title="Get verified to post, vote, and comment"
+                  >
+                    <Icon name="ui-lock" size={11} />
+                    Unverified · read only · Verify →
+                  </button>
+                )
+              }
               return (
                 <>
-                  {isVerified && (
+                  {profileVerified && (
                     <span className="verified" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                       <Icon name="ui-verified" size={12} />
                       Verified
                     </span>
                   )}
-                  <span className="location">{isVerified ? '· ' : ''}{locationLabel}</span>
+                  <span className="location">{profileVerified ? '· ' : ''}{locationLabel}</span>
                 </>
               )
             })()

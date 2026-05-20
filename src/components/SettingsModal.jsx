@@ -7,7 +7,7 @@ import LegalModal from './LegalModal'
 
 const DEFAULT_INCOGNITO_KEY = 'pulse_default_incognito'
 
-export default function SettingsModal({ onClose, notificationsEnabled = true, onToggleNotifications }) {
+export default function SettingsModal({ onClose, notificationsEnabled = true, onToggleNotifications, onShowVerify }) {
   const { user, profile, refreshProfile } = useAuth()
   const [defaultIncognito, setDefaultIncognito] = useState(() => {
     try { return localStorage.getItem(DEFAULT_INCOGNITO_KEY) === 'true' } catch { return false }
@@ -223,21 +223,31 @@ export default function SettingsModal({ onClose, notificationsEnabled = true, on
           <Section title="Account">
             <Row
               title="Verification"
-              description={profile?.is_verified ? 'Verified resident' : 'Not yet verified'}
+              description={
+                profile?.is_verified
+                  ? 'You can post, vote, and comment.'
+                  : 'Verify your phone + ZIP to interact. Reading stays free.'
+              }
               control={
-                <span style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: '0.04em',
-                  textTransform: 'uppercase',
-                  padding: '4px 10px',
-                  borderRadius: 10,
-                  background: profile?.is_verified ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)',
-                  color: profile?.is_verified ? '#22C55E' : '#F59E0B',
-                  border: `1px solid ${profile?.is_verified ? 'rgba(34,197,94,0.3)' : 'rgba(245,158,11,0.3)'}`
-                }}>
-                  {profile?.is_verified ? 'Verified' : 'Pending'}
-                </span>
+                profile?.is_verified ? (
+                  <span style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    padding: '4px 10px',
+                    borderRadius: 10,
+                    background: 'rgba(34,197,94,0.12)',
+                    color: '#22C55E',
+                    border: '1px solid rgba(34,197,94,0.3)'
+                  }}>Verified</span>
+                ) : user && onShowVerify ? (
+                  <ActionButton onClick={() => { onClose?.(); onShowVerify() }}>
+                    Get verified
+                  </ActionButton>
+                ) : (
+                  <ComingSoon label="Pending" />
+                )
               }
             />
             <Row

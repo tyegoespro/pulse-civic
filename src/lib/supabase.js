@@ -45,6 +45,14 @@ export const getProfile = (userId) =>
 export const updateProfile = (userId, fields) =>
   supabase?.from('profiles').update(fields).eq('id', userId)
 
+// Submit a phone + ZIP verification request. Auto-approves under the current
+// placeholder trigger — at launch this gets gated on Twilio SMS OTP success.
+export const submitVerification = ({ userId, phone, zip, city, state }) =>
+  supabase?.from('verification_requests')
+    .insert([{ user_id: userId, phone: phone || null, zip, city: city || null, state: state || null }])
+    .select()
+    .single()
+
 // Permanently delete the current user's account via the delete-account edge
 // function. The function verifies the caller's JWT then runs auth.admin.deleteUser
 // with the service role; FK cascades clean up the rest.
