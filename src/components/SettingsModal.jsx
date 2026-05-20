@@ -7,7 +7,7 @@ import LegalModal from './LegalModal'
 
 const DEFAULT_INCOGNITO_KEY = 'pulse_default_incognito'
 
-export default function SettingsModal({ onClose }) {
+export default function SettingsModal({ onClose, notificationsEnabled = true, onToggleNotifications }) {
   const { user, profile, refreshProfile } = useAuth()
   const [defaultIncognito, setDefaultIncognito] = useState(() => {
     try { return localStorage.getItem(DEFAULT_INCOGNITO_KEY) === 'true' } catch { return false }
@@ -185,8 +185,18 @@ export default function SettingsModal({ onClose }) {
             />
             <Row
               title="Notifications"
-              description="Push and email alerts for Pulses you're watching."
-              control={<ComingSoon />}
+              description={
+                user
+                  ? "In-app alerts when someone comments on Pulses you've posted or are watching. Push and email coming later."
+                  : "Sign in to receive notifications."
+              }
+              control={
+                user && onToggleNotifications ? (
+                  <Toggle checked={notificationsEnabled} onChange={() => onToggleNotifications(!notificationsEnabled)} />
+                ) : (
+                  <ComingSoon />
+                )
+              }
             />
           </Section>
 

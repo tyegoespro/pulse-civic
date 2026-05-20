@@ -14,7 +14,10 @@ export default function Header({
   activityBadge = 0,
   onActivityClick,
   onShowAuth,
-  onSignOut
+  onSignOut,
+  onShowNotifications,
+  notificationsUnread = 0,
+  notificationsEnabled = true
 }) {
   const { user, profile, configured } = useAuth()
   const authReady = configured
@@ -149,6 +152,51 @@ export default function Header({
               </div>
             )}
           </button>
+
+          {/* Notifications bell — only for signed-in users */}
+          {authReady && user && notificationsEnabled && onShowNotifications && (
+            <button
+              onClick={onShowNotifications}
+              title={notificationsUnread > 0 ? `${notificationsUnread} new` : 'Notifications'}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                border: '1px solid var(--border)',
+                background: 'rgba(255,255,255,0.04)',
+                color: notificationsUnread > 0 ? '#FF3366' : 'var(--text-muted)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.25s ease',
+                position: 'relative'
+              }}
+              aria-label="Notifications"
+            >
+              <Icon name="ui-activity" size={16} />
+              {notificationsUnread > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  minWidth: 16,
+                  height: 16,
+                  padding: '0 4px',
+                  borderRadius: 8,
+                  background: '#FF3366',
+                  color: 'white',
+                  fontSize: 9,
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid var(--bg-primary)',
+                  lineHeight: 1
+                }}>{notificationsUnread > 9 ? '9+' : notificationsUnread}</span>
+              )}
+            </button>
+          )}
 
           {/* Auth — only render when Supabase is configured */}
           {authReady && (user ? (

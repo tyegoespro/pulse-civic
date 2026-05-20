@@ -20,6 +20,7 @@ import OnboardingModal from './components/OnboardingModal'
 import AuthModal from './components/AuthModal'
 import AccountMenu from './components/AccountMenu'
 import SettingsModal from './components/SettingsModal'
+import NotificationsPanel from './components/NotificationsPanel'
 import { canVoteOnPost, canVoteOnStatePost } from './lib/proximity'
 import { useAuth } from './lib/auth'
 import {
@@ -32,7 +33,13 @@ import {
   liveStartWatching,
   liveStopWatching
 } from './lib/posts'
-import { getProfile as fetchSupabaseProfile } from './lib/supabase'
+import {
+  getProfile as fetchSupabaseProfile,
+  fetchMyNotifications,
+  subscribeToNotifications
+} from './lib/supabase'
+
+const NOTIF_ENABLED_KEY = 'pulse_notifications_enabled'
 
 const FREE_INCOGNITO_LIMIT = 3
 const PRO_STORAGE_KEY = 'pulse-pro-state'
@@ -179,6 +186,14 @@ export default function App() {
   const [authReason, setAuthReason] = useState(null)
   const [showAccount, setShowAccount] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [notifications, setNotifications] = useState([])
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+    try {
+      const v = localStorage.getItem(NOTIF_ENABLED_KEY)
+      return v === null ? true : v === 'true'
+    } catch { return true }
+  })
   const [liveLoading, setLiveLoading] = useState(false)
   const openAuth = (reason = null) => {
     setAuthReason(reason)
@@ -213,6 +228,34 @@ export default function App() {
     if (!liveMode) return
     refreshLive()
   }, [liveMode, user?.id])
+
+  // Fetch existing notifications when signing in, then subscribe to new ones
+  // in real time. The notificationsEnabled gate keeps us idle when the user
+  // muted notifications in Settings.
+  useEffect(() => {
+    if (!liveMode || !notificationsEnabled) {
+      setNotifications([])
+      return
+    }
+    let cancelled = false
+    fetchMyNotifications(user.id)?.then(({ data }) => {
+      if (!cancelled) setNotifications(data || [])
+    })
+    const unsub = subscribeToNotifications(user.id, (row) => {
+      setNotifications(prev => [row, ...prev])
+    })
+    return () => {
+      cancelled = true
+      try { unsub?.() } catch {}
+    }
+  }, [liveMode, user?.id, notificationsEnabled])
+
+  // Persist the notifications master toggle.
+  useEffect(() => {
+    try { localStorage.setItem(NOTIF_ENABLED_KEY, notificationsEnabled ? 'true' : 'false') } catch {}
+  }, [notificationsEnabled])
+
+  const unreadNotifications = notifications.filter(n => !n.read_at).length
 
   // When viewing a live user's profile, fetch their Supabase profile row.
   // UUIDs contain hyphens — that distinguishes them from demo-seed string IDs
@@ -690,6 +733,9 @@ export default function App() {
         }}
         onShowAuth={() => openAuth()}
         onSignOut={() => setShowAccount(true)}
+        onShowNotifications={() => setShowNotifications(true)}
+        notificationsUnread={unreadNotifications}
+        notificationsEnabled={notificationsEnabled}
       />
 
       <div className="app-content">
@@ -903,7 +949,23 @@ export default function App() {
 
       {/* Settings */}
       {showSettings && (
-        <SettingsModal onClose={() => setShowSettings(false)} />
+        <SettingsModal
+          onClose={() => setShowSettings(false)}
+          notificationsEnabled={notificationsEnabled}
+          onToggleNotifications={setNotificationsEnabled}
+        />
+      )}
+
+      {/* Notifications panel */}
+      {showNotifications && user && (
+        <NotificationsPanel
+          userId={user.id}
+          notifications={notifications}
+          onClose={() => setShowNotifications(false)}
+          onMarkRead={(id) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read_at: new Date().toISOString() } : n))}
+          onMarkAllRead={() => setNotifications(prev => prev.map(n => n.read_at ? n : { ...n, read_at: new Date().toISOString() }))}
+          onOpenPost={(postId) => setDetailPostId(postId)}
+        />
       )}
     </div>
   )

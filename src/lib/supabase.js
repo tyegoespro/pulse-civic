@@ -221,3 +221,44 @@ export const stopWatching = (postId, userId) =>
 
 export const fetchMyWatched = (userId) =>
   supabase?.from('watched').select('*').eq('user_id', userId)
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+export const fetchMyNotifications = (userId, { limit = 30 } = {}) =>
+  supabase?.from('notifications')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+export const markNotificationRead = (notificationId) =>
+  supabase?.from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('id', notificationId)
+
+export const markAllNotificationsRead = (userId) =>
+  supabase?.from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .is('read_at', null)
+
+// Subscribe to new notifications for the given user. Returns an unsubscribe fn.
+export const subscribeToNotifications = (userId, onInsert) => {
+  if (!supabase) return () => {}
+  const channel = supabase
+    .channel(`notifications:${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`
+      },
+      (payload) => { try { onInsert?.(payload.new) } catch {} }
+    )
+    .subscribe()
+  return () => { try { supabase.removeChannel(channel) } catch {} }
+}
