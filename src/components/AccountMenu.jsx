@@ -3,7 +3,7 @@ import Icon from './Icon'
 import { useAuth } from '../lib/auth'
 import { updateProfile, uploadAvatar } from '../lib/supabase'
 
-export default function AccountMenu({ onClose, onSignOut, onOpenSettings, onViewProfile }) {
+export default function AccountMenu({ onClose, onSignOut, onOpenSettings, onViewProfile, onViewLanding }) {
   const { user, profile, refreshProfile } = useAuth()
   const [displayName, setDisplayName] = useState(profile?.display_name || '')
   const [bio, setBio] = useState(profile?.bio || '')
@@ -399,6 +399,31 @@ export default function AccountMenu({ onClose, onSignOut, onOpenSettings, onView
             >
               <Icon name="ui-feed" size={14} />
               View public profile
+            </button>
+          )}
+          {onViewLanding && (
+            <button
+              onClick={() => { onViewLanding(); onClose?.() }}
+              style={{
+                width: '100%',
+                height: 42,
+                borderRadius: 12,
+                background: 'rgba(255,255,255,0.04)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border)',
+                fontWeight: 700,
+                fontSize: 14,
+                cursor: 'pointer',
+                fontFamily: 'var(--font)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <Icon name="ui-megaphone" size={14} />
+              View landing page
             </button>
           )}
           <button

@@ -188,11 +188,14 @@ export default function App() {
 
   // Landing page — shown on first visit when the user isn't already signed in
   // and they didn't arrive via a deep-link to a specific Pulse. Once dismissed
-  // via "Open Pulse," we never show it again on this device.
+  // via "Open Pulse," we don't auto-show it again, but the user can re-open it
+  // from the Account menu or by visiting /?landing=1.
   const [showLanding, setShowLanding] = useState(() => {
     try {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('landing') === '1') return true
       const seen = localStorage.getItem(LANDING_SEEN_KEY) === 'true'
-      const hasDeepLink = !!new URLSearchParams(window.location.search).get('post')
+      const hasDeepLink = !!params.get('post')
       return !seen && !hasDeepLink
     } catch { return false }
   })
@@ -200,6 +203,22 @@ export default function App() {
   const dismissLanding = () => {
     try { localStorage.setItem(LANDING_SEEN_KEY, 'true') } catch {}
     setShowLanding(false)
+    // Strip ?landing=1 from the URL so a refresh doesn't re-open it.
+    try {
+      const params = new URLSearchParams(window.location.search)
+      if (params.has('landing')) {
+        params.delete('landing')
+        const search = params.toString()
+        const url = window.location.pathname + (search ? `?${search}` : '') + window.location.hash
+        window.history.replaceState({}, '', url)
+      }
+    } catch {}
+  }
+
+  const openLanding = () => {
+    try { localStorage.removeItem(LANDING_SEEN_KEY) } catch {}
+    setShowLanding(true)
+    window.scrollTo({ top: 0, behavior: 'instant' })
   }
 
   // Deep-link from shared URL: ?post=<id> auto-opens that Pulse's detail view.
@@ -1123,6 +1142,7 @@ export default function App() {
           onSignOut={() => signOut()}
           onOpenSettings={() => setShowSettings(true)}
           onViewProfile={() => setViewingProfile(user.id)}
+          onViewLanding={() => { setShowAccount(false); openLanding() }}
         />
       )}
 
