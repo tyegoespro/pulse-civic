@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import iconSprite from '../icons/sprite.svg?raw'
+import Icon from './Icon'
 
 const FONT_MONO = "'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
 const THEME_KEY = 'pulse_landing_theme'
@@ -47,17 +49,39 @@ const PALETTES = {
 }
 
 export default function LandingPage({ onLaunchApp }) {
-  // Theme persistence — light editorial newsprint by default.
+  // Theme — explicit user toggle wins (persisted to localStorage). If they
+  // haven't picked, follow the OS / browser preference. If they later flip
+  // their OS theme and haven't overridden in our toggle, we follow along.
+  const [userPicked, setUserPicked] = useState(() => {
+    try {
+      const saved = localStorage.getItem(THEME_KEY)
+      return saved === 'dark' || saved === 'light'
+    } catch { return false }
+  })
   const [theme, setTheme] = useState(() => {
     try {
       const saved = localStorage.getItem(THEME_KEY)
       if (saved === 'dark' || saved === 'light') return saved
     } catch {}
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    }
     return 'light'
   })
+  // Watch the OS preference and follow it only while the user hasn't picked.
   useEffect(() => {
-    try { localStorage.setItem(THEME_KEY, theme) } catch {}
-  }, [theme])
+    if (userPicked || typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = (e) => setTheme(e.matches ? 'dark' : 'light')
+    mq.addEventListener?.('change', onChange)
+    return () => mq.removeEventListener?.('change', onChange)
+  }, [userPicked])
+  const handleToggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    setUserPicked(true)
+    try { localStorage.setItem(THEME_KEY, next) } catch {}
+  }
   const c = PALETTES[theme]
   const isDark = theme === 'dark'
 
@@ -153,6 +177,9 @@ export default function LandingPage({ onLaunchApp }) {
       fontFeatureSettings: '"ss01", "ss02"',
       transition: 'background 0.3s ease, color 0.3s ease'
     }}>
+      {/* Inlined Streamline Plump icon sprite so the in-app brand mark resolves */}
+      <div dangerouslySetInnerHTML={{ __html: iconSprite }} style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} aria-hidden="true" />
+
       <style>{`
         @keyframes pulse-live {
           0%, 100% { transform: scale(1); opacity: 1; }
@@ -175,13 +202,26 @@ export default function LandingPage({ onLaunchApp }) {
         flexWrap: 'wrap',
         background: c.paper
       }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 18, flexWrap: 'wrap' }}>
-          <span style={{
-            fontSize: 26,
-            fontWeight: 700,
-            letterSpacing: '-0.04em',
-            color: c.ink
-          }}>PULSE</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 30,
+              height: 30,
+              color: ACCENTS.pink
+            }}>
+              <Icon name="ui-brand-pulse" size={30} />
+            </span>
+            <span style={{
+              fontSize: 26,
+              fontWeight: 700,
+              letterSpacing: '-0.04em',
+              color: c.ink,
+              lineHeight: 1
+            }}>PULSE</span>
+          </div>
           <span style={{
             fontSize: 10,
             fontWeight: 700,
@@ -228,7 +268,7 @@ export default function LandingPage({ onLaunchApp }) {
             onMouseLeave={() => setHover(null)}
           >Privacy</a>
           <button
-            onClick={() => setTheme(isDark ? 'light' : 'dark')}
+            onClick={handleToggleTheme}
             onMouseEnter={() => setHover('theme')}
             onMouseLeave={() => setHover(null)}
             aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -745,15 +785,27 @@ export default function LandingPage({ onLaunchApp }) {
                   onMouseEnter={() => setHover(k)}
                   onMouseLeave={() => setHover(null)}
                   style={{
-                    padding: '28px clamp(20px, 2.5vw, 32px) 28px 16px',
-                    margin: '0 -16px',
+                    padding: '28px clamp(20px, 2.5vw, 32px) 28px clamp(16px, 2vw, 24px)',
+                    borderRight: i < 2 ? `1px solid ${c.inverseInk}22` : 'none',
                     borderBottom: `1px solid ${c.inverseInk}22`,
                     position: 'relative',
+                    overflow: 'hidden',
                     cursor: 'default',
                     background: isHovered ? `${card.color}1A` : 'transparent',
                     transition: 'background 0.3s ease'
                   }}
                 >
+                  <div style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 3,
+                    background: card.color,
+                    transform: isHovered ? 'scaleY(1)' : 'scaleY(0)',
+                    transformOrigin: 'top',
+                    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }} />
                   <div style={{
                     ...tag(card.color),
                     marginBottom: 10
