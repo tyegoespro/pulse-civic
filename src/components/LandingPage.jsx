@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import iconSprite from '../icons/sprite.svg?raw'
+import Icon from './Icon'
 
 export default function LandingPage({ onLaunchApp }) {
   const [scrollY, setScrollY] = useState(0)
@@ -32,6 +34,9 @@ export default function LandingPage({ onLaunchApp }) {
 
   return (
     <div className="landing-page">
+      {/* Inlined icon sprite — landing page has its own root so we mount it here too */}
+      <div dangerouslySetInnerHTML={{ __html: iconSprite }} style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} />
+
       {/* ═══ NAV ═══ */}
       <nav className="landing-nav" style={{
         background: scrollY > 60 ? 'rgba(10, 10, 26, 0.92)' : 'transparent',
@@ -40,11 +45,12 @@ export default function LandingPage({ onLaunchApp }) {
       }}>
         <div className="landing-nav-inner">
           <div className="landing-brand">
-            <span className="landing-brand-icon">🫀</span>
+            <span className="landing-brand-icon" style={{ display: 'inline-flex', alignItems: 'center', color: '#FF3366' }}>
+              <Icon name="ui-brand-pulse" size={26} />
+            </span>
             <span className="landing-brand-text">Pulse</span>
           </div>
           <div className="landing-nav-links">
-            <a href="#how-it-works">How It Works</a>
             <a href="#why-pulse">Why Pulse</a>
             <a href="#privacy">Privacy</a>
             <button className="landing-cta-sm" onClick={onLaunchApp}>Open App</button>
@@ -74,8 +80,8 @@ export default function LandingPage({ onLaunchApp }) {
               Open Pulse
               <span className="landing-cta-arrow">→</span>
             </button>
-            <a href="#how-it-works" className="landing-cta-secondary">
-              See how it works
+            <a href="#why-pulse" className="landing-cta-secondary">
+              See why Pulse is different
             </a>
           </div>
 
@@ -135,50 +141,6 @@ export default function LandingPage({ onLaunchApp }) {
         </div>
       </section>
 
-      {/* ═══ HOW IT WORKS ═══ */}
-      <section className="landing-section dark" id="how-it-works" data-section="how">
-        <div className={`landing-section-inner ${isVisible('how') ? 'visible' : ''}`}>
-          <span className="landing-section-tag center">How Pulse Works</span>
-          <h2 className="landing-section-title center">
-            Three steps between a pothole<br />and a city council agenda item.
-          </h2>
-
-          <div className="landing-steps">
-            <div className="landing-step">
-              <div className="landing-step-num">01</div>
-              <div className="landing-step-icon">🪪</div>
-              <h3 className="landing-step-title">Verify once</h3>
-              <p className="landing-step-body">
-                Government ID verification confirms you're a real resident of your 
-                city. Takes under 2 minutes. Never shared; encrypted at rest. One and done.
-              </p>
-            </div>
-            <div className="landing-step-connector" />
-            <div className="landing-step">
-              <div className="landing-step-num">02</div>
-              <div className="landing-step-icon">📋</div>
-              <h3 className="landing-step-title">Raise or vote</h3>
-              <p className="landing-step-body">
-                Post a Pulse, attach photos for evidence, and vote on the voices that
-                matter to you. Duplicates are detected automatically — your voice
-                adds weight to existing ones instead of getting lost.
-              </p>
-            </div>
-            <div className="landing-step-connector" />
-            <div className="landing-step">
-              <div className="landing-step-num">03</div>
-              <div className="landing-step-icon">📊</div>
-              <h3 className="landing-step-title">Consensus forms</h3>
-              <p className="landing-step-body">
-                When enough verified residents back a Pulse, it crosses the
-                threshold. Structured reports — categorized, geo-tagged, and
-                ranked — get delivered to the relevant city departments.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ═══ WHY PULSE / VS COMPARISON ═══ */}
       <section className="landing-section" id="why-pulse" data-section="why">
         <div className={`landing-section-inner ${isVisible('why') ? 'visible' : ''}`}>
@@ -231,7 +193,9 @@ export default function LandingPage({ onLaunchApp }) {
 
           <div className="landing-bento">
             <div className="landing-bento-card large">
-              <div className="landing-bento-icon">🗺️</div>
+              <div className="landing-bento-icon" style={{ color: '#3B82F6' }}>
+                <Icon name="ui-explore" size={32} />
+              </div>
               <h3>Live City Heatmap</h3>
               <p>
                 See where voices cluster across your city in real time. Potholes
@@ -240,16 +204,20 @@ export default function LandingPage({ onLaunchApp }) {
               </p>
             </div>
             <div className="landing-bento-card">
-              <div className="landing-bento-icon">👤</div>
+              <div className="landing-bento-icon" style={{ color: '#A78BFA' }}>
+                <Icon name="ui-incognito" size={32} />
+              </div>
               <h3>Incognito Mode</h3>
               <p>
-                One toggle hides your identity across every interaction — votes, 
-                posts, comments. You're still verified. You're still counted. 
+                One toggle hides your identity across every interaction — votes,
+                posts, comments. You're still verified. You're still counted.
                 You're just anonymous.
               </p>
             </div>
             <div className="landing-bento-card">
-              <div className="landing-bento-icon">📸</div>
+              <div className="landing-bento-icon" style={{ color: '#EC4899' }}>
+                <Icon name="ui-camera" size={32} />
+              </div>
               <h3>Photo & Video Evidence</h3>
               <p>
                 Attach up to 4 photos or videos per Pulse. Visual proof eliminates
@@ -257,16 +225,20 @@ export default function LandingPage({ onLaunchApp }) {
               </p>
             </div>
             <div className="landing-bento-card">
-              <div className="landing-bento-icon">📍</div>
+              <div className="landing-bento-icon" style={{ color: '#22C55E' }}>
+                <Icon name="ui-location" size={32} />
+              </div>
               <h3>Proximity Voting</h3>
               <p>
-                Live or commute in the city? Your vote counts — same as everyone 
-                else. Outside the radius? You can't vote, period. No brigading, 
+                Live or commute in the city? Your vote counts — same as everyone
+                else. Outside the radius? You can't vote, period. No brigading,
                 no astroturfing, just verified local voices.
               </p>
             </div>
             <div className="landing-bento-card">
-              <div className="landing-bento-icon">🔄</div>
+              <div className="landing-bento-icon" style={{ color: '#F59E0B' }}>
+                <Icon name="ui-refresh" size={32} />
+              </div>
               <h3>Duplicate Detection</h3>
               <p>
                 AI-powered semantic matching ensures your voice adds weight to
@@ -275,12 +247,14 @@ export default function LandingPage({ onLaunchApp }) {
               </p>
             </div>
             <div className="landing-bento-card large">
-              <div className="landing-bento-icon">✨</div>
+              <div className="landing-bento-icon" style={{ color: '#FCD34D' }}>
+                <Icon name="ui-ai-spark" size={32} />
+              </div>
               <h3>AI-Assisted Civic Discourse</h3>
               <p>
-                Every post gets an impact score measuring actionability. Comments 
-                can be refined for constructive tone — preserving your opinion while 
-                improving delivery. The goal: make every citizen sound like they 
+                Every post gets an impact score measuring actionability. Comments
+                can be refined for constructive tone — preserving your opinion while
+                improving delivery. The goal: make every citizen sound like they
                 belong at the podium.
               </p>
             </div>
@@ -305,28 +279,36 @@ export default function LandingPage({ onLaunchApp }) {
             </div>
             <div className="landing-privacy-cards">
               <div className="landing-privacy-card">
-                <span className="landing-privacy-icon">🔐</span>
+                <span className="landing-privacy-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#22C55E' }}>
+                  <Icon name="ui-lock" size={24} />
+                </span>
                 <div>
                   <strong>Zero-knowledge verification</strong>
                   <p>We confirm you're real without storing your documents.</p>
                 </div>
               </div>
               <div className="landing-privacy-card">
-                <span className="landing-privacy-icon">🕵️</span>
+                <span className="landing-privacy-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#A78BFA' }}>
+                  <Icon name="ui-incognito" size={24} />
+                </span>
                 <div>
                   <strong>Incognito by default if you want it</strong>
                   <p>One button. Every action anonymous. Still counted.</p>
                 </div>
               </div>
               <div className="landing-privacy-card">
-                <span className="landing-privacy-icon">🚫</span>
+                <span className="landing-privacy-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#FF3366' }}>
+                  <Icon name="ui-megaphone" size={24} />
+                </span>
                 <div>
                   <strong>No ads. No data selling. Ever.</strong>
                   <p>Our customer is the city, not an advertiser.</p>
                 </div>
               </div>
               <div className="landing-privacy-card">
-                <span className="landing-privacy-icon">🏛️</span>
+                <span className="landing-privacy-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#3B82F6' }}>
+                  <Icon name="ui-verified" size={24} />
+                </span>
                 <div>
                   <strong>Row-level security</strong>
                   <p>Your votes and incognito posts are invisible — even to us.</p>
@@ -370,7 +352,9 @@ export default function LandingPage({ onLaunchApp }) {
       <section className="landing-section landing-final-cta" data-section="cta">
         <div className={`landing-section-inner ${isVisible('cta') ? 'visible' : ''}`}>
           <div className="landing-final-content">
-            <span className="landing-final-icon">🫀</span>
+            <span className="landing-final-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#FF3366' }}>
+              <Icon name="ui-brand-pulse" size={48} />
+            </span>
             <h2 className="landing-final-title">
               Your city is already talking.<br />
               Make sure it's being heard.
@@ -396,11 +380,13 @@ export default function LandingPage({ onLaunchApp }) {
       <footer className="landing-footer">
         <div className="landing-footer-inner">
           <div className="landing-footer-brand">
-            <span>🫀</span> Pulse
+            <span style={{ display: 'inline-flex', alignItems: 'center', color: '#FF3366', marginRight: 6 }}>
+              <Icon name="ui-brand-pulse" size={20} />
+            </span> Pulse
           </div>
           <div className="landing-footer-links">
             <a href="#privacy">Privacy</a>
-            <a href="#how-it-works">How It Works</a>
+            <a href="#why-pulse">Why Pulse</a>
             <a href="mailto:hello@getpulse.city">Contact</a>
           </div>
           <div className="landing-footer-legal">
