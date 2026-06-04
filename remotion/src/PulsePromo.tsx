@@ -43,8 +43,9 @@ export const PulsePromo: React.FC = () => {
       <Sequence from={660} durationInFrames={150}><VerifiedReal /></Sequence>
       <Sequence from={810} durationInFrames={90}><EndCard /></Sequence>
 
-      {/* Persistent corner watermark after the opening masthead */}
-      <Sequence from={60} durationInFrames={780}><CornerWatermark /></Sequence>
+      {/* Persistent corner watermark after the opening masthead — layout="none"
+          because CornerWatermark is itself absolutely positioned. */}
+      <Sequence from={60} durationInFrames={780} layout="none"><CornerWatermark /></Sequence>
     </AbsoluteFill>
   )
 }
@@ -57,16 +58,6 @@ const useFadeIn = (durationFrames = 18) => {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp'
   })
-}
-
-const useFadeOut = (startFrame: number, durationFrames = 18) => {
-  const frame = useCurrentFrame()
-  return interpolate(
-    frame,
-    [startFrame, startFrame + durationFrames],
-    [1, 0],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-  )
 }
 
 const useSlideUp = (startFrame: number, durationFrames = 24) => {
@@ -174,37 +165,35 @@ const Masthead: React.FC = () => {
 }
 
 // ─── Scene 2: Hero headline (2-7s) ───────────────────────────────────────
-const HeroHeadline: React.FC = () => {
-  // Three lines, staggered slide-in
-  const lines = [
-    'The same twelve',
-    'people show up to',
-    'every council meeting.'
-  ]
+const HERO_LINES = [
+  'The same twelve',
+  'people show up to',
+  'every council meeting.'
+]
+// Single hoisted line component so the hook lives at the top level — the
+// previous .map(useSlideUp(...)) inside the parent was a Rules of Hooks
+// violation even when the array length was static.
+const HeroLine: React.FC<{ text: string; startFrame: number }> = ({ text, startFrame }) => {
+  const style = useSlideUp(startFrame, 30)
   return (
-    <AbsoluteFill style={{ padding: '180px 140px', justifyContent: 'center' }}>
-      {lines.map((line, i) => {
-        const style = useSlideUp(i * 8, 30)
-        return (
-          <div
-            key={i}
-            style={{
-              ...style,
-              fontSize: 140,
-              fontWeight: 700,
-              color: INK,
-              lineHeight: 1.02,
-              letterSpacing: '-0.045em',
-              marginBottom: 8
-            }}
-          >
-            {line}
-          </div>
-        )
-      })}
-    </AbsoluteFill>
+    <div style={{
+      ...style,
+      fontSize: 140,
+      fontWeight: 700,
+      color: INK,
+      lineHeight: 1.02,
+      letterSpacing: '-0.045em',
+      marginBottom: 8
+    }}>{text}</div>
   )
 }
+const HeroHeadline: React.FC = () => (
+  <AbsoluteFill style={{ padding: '180px 140px', justifyContent: 'center' }}>
+    {HERO_LINES.map((line, i) => (
+      <HeroLine key={i} text={line} startFrame={i * 8} />
+    ))}
+  </AbsoluteFill>
+)
 
 // ─── Scene 3: The rest of us stopped going (7-10s) ───────────────────────
 const RestOfUs: React.FC = () => {
@@ -298,98 +287,98 @@ const PLANKS = [
   { n: '02', color: INDIGO, title: 'One person, one vote.' },
   { n: '03', color: GREEN, title: 'Public consensus, in public.' },
   { n: '04', color: AMBER, title: 'No ads. Ever.' }
-]
-const Planks: React.FC = () => {
+] as const
+
+const Plank: React.FC<{ n: string; color: string; title: string; startFrame: number }> = ({
+  n,
+  color,
+  title,
+  startFrame
+}) => {
+  const style = useSlideUp(startFrame, 30)
   return (
-    <AbsoluteFill style={{ padding: '160px 140px', justifyContent: 'center' }}>
-      {PLANKS.map((p, i) => {
-        const style = useSlideUp(i * 14, 30)
-        return (
-          <div
-            key={p.n}
-            style={{
-              ...style,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 40,
-              marginBottom: 28,
-              borderTop: `2px solid ${INK}22`,
-              paddingTop: 24
-            }}
-          >
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              width: 220
-            }}>
-              <div style={{
-                width: 10,
-                height: 70,
-                background: p.color
-              }} />
-              <div style={{
-                fontSize: 48,
-                fontWeight: 700,
-                color: p.color,
-                letterSpacing: '0.04em'
-              }}>{p.n}</div>
-            </div>
-            <div style={{
-              fontSize: 84,
-              fontWeight: 700,
-              color: INK,
-              letterSpacing: '-0.025em',
-              lineHeight: 1
-            }}>{p.title}</div>
-          </div>
-        )
-      })}
-    </AbsoluteFill>
+    <div style={{
+      ...style,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 40,
+      marginBottom: 28,
+      borderTop: `2px solid ${INK}22`,
+      paddingTop: 24
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, width: 220 }}>
+        <div style={{ width: 10, height: 70, background: color }} />
+        <div style={{
+          fontSize: 48,
+          fontWeight: 700,
+          color,
+          letterSpacing: '0.04em'
+        }}>{n}</div>
+      </div>
+      <div style={{
+        fontSize: 84,
+        fontWeight: 700,
+        color: INK,
+        letterSpacing: '-0.025em',
+        lineHeight: 1
+      }}>{title}</div>
+    </div>
   )
 }
 
+const Planks: React.FC = () => (
+  <AbsoluteFill style={{ padding: '160px 140px', justifyContent: 'center' }}>
+    {PLANKS.map((p, i) => (
+      <Plank key={p.n} n={p.n} color={p.color} title={p.title} startFrame={i * 14} />
+    ))}
+  </AbsoluteFill>
+)
+
 // ─── Scene 6: Verified residents / Real consensus / Live (22-27s) ───────
-const VerifiedReal: React.FC = () => {
-  const items = [
-    { label: 'Verified residents.', color: GREEN },
-    { label: 'Real consensus.', color: INDIGO },
-    { label: 'In real time.', color: PINK }
-  ]
+const VERIFIED_ITEMS = [
+  { label: 'Verified residents.', color: GREEN },
+  { label: 'Real consensus.', color: INDIGO },
+  { label: 'In real time.', color: PINK }
+] as const
+
+const VerifiedItem: React.FC<{ label: string; color: string; startFrame: number }> = ({
+  label,
+  color,
+  startFrame
+}) => {
+  const style = useSlideUp(startFrame, 30)
   return (
-    <AbsoluteFill style={{ padding: '200px 140px', justifyContent: 'center' }}>
-      {items.map((it, i) => {
-        const style = useSlideUp(i * 18, 30)
-        return (
-          <div
-            key={i}
-            style={{
-              ...style,
-              fontSize: 144,
-              fontWeight: 700,
-              color: INK,
-              lineHeight: 1.02,
-              letterSpacing: '-0.045em',
-              marginBottom: 8,
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: 24
-            }}
-          >
-            <span style={{
-              width: 14,
-              height: 14,
-              borderRadius: 7,
-              background: it.color,
-              display: 'inline-block'
-            }} />
-            <span>{it.label}</span>
-          </div>
-        )
-      })}
-    </AbsoluteFill>
+    <div style={{
+      ...style,
+      fontSize: 144,
+      fontWeight: 700,
+      color: INK,
+      lineHeight: 1.02,
+      letterSpacing: '-0.045em',
+      marginBottom: 8,
+      display: 'flex',
+      alignItems: 'baseline',
+      gap: 24
+    }}>
+      <span style={{
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        background: color,
+        display: 'inline-block'
+      }} />
+      <span>{label}</span>
+    </div>
   )
 }
+
+const VerifiedReal: React.FC = () => (
+  <AbsoluteFill style={{ padding: '200px 140px', justifyContent: 'center' }}>
+    {VERIFIED_ITEMS.map((it, i) => (
+      <VerifiedItem key={it.label} label={it.label} color={it.color} startFrame={i * 18} />
+    ))}
+  </AbsoluteFill>
+)
 
 // ─── Scene 7: End card (27-30s) ──────────────────────────────────────────
 const EndCard: React.FC = () => {
