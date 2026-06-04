@@ -1,0 +1,24 @@
+{
+  "name": "pulse-promo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "30-second editorial promo video for Pulse, built with Remotion",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts pulse-promo out/pulse-promo.mp4",
+    "render:web": "remotion render src/index.ts pulse-promo ../public/pulse-promo.mp4 --codec h264 --crf 20",
+    "render:square": "remotion render src/index.ts pulse-promo-square out/pulse-promo-square.mp4",
+    "render:vertical": "remotion render src/index.ts pulse-promo-vertical out/pulse-promo-vertical.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "@remotion/google-fonts": "^4.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "typescript": "^5.4.5"
+  }
+}

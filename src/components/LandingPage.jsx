@@ -368,6 +368,52 @@ export default function LandingPage({ onLaunchApp }) {
         </div>
       </section>
 
+      {/* ─────────────── PROMO REEL ─────────────── */}
+      <section data-r="reel" style={{
+        ...reveal('reel'),
+        padding: 'clamp(40px, 6vw, 80px) clamp(20px, 4vw, 40px) clamp(48px, 7vw, 96px)',
+        maxWidth: 1240,
+        margin: '0 auto'
+      }}>
+        <div style={{
+          ...tag(ACCENTS.pink),
+          marginBottom: 12,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10
+        }}>
+          <span style={{
+            width: 7,
+            height: 7,
+            borderRadius: '50%',
+            background: ACCENTS.pink,
+            animation: 'pulse-live 1.6s ease-in-out infinite',
+            display: 'inline-block'
+          }} />
+          30-second introduction
+        </div>
+        <div style={{
+          border: `2px solid ${c.ink}`,
+          background: c.ink,
+          lineHeight: 0,
+          position: 'relative'
+        }}>
+          <video
+            src="/pulse-promo.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            style={{
+              width: '100%',
+              display: 'block',
+              aspectRatio: '16 / 9'
+            }}
+          />
+        </div>
+      </section>
+
       <hr style={{ border: 'none', borderTop: `1px solid ${c.ink}`, margin: 0, opacity: 0.18 }} />
 
       {/* ─────────────── WHAT IT IS ─────────────── */}
