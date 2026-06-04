@@ -121,34 +121,6 @@ const Particles: React.FC<{ count?: number; opacity?: number }> = ({ count = 18,
   )
 }
 
-// Sweep light leak — drifts across when a scene opens
-const LightLeak: React.FC<{ color?: string; startFrame?: number; duration?: number }> = ({
-  color = PINK_GLOW,
-  startFrame = 0,
-  duration = 50
-}) => {
-  const frame = useCurrentFrame()
-  const t = interpolate(frame, [startFrame, startFrame + duration], [0, 1], {
-    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH
-  })
-  const x = interpolate(t, [0, 1], [-600, 2400])
-  const opacity = interpolate(t, [0, 0.3, 0.7, 1], [0, 0.6, 0.6, 0])
-  return (
-    <div style={{
-      position: 'absolute',
-      top: 0,
-      bottom: 0,
-      left: x,
-      width: 800,
-      pointerEvents: 'none',
-      background: `radial-gradient(ellipse at center, ${color} 0%, transparent 70%)`,
-      filter: 'blur(40px)',
-      opacity,
-      zIndex: 60
-    }} />
-  )
-}
-
 // Confetti burst — used at the "Resolved" celebration
 const Confetti: React.FC<{ startFrame: number; x?: number; y?: number; color?: string }> = ({
   startFrame,
@@ -415,7 +387,6 @@ const SceneOpen: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ background: BG }}>
-      <LightLeak color={ORANGE + '88'} startFrame={0} duration={60} />
       <Particles count={14} opacity={0.12} />
 
       <div style={{ opacity: headerFade }}>
@@ -588,7 +559,6 @@ const SceneClimb: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ background: BG }}>
-      <LightLeak color={PINK_GLOW} startFrame={0} duration={50} />
       <Particles count={16} opacity={0.14} />
 
       <div style={{ opacity: headerFade }}>
@@ -746,7 +716,6 @@ const SceneListens: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ background: BG }}>
-      <LightLeak color={`${AMBER}66`} startFrame={0} duration={60} />
       <Particles count={14} opacity={0.12} />
 
       <div style={{ opacity: headerFade }}>
@@ -917,7 +886,6 @@ const SceneFixed: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ background: BG }}>
-      <LightLeak color={`${GREEN}66`} startFrame={0} duration={70} />
       <Particles count={14} opacity={0.12} />
 
       <div style={{ opacity: headerFade }}>
@@ -1067,7 +1035,6 @@ const SceneCelebrate: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ background: BG }}>
-      <LightLeak color={`${GREEN}66`} startFrame={0} duration={60} />
       <Particles count={14} opacity={0.12} />
 
       <div style={{ opacity: headerFade }}>
@@ -1178,7 +1145,6 @@ const EndCard: React.FC = () => {
       fontFamily,
       background: `radial-gradient(ellipse at center, ${BG} 0%, ${BG_DEEP} 100%)`
     }}>
-      <LightLeak color={PINK_GLOW} startFrame={0} duration={60} />
       <Particles count={24} opacity={0.18} />
 
       <div style={{ ...brandPop, marginBottom: 36, position: 'relative' }}>
