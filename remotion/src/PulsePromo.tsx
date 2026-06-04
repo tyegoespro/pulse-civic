@@ -11,7 +11,7 @@ import { loadFont as loadInter } from '@remotion/google-fonts/Inter'
 
 const { fontFamily } = loadInter()
 
-// ─── App palette — matches the actual Pulse PWA ─────────────────────────
+// ─── App palette ─────────────────────────────────────────────────────────
 const BG = '#0F0F1A'
 const BG_CARD = '#1A1A2E'
 const BORDER = 'rgba(255, 255, 255, 0.08)'
@@ -26,58 +26,55 @@ const PURPLE = '#A855F7'
 const INDIGO = '#6366F1'
 const AMBER = '#F59E0B'
 const BLUE = '#3B82F6'
+const ORANGE = '#FF6B35'
 
-// ─── Helpers ────────────────────────────────────────────────────────────
+// ─── Easings (from the skill's recommended curves) ───────────────────────
+const ENTER = Easing.bezier(0.16, 1, 0.3, 1)
+const SMOOTH = Easing.bezier(0.45, 0, 0.55, 1)
+const SOFT_POP = Easing.bezier(0.34, 1.56, 0.64, 1)
 
-const useSlideUp = (startFrame: number) => {
+// ─── Helpers ─────────────────────────────────────────────────────────────
+
+const useEnter = (startFrame: number, durationFrames = 24) => {
   const frame = useCurrentFrame()
-  const { fps } = useVideoConfig()
-  const t = spring({
-    frame: frame - startFrame,
-    fps,
-    config: { damping: 18, stiffness: 80, mass: 0.6 }
-  })
-  return {
-    opacity: interpolate(t, [0, 1], [0, 1]),
-    transform: `translateY(${interpolate(t, [0, 1], [40, 0])}px)`
-  }
-}
-
-const useFadeIn = (startFrame: number, durationFrames = 18) => {
-  const frame = useCurrentFrame()
-  return interpolate(
+  const t = interpolate(
     frame,
     [startFrame, startFrame + durationFrames],
     [0, 1],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER }
   )
-}
-
-const usePop = (startFrame: number) => {
-  const frame = useCurrentFrame()
-  const { fps } = useVideoConfig()
-  const t = spring({
-    frame: frame - startFrame,
-    fps,
-    config: { damping: 10, stiffness: 200, mass: 0.5 }
-  })
   return {
-    opacity: interpolate(t, [0, 0.5], [0, 1], { extrapolateRight: 'clamp' }),
-    transform: `scale(${interpolate(t, [0, 1], [0.4, 1])})`
+    opacity: t,
+    transform: `translateY(${interpolate(t, [0, 1], [22, 0])}px)`
   }
 }
 
-// Animated number ticker that interpolates between two integer values.
+const usePop = (startFrame: number, durationFrames = 18) => {
+  const frame = useCurrentFrame()
+  const t = interpolate(
+    frame,
+    [startFrame, startFrame + durationFrames],
+    [0, 1],
+    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SOFT_POP }
+  )
+  return {
+    opacity: interpolate(t, [0, 0.5, 1], [0, 1, 1]),
+    transform: `scale(${interpolate(t, [0, 1], [0.6, 1])})`
+  }
+}
+
 const useTicker = (startFrame: number, fromValue: number, toValue: number, durationFrames = 30) => {
   const frame = useCurrentFrame()
   const t = interpolate(
     frame,
     [startFrame, startFrame + durationFrames],
     [0, 1],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic) }
+    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER }
   )
   return Math.floor(fromValue + (toValue - fromValue) * t)
 }
+
+const fmtNum = (n: number) => n.toLocaleString('en-US')
 
 // ─── UI atoms ────────────────────────────────────────────────────────────
 
@@ -95,74 +92,115 @@ const PulseLogo: React.FC<{ size?: number }> = ({ size = 32 }) => (
   </svg>
 )
 
-// Touch ripple — white dot with a pink ring that scales out + fades.
-// Pass a startFrame relative to the parent Sequence. Will auto-self-destruct
-// after ~30 frames; just stop rendering it.
-const TouchTap: React.FC<{ x: number; y: number; startFrame: number }> = ({ x, y, startFrame }) => {
-  const frame = useCurrentFrame()
-  const { fps } = useVideoConfig()
-  const localFrame = frame - startFrame
+// Stylized pothole photo — recognizable as a road problem without being photoreal
+const PotholePhoto: React.FC<{ style?: React.CSSProperties }> = ({ style }) => (
+  <svg viewBox="0 0 800 500" style={{ width: '100%', height: '100%', display: 'block', ...style }} xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="potSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#4a5d76" />
+        <stop offset="1" stopColor="#2e4055" />
+      </linearGradient>
+      <linearGradient id="potRoad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#3a3a3a" />
+        <stop offset="0.5" stopColor="#2a2a2a" />
+        <stop offset="1" stopColor="#1a1a1a" />
+      </linearGradient>
+      <radialGradient id="potHole" cx="0.5" cy="0.5">
+        <stop offset="0" stopColor="#000" />
+        <stop offset="0.55" stopColor="#050505" />
+        <stop offset="1" stopColor="#1a1a1a" />
+      </radialGradient>
+    </defs>
+    {/* Sky */}
+    <rect width="800" height="170" fill="url(#potSky)" />
+    {/* Distant buildings silhouette */}
+    <path d="M0,150 L80,150 L80,118 L140,118 L140,140 L210,140 L210,108 L290,108 L290,150 L370,150 L370,124 L450,124 L450,150 L540,150 L540,118 L610,118 L610,150 L700,150 L700,134 L800,134 L800,170 L0,170 Z" fill="#1e2a3a" />
+    {/* Road */}
+    <rect x="0" y="170" width="800" height="330" fill="url(#potRoad)" />
+    {/* Asphalt texture — random small dots */}
+    <g fill="#0d0d0d" opacity="0.5">
+      <circle cx="80" cy="220" r="2" /><circle cx="180" cy="265" r="3" /><circle cx="260" cy="240" r="2" />
+      <circle cx="340" cy="300" r="2" /><circle cx="490" cy="245" r="3" /><circle cx="610" cy="265" r="2" />
+      <circle cx="720" cy="240" r="2" /><circle cx="140" cy="360" r="3" /><circle cx="280" cy="380" r="2" />
+      <circle cx="540" cy="340" r="2" /><circle cx="680" cy="380" r="3" /><circle cx="90" cy="430" r="2" />
+      <circle cx="220" cy="445" r="3" /><circle cx="380" cy="425" r="2" /><circle cx="540" cy="450" r="3" />
+      <circle cx="700" cy="440" r="2" />
+    </g>
+    {/* Cracks radiating from pothole */}
+    <g stroke="#0a0a0a" strokeWidth="2.5" fill="none" opacity="0.85">
+      <path d="M120,320 L240,300 L320,310" />
+      <path d="M480,280 L580,290 L680,310" />
+      <path d="M200,420 L320,400 L380,390" />
+      <path d="M520,420 L620,410 L700,400" />
+    </g>
+    {/* The pothole */}
+    <ellipse cx="400" cy="370" rx="195" ry="92" fill="url(#potHole)" />
+    {/* Pothole rim — slightly raised broken edge */}
+    <ellipse cx="400" cy="365" rx="198" ry="93" fill="none" stroke="#0a0a0a" strokeWidth="3" />
+    {/* Yellow centerline broken */}
+    <rect x="380" y="200" width="40" height="14" fill="#FFD700" opacity="0.85" />
+    <rect x="380" y="240" width="40" height="14" fill="#FFD700" opacity="0.85" />
+    <rect x="380" y="475" width="40" height="14" fill="#FFD700" opacity="0.85" />
+    {/* White edge lines */}
+    <rect x="70" y="195" width="6" height="300" fill="#e8e8e8" opacity="0.55" />
+    <rect x="724" y="195" width="6" height="300" fill="#e8e8e8" opacity="0.55" />
+    {/* Top edge highlight */}
+    <rect x="0" y="170" width="800" height="2" fill="#5a5a5a" />
+  </svg>
+)
 
-  const dotT = spring({ frame: localFrame, fps, config: { damping: 12, stiffness: 250, mass: 0.4 } })
-  const ringT = interpolate(localFrame, [0, 36], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-    easing: Easing.out(Easing.cubic)
-  })
-  const dotScale = interpolate(dotT, [0, 0.6, 1], [0, 1.15, 0.85])
-  const dotOpacity = interpolate(localFrame, [0, 6, 24, 36], [0, 1, 1, 0], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp'
-  })
-  const ringScale = interpolate(ringT, [0, 1], [0.4, 2.4])
-  const ringOpacity = interpolate(ringT, [0, 1], [0.9, 0])
+// Stylized repaved/smooth road photo — same composition, fresh
+const RepavedPhoto: React.FC<{ style?: React.CSSProperties }> = ({ style }) => (
+  <svg viewBox="0 0 800 500" style={{ width: '100%', height: '100%', display: 'block', ...style }} xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="rpSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#7b9ab9" />
+        <stop offset="1" stopColor="#5a7d9e" />
+      </linearGradient>
+      <linearGradient id="rpRoad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#3a3a40" />
+        <stop offset="0.5" stopColor="#22222a" />
+        <stop offset="1" stopColor="#15151c" />
+      </linearGradient>
+      <linearGradient id="rpShine" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="rgba(255,255,255,0.12)" />
+        <stop offset="0.5" stopColor="rgba(255,255,255,0)" />
+        <stop offset="1" stopColor="rgba(255,255,255,0.04)" />
+      </linearGradient>
+    </defs>
+    {/* Brighter sky — sunnier day */}
+    <rect width="800" height="170" fill="url(#rpSky)" />
+    {/* Same buildings */}
+    <path d="M0,150 L80,150 L80,118 L140,118 L140,140 L210,140 L210,108 L290,108 L290,150 L370,150 L370,124 L450,124 L450,150 L540,150 L540,118 L610,118 L610,150 L700,150 L700,134 L800,134 L800,170 L0,170 Z" fill="#3a4a5e" />
+    {/* Fresh asphalt — smooth, no texture noise, slight sheen */}
+    <rect x="0" y="170" width="800" height="330" fill="url(#rpRoad)" />
+    <rect x="0" y="170" width="800" height="330" fill="url(#rpShine)" />
+    {/* Clean yellow centerline — full dashes, no breaks */}
+    <rect x="380" y="200" width="40" height="14" fill="#FFE600" />
+    <rect x="380" y="234" width="40" height="14" fill="#FFE600" />
+    <rect x="380" y="268" width="40" height="14" fill="#FFE600" />
+    <rect x="380" y="302" width="40" height="14" fill="#FFE600" />
+    <rect x="380" y="336" width="40" height="14" fill="#FFE600" />
+    <rect x="380" y="370" width="40" height="14" fill="#FFE600" />
+    <rect x="380" y="404" width="40" height="14" fill="#FFE600" />
+    <rect x="380" y="438" width="40" height="14" fill="#FFE600" />
+    <rect x="380" y="472" width="40" height="14" fill="#FFE600" />
+    {/* Crisp white edge lines — wider, brighter */}
+    <rect x="70" y="195" width="6" height="300" fill="#FFFFFF" opacity="0.9" />
+    <rect x="724" y="195" width="6" height="300" fill="#FFFFFF" opacity="0.9" />
+    {/* Top edge of fresh asphalt — slight gloss line */}
+    <rect x="0" y="170" width="800" height="3" fill="#6a6a72" />
+  </svg>
+)
 
-  if (localFrame < 0 || localFrame > 40) return null
-
-  return (
-    <div style={{
-      position: 'absolute',
-      left: x,
-      top: y,
-      width: 0,
-      height: 0,
-      pointerEvents: 'none'
-    }}>
-      <div style={{
-        position: 'absolute',
-        left: -70,
-        top: -70,
-        width: 140,
-        height: 140,
-        borderRadius: 70,
-        border: `4px solid ${PINK}`,
-        transform: `scale(${ringScale})`,
-        opacity: ringOpacity
-      }} />
-      <div style={{
-        position: 'absolute',
-        left: -42,
-        top: -42,
-        width: 84,
-        height: 84,
-        borderRadius: 42,
-        background: 'rgba(255, 255, 255, 0.92)',
-        boxShadow: `0 0 36px ${PINK_GLOW}`,
-        transform: `scale(${dotScale})`,
-        opacity: dotOpacity
-      }} />
-    </div>
-  )
-}
-
-// App-style top header that anchors every scene.
-const AppHeader: React.FC<{ activeTab?: 'feed' | 'explore' | 'activity' }> = ({ activeTab = 'feed' }) => (
+// App header — minimal, no Oshkosh reference
+const AppHeader: React.FC = () => (
   <div style={{
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    padding: '32px 64px 24px',
+    padding: '28px 64px 22px',
     borderBottom: `1px solid ${BORDER}`,
     background: BG,
     display: 'flex',
@@ -174,806 +212,710 @@ const AppHeader: React.FC<{ activeTab?: 'feed' | 'explore' | 'activity' }> = ({ 
       <PulseLogo size={36} />
       <span style={{ fontSize: 28, fontWeight: 800, color: TEXT, letterSpacing: '-0.02em' }}>Pulse</span>
     </div>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      {(['feed', 'explore', 'activity'] as const).map(tab => (
-        <div key={tab} style={{
-          padding: '10px 22px',
-          borderRadius: 12,
-          fontSize: 15,
-          fontWeight: 700,
-          color: activeTab === tab ? PINK : TEXT_MUTE,
-          background: activeTab === tab ? `${PINK}22` : 'transparent',
-          border: activeTab === tab ? `1px solid ${PINK}66` : '1px solid transparent',
-          textTransform: 'capitalize'
-        }}>{tab}</div>
-      ))}
+    <div style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 8,
+      padding: '8px 16px',
+      borderRadius: 24,
+      background: `${GREEN}1A`,
+      border: `1px solid ${GREEN}44`,
+      color: GREEN,
+      fontSize: 14,
+      fontWeight: 700,
+      letterSpacing: '0.04em'
+    }}>
+      <div style={{ width: 8, height: 8, borderRadius: 4, background: GREEN }} />
+      <span>Verified resident</span>
     </div>
   </div>
 )
 
-// PostCard mock — laid out close to the in-app component
-const PulseCard: React.FC<{
-  category: { name: string; color: string }
-  title: string
-  location: string
-  votes: number
-  comments: number
-  author: string
-  voteHighlight?: boolean
-  scale?: number
-}> = ({ category, title, location, votes, comments, author, voteHighlight = false, scale = 1 }) => (
-  <div style={{
-    background: BG_CARD,
-    borderRadius: 20,
-    padding: '32px 36px',
-    border: `1px solid ${BORDER}`,
-    boxShadow: '0 8px 40px rgba(0, 0, 0, 0.35)',
-    fontFamily,
-    transform: `scale(${scale})`
-  }}>
-    {/* Category + location row */}
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
-      <span style={{
-        padding: '6px 14px',
-        borderRadius: 8,
-        background: `${category.color}22`,
-        border: `1px solid ${category.color}44`,
-        color: category.color,
-        fontSize: 14,
-        fontWeight: 800,
-        letterSpacing: '0.04em',
-        textTransform: 'uppercase'
-      }}>{category.name}</span>
-      <span style={{ fontSize: 16, color: TEXT_MUTE }}>· {location}</span>
-    </div>
-
-    <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start' }}>
-      {/* Vote column */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 10,
-        flexShrink: 0
-      }}>
-        <div style={{
-          width: 72,
-          height: 72,
-          borderRadius: 18,
-          background: voteHighlight ? PINK : 'rgba(255, 255, 255, 0.05)',
-          border: voteHighlight ? `2px solid ${PINK}` : `1px solid ${BORDER_STRONG}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: voteHighlight ? 'white' : TEXT_MUTE,
-          fontSize: 38,
-          fontWeight: 800,
-          boxShadow: voteHighlight ? `0 0 28px ${PINK_GLOW}` : 'none'
-        }}>▲</div>
-        <span style={{
-          fontSize: 30,
-          fontWeight: 800,
-          color: voteHighlight ? PINK : TEXT,
-          fontVariantNumeric: 'tabular-nums',
-          letterSpacing: '-0.02em'
-        }}>{votes}</span>
-        <div style={{
-          width: 72,
-          height: 72,
-          borderRadius: 18,
-          background: 'rgba(255, 255, 255, 0.05)',
-          border: `1px solid ${BORDER_STRONG}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: TEXT_MUTE,
-          fontSize: 38,
-          fontWeight: 800
-        }}>▼</div>
-      </div>
-
-      {/* Body */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <h3 style={{
-          fontSize: 36,
-          fontWeight: 800,
-          color: TEXT,
-          margin: 0,
-          marginBottom: 14,
-          letterSpacing: '-0.015em',
-          lineHeight: 1.2
-        }}>{title}</h3>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, fontSize: 18, color: TEXT_MUTE }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 18 }}>💬</span>
-            <span style={{ color: TEXT, fontWeight: 600 }}>{comments}</span>
-            <span>replies</span>
-          </span>
-          <span>·</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ color: TEXT, fontWeight: 700 }}>{author}</span>
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              padding: '2px 8px',
-              borderRadius: 6,
-              background: `${GREEN}22`,
-              color: GREEN,
-              fontSize: 13,
-              fontWeight: 700
-            }}>
-              ✓ Verified
-            </span>
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-)
-
-// Caption strip — sits above the UI scene as a moment of narration
 const Caption: React.FC<{ text: string; color?: string; startFrame: number }> = ({
   text,
   color = PINK,
   startFrame
 }) => {
-  const slide = useSlideUp(startFrame)
+  const slide = useEnter(startFrame, 22)
   return (
     <div style={{
       ...slide,
       position: 'absolute',
-      top: 160,
+      top: 122,
       left: 64,
       right: 64,
       fontFamily,
       fontSize: 14,
       fontWeight: 800,
       color,
-      letterSpacing: '0.24em',
+      letterSpacing: '0.26em',
       textTransform: 'uppercase'
-    }}>{text}</div>
+    }}>
+      <span style={{
+        display: 'inline-block',
+        width: 36,
+        height: 2,
+        background: color,
+        verticalAlign: 'middle',
+        marginRight: 14
+      }} />
+      {text}
+    </div>
   )
 }
 
-// ─── Scene 1: Tap to vote (0–4s) ────────────────────────────────────────
-const Scene1Tap: React.FC = () => {
-  const headerFade = useFadeIn(2, 14)
-  const cardSlide = useSlideUp(8)
-  const tapFrame = 60
+// ─── Scene 1 + 2: Photo reveal → Pulse card (0–6s) ────────────────────────
+const SceneOpen: React.FC = () => {
   const frame = useCurrentFrame()
-  // Vote button hits "highlight" state right after the tap lands
-  const highlighted = frame >= tapFrame + 6
-  const tickerVotes = useTicker(tapFrame + 6, 142, 143, 6)
+  // Phase 1 (0–30): fullscreen photo fades in
+  // Phase 2 (30–90): photo shrinks + slides into card, card UI appears around it
+  const photoFade = interpolate(frame, [0, 18], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: ENTER
+  })
+  // Hold the photo fullscreen for a beat, then animate it into the card
+  const pullback = interpolate(frame, [40, 100], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: ENTER
+  })
+  // Photo target: 480×300 inside a card at top:280, left:120, so the photo
+  // sits at top:432 (after category row + title)
+  // 1920×1080 to 480×300: scale = 0.435 roughly
+  const photoScale = interpolate(pullback, [0, 1], [1, 0.36])
+  const photoTranslateX = interpolate(pullback, [0, 1], [0, -540])
+  const photoTranslateY = interpolate(pullback, [0, 1], [0, 60])
+
+  const headerFade = interpolate(frame, [70, 100], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
+  const cardChromeFade = interpolate(frame, [80, 115], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
+  const captionStart = 100
+
+  // Vote count subtle pop when card is fully revealed
+  const tickerVotes = useTicker(118, 11, 12, 14)
 
   return (
-    <AbsoluteFill>
+    <AbsoluteFill style={{ background: BG }}>
+      {/* App header fades up under the photo zoom-out */}
       <div style={{ opacity: headerFade }}>
-        <AppHeader activeTab="feed" />
+        <AppHeader />
       </div>
-      <Caption text="One tap. One vote." startFrame={4} />
+      <Caption text="Post what you see." startFrame={captionStart} />
+
+      {/* The photo lives in absolute space — starts fullscreen, animates into card */}
       <div style={{
-        ...cardSlide,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: 1920,
+        height: 1080,
+        opacity: photoFade,
+        transform: `translate(${photoTranslateX}px, ${photoTranslateY}px) scale(${photoScale})`,
+        transformOrigin: 'center center',
+        pointerEvents: 'none'
+      }}>
+        <PotholePhoto />
+      </div>
+
+      {/* The card chrome appears AROUND the photo once it's parked */}
+      <div style={{
         position: 'absolute',
         top: 240,
         left: 120,
-        right: 120
-      }}>
-        <PulseCard
-          category={{ name: 'Pothole', color: '#FF6B35' }}
-          title="Massive potholes on Main & 9th — bent my rim last week"
-          location="Main St & 9th Ave"
-          votes={tickerVotes}
-          comments={18}
-          author="Marcus T."
-          voteHighlight={highlighted}
-        />
-      </div>
-      {/* Touch indicator sits over the upvote button */}
-      <TouchTap x={278} y={398} startFrame={tapFrame} />
-    </AbsoluteFill>
-  )
-}
-
-// ─── Scene 2: Consensus forms — vote count rapidly ticks (4–9s) ─────────
-const Scene2Consensus: React.FC = () => {
-  const frame = useCurrentFrame()
-  const headerFade = useFadeIn(0, 8)
-  const cardFade = useFadeIn(0, 8)
-  // Two phases of fast ticking — gives the count a "burst" feel
-  const votes1 = useTicker(0, 143, 287, 30)
-  const votes2 = useTicker(30, 287, 491, 30)
-  const votes3 = useTicker(60, 491, 742, 36)
-  const votes = frame < 30 ? votes1 : frame < 60 ? votes2 : votes3
-
-  // Trending badge appears at frame 60
-  const trendingPop = usePop(60)
-
-  return (
-    <AbsoluteFill>
-      <div style={{ opacity: headerFade }}>
-        <AppHeader activeTab="feed" />
-      </div>
-      <Caption text="Watch consensus form." startFrame={0} />
-      <div style={{
-        opacity: cardFade,
-        position: 'absolute',
-        top: 240,
-        left: 120,
-        right: 120
-      }}>
-        <PulseCard
-          category={{ name: 'Pothole', color: '#FF6B35' }}
-          title="Massive potholes on Main & 9th — bent my rim last week"
-          location="Main St & 9th Ave"
-          votes={votes}
-          comments={18}
-          author="Marcus T."
-          voteHighlight
-        />
-      </div>
-      {/* Trending badge pops in */}
-      <div style={{
-        ...trendingPop,
-        position: 'absolute',
-        top: 260,
-        right: 100,
-        padding: '12px 22px',
-        borderRadius: 14,
-        background: PINK,
-        color: 'white',
-        fontSize: 18,
-        fontWeight: 800,
-        letterSpacing: '0.06em',
-        textTransform: 'uppercase',
-        boxShadow: `0 4px 28px ${PINK_GLOW}`,
-        fontFamily,
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 8
-      }}>
-        🔥 Trending
-      </div>
-    </AbsoluteFill>
-  )
-}
-
-// ─── Scene 3: A real comment lands (9–14s) ───────────────────────────────
-const Scene3Comment: React.FC = () => {
-  const frame = useCurrentFrame()
-  const { fps } = useVideoConfig()
-  const headerFade = useFadeIn(0, 8)
-  const titleSlide = useSlideUp(0)
-  const commentSlide = useSlideUp(20)
-  const verifiedPop = usePop(60)
-  const tapFrame = 100
-  const ticker = useTicker(tapFrame + 6, 12, 13, 6)
-
-  // Typewriter — reveal one character at a time
-  const fullText = 'This corner is dangerous for kids walking to school. My daughter crosses here every morning.'
-  const charsPerFrame = 1.3
-  const charsRevealed = Math.min(
-    fullText.length,
-    Math.floor(Math.max(0, frame - 30) * charsPerFrame)
-  )
-  const typedText = fullText.slice(0, charsRevealed)
-
-  return (
-    <AbsoluteFill>
-      <div style={{ opacity: headerFade }}>
-        <AppHeader activeTab="feed" />
-      </div>
-      <Caption text="With real neighbors." startFrame={0} />
-
-      {/* Post title (smaller, condensed) */}
-      <div style={{
-        ...titleSlide,
-        position: 'absolute',
-        top: 230,
-        left: 120,
-        right: 120
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
-          <span style={{
-            padding: '6px 14px',
-            borderRadius: 8,
-            background: '#FF6B3522',
-            border: '1px solid #FF6B3544',
-            color: '#FF6B35',
-            fontSize: 14,
-            fontWeight: 800,
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase',
-            fontFamily
-          }}>Pothole</span>
-          <span style={{ fontSize: 16, color: TEXT_MUTE, fontFamily }}>· Main St & 9th Ave</span>
-        </div>
-        <div style={{
-          fontSize: 32,
-          fontWeight: 800,
-          color: TEXT,
-          letterSpacing: '-0.015em',
-          lineHeight: 1.25,
-          fontFamily
-        }}>Massive potholes on Main & 9th — bent my rim last week</div>
-      </div>
-
-      {/* Comment card */}
-      <div style={{
-        ...commentSlide,
-        position: 'absolute',
-        top: 460,
-        left: 120,
         right: 120,
         background: BG_CARD,
-        borderRadius: 18,
-        padding: '28px 32px',
+        borderRadius: 22,
         border: `1px solid ${BORDER}`,
-        fontFamily
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-          <div style={{
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            background: `linear-gradient(135deg, ${PINK}, ${PURPLE})`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: 24,
-            fontWeight: 800
-          }}>D</div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 22, fontWeight: 700, color: TEXT }}>Desiree W.</span>
-              <span style={{
-                ...verifiedPop,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '4px 10px',
-                borderRadius: 8,
-                background: `${GREEN}22`,
-                color: GREEN,
-                fontSize: 13,
-                fontWeight: 700
-              }}>✓ Verified resident</span>
-            </div>
-            <span style={{ fontSize: 14, color: TEXT_MUTE }}>2 minutes ago</span>
-          </div>
-        </div>
-
-        <p style={{
-          fontSize: 22,
-          color: TEXT_DIM,
-          margin: 0,
-          marginBottom: 18,
-          lineHeight: 1.45,
-          minHeight: 100
-        }}>{typedText}<span style={{ opacity: (frame % 16) > 8 ? 1 : 0 }}>|</span></p>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '10px 18px',
-            borderRadius: 12,
-            background: frame >= tapFrame + 6 ? `${PINK}22` : 'rgba(255, 255, 255, 0.05)',
-            border: frame >= tapFrame + 6 ? `1px solid ${PINK}` : `1px solid ${BORDER}`,
-            color: frame >= tapFrame + 6 ? PINK : TEXT_MUTE,
-            fontSize: 18,
-            fontWeight: 700
-          }}>▲ {ticker}</div>
-        </div>
-      </div>
-
-      <TouchTap x={250} y={700} startFrame={tapFrame} />
-    </AbsoluteFill>
-  )
-}
-
-// ─── Scene 4: Verification flow (14–21s) ─────────────────────────────────
-const Scene4Verify: React.FC = () => {
-  const frame = useCurrentFrame()
-  const headerFade = useFadeIn(0, 8)
-  const modalSlide = useSlideUp(12)
-
-  // Typewriter ZIP
-  const zip = '54901'
-  const zipChars = Math.min(zip.length, Math.max(0, Math.floor((frame - 50) / 6)))
-  const typedZip = zip.slice(0, zipChars)
-
-  // Typewriter phone
-  const phone = '(920) 555-0124'
-  const phoneChars = Math.min(phone.length, Math.max(0, Math.floor((frame - 90) / 4)))
-  const typedPhone = phone.slice(0, phoneChars)
-
-  // Submit button tap → verified badge
-  const submitTapFrame = 150
-  const badgePop = usePop(submitTapFrame + 8)
-  const badgeSpin = interpolate(
-    frame,
-    [submitTapFrame + 8, submitTapFrame + 32],
-    [0, 720],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic) }
-  )
-
-  const showVerifiedOverlay = frame >= submitTapFrame + 8
-
-  return (
-    <AbsoluteFill>
-      <div style={{ opacity: headerFade }}>
-        <AppHeader activeTab="feed" />
-      </div>
-      <Caption text="Verified residents only." startFrame={0} />
-
-      {/* Modal */}
-      <div style={{
-        ...modalSlide,
-        position: 'absolute',
-        top: 220,
-        left: 360,
-        right: 360,
-        background: BG_CARD,
-        borderRadius: 24,
-        border: `1px solid ${BORDER}`,
-        padding: 0,
-        overflow: 'hidden',
-        boxShadow: '0 30px 80px rgba(0, 0, 0, 0.6)',
-        fontFamily
-      }}>
-        {/* Modal hero */}
-        <div style={{
-          background: `linear-gradient(135deg, ${PINK} 0%, #C2185B 100%)`,
-          padding: '32px 36px',
-          textAlign: 'center'
-        }}>
-          <div style={{
-            width: 56,
-            height: 56,
-            borderRadius: 14,
-            background: 'rgba(255, 255, 255, 0.2)',
-            border: '2px solid rgba(255, 255, 255, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: 28,
-            margin: '0 auto 12px'
-          }}>✓</div>
-          <h2 style={{
-            margin: 0,
-            fontSize: 32,
-            fontWeight: 800,
-            color: 'white',
-            letterSpacing: '-0.01em'
-          }}>Get verified</h2>
-          <p style={{
-            margin: '6px 0 0',
-            fontSize: 16,
-            color: 'rgba(255, 255, 255, 0.9)'
-          }}>Phone + ZIP. Confirm you live here.</p>
-        </div>
-
-        {/* Form */}
-        <div style={{ padding: '32px 36px 36px' }}>
-          <div style={{ marginBottom: 22 }}>
-            <div style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: TEXT_DIM,
-              marginBottom: 8,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em'
-            }}>ZIP code</div>
-            <div style={{
-              height: 64,
-              borderRadius: 14,
-              border: typedZip.length === 5 ? `1.5px solid ${PINK}` : `1px solid ${BORDER_STRONG}`,
-              background: 'rgba(255, 255, 255, 0.04)',
-              padding: '0 22px',
-              display: 'flex',
-              alignItems: 'center',
-              fontSize: 26,
-              fontWeight: 700,
-              color: TEXT,
-              letterSpacing: '0.08em',
-              fontVariantNumeric: 'tabular-nums'
-            }}>
-              {typedZip}<span style={{ opacity: (frame % 16) > 8 && typedZip.length < 5 ? 1 : 0, color: PINK }}>|</span>
-              {typedZip.length === 5 && (
-                <span style={{
-                  marginLeft: 'auto',
-                  fontSize: 14,
-                  color: GREEN,
-                  fontWeight: 700,
-                  letterSpacing: '0.04em'
-                }}>✓ Confirmed resident</span>
-              )}
-            </div>
-          </div>
-          <div style={{ marginBottom: 26 }}>
-            <div style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: TEXT_DIM,
-              marginBottom: 8,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em'
-            }}>Phone</div>
-            <div style={{
-              height: 64,
-              borderRadius: 14,
-              border: typedPhone.length === phone.length ? `1.5px solid ${PINK}` : `1px solid ${BORDER_STRONG}`,
-              background: 'rgba(255, 255, 255, 0.04)',
-              padding: '0 22px',
-              display: 'flex',
-              alignItems: 'center',
-              fontSize: 26,
-              fontWeight: 700,
-              color: TEXT,
-              fontVariantNumeric: 'tabular-nums'
-            }}>
-              {typedPhone}<span style={{ opacity: (frame % 16) > 8 && typedPhone.length < phone.length ? 1 : 0, color: PINK }}>|</span>
-            </div>
-          </div>
-
-          <div style={{
-            height: 68,
-            borderRadius: 14,
-            background: PINK,
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 20,
-            fontWeight: 800,
-            letterSpacing: '0.04em',
-            boxShadow: `0 8px 28px ${PINK_GLOW}`
-          }}>Verify and continue →</div>
-        </div>
-      </div>
-
-      <TouchTap x={960} y={780} startFrame={submitTapFrame} />
-
-      {/* Verified celebration overlay */}
-      {showVerifiedOverlay && (
-        <AbsoluteFill style={{
-          background: 'rgba(15, 15, 26, 0.85)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <div style={{
-            ...badgePop,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 22,
-            fontFamily
-          }}>
-            <div style={{
-              width: 200,
-              height: 200,
-              borderRadius: 50,
-              background: GREEN,
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 110,
-              fontWeight: 800,
-              boxShadow: `0 0 80px ${GREEN}66`,
-              transform: `rotate(${badgeSpin}deg)`
-            }}>✓</div>
-            <div style={{
-              fontSize: 56,
-              fontWeight: 800,
-              color: TEXT,
-              letterSpacing: '-0.02em'
-            }}>You're verified.</div>
-          </div>
-        </AbsoluteFill>
-      )}
-    </AbsoluteFill>
-  )
-}
-
-// ─── Scene 5: Question Pulse → Verdict (21–26s) ─────────────────────────
-const Scene5Verdict: React.FC = () => {
-  const frame = useCurrentFrame()
-  const headerFade = useFadeIn(0, 8)
-  const cardSlide = useSlideUp(8)
-  const answer1Slide = useSlideUp(36)
-  const answer2Slide = useSlideUp(52)
-  const answer3Slide = useSlideUp(68)
-  const verdictTap = 110
-  const verdictPop = usePop(verdictTap + 6)
-
-  const topVotes = useTicker(verdictTap + 6, 287, 412, 24)
-  const showVerdict = frame >= verdictTap + 6
-
-  return (
-    <AbsoluteFill>
-      <div style={{ opacity: headerFade }}>
-        <AppHeader activeTab="feed" />
-      </div>
-      <Caption text="Verdicts decided by the community." startFrame={0} color={INDIGO} />
-
-      {/* Question Pulse card */}
-      <div style={{
-        ...cardSlide,
-        position: 'absolute',
-        top: 230,
-        left: 120,
-        right: 120,
-        background: BG_CARD,
-        borderRadius: 20,
         padding: '32px 36px',
-        border: `1px solid ${INDIGO}55`,
-        boxShadow: `0 8px 40px ${INDIGO}22`,
-        fontFamily
+        boxShadow: '0 12px 50px rgba(0,0,0,0.4)',
+        opacity: cardChromeFade,
+        fontFamily,
+        zIndex: 0
       }}>
+        {/* Category + location chip */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
           <span style={{
             padding: '6px 14px',
             borderRadius: 8,
-            background: `${INDIGO}22`,
-            border: `1px solid ${INDIGO}55`,
-            color: INDIGO,
+            background: `${ORANGE}22`,
+            border: `1px solid ${ORANGE}55`,
+            color: ORANGE,
             fontSize: 14,
             fontWeight: 800,
             letterSpacing: '0.04em',
             textTransform: 'uppercase'
-          }}>? Question</span>
+          }}>Pothole</span>
+          <span style={{ fontSize: 16, color: TEXT_MUTE }}>· Main St &amp; 9th Ave</span>
         </div>
+
+        {/* Title + body */}
         <div style={{
-          fontSize: 32,
+          fontSize: 30,
           fontWeight: 800,
           color: TEXT,
-          margin: 0,
+          marginBottom: 22,
           letterSpacing: '-0.015em',
           lineHeight: 1.25
-        }}>Where should the next dog park go — north side or south?</div>
-      </div>
+        }}>Massive potholes on Main &amp; 9th — bent my rim last week</div>
 
-      {/* Answers */}
-      <div style={{
-        position: 'absolute',
-        top: 460,
-        left: 120,
-        right: 120,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 14
-      }}>
-        <AnswerRow
-          style={answer1Slide}
-          rank={1}
-          text="North side. The west cluster doesn't have a single off-leash area."
-          author="DeShawn R."
-          votes={topVotes}
-          highlighted={showVerdict}
-          showVerdict={showVerdict}
-          verdictPopStyle={verdictPop}
-        />
-        <AnswerRow
-          style={answer2Slide}
-          rank={2}
-          text="South side — Quincy Park is half empty, easy retrofit."
-          author="Jamie L."
-          votes={184}
-          highlighted={false}
-        />
-        <AnswerRow
-          style={answer3Slide}
-          rank={3}
-          text="Both? Split the budget. The city is bigger than one park."
-          author="Natalie K."
-          votes={97}
-          highlighted={false}
-        />
-      </div>
+        {/* Photo slot — the actual SVG above will land here visually once pullback completes */}
+        <div style={{
+          width: '100%',
+          height: 480,
+          borderRadius: 14,
+          background: '#000',
+          overflow: 'hidden',
+          marginBottom: 22,
+          opacity: cardChromeFade
+        }}>
+          {/* Show the photo statically inside the card AFTER the pullback completes */}
+          {frame > 95 && <PotholePhoto />}
+        </div>
 
-      <TouchTap x={960} y={620} startFrame={verdictTap} />
+        {/* Vote bar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 22, opacity: cardChromeFade }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '10px 18px',
+            borderRadius: 12,
+            background: 'rgba(255,255,255,0.05)',
+            border: `1px solid ${BORDER_STRONG}`,
+            color: TEXT,
+            fontSize: 22,
+            fontWeight: 800,
+            fontVariantNumeric: 'tabular-nums'
+          }}>▲ {tickerVotes}</div>
+          <span style={{ fontSize: 16, color: TEXT_MUTE }}>posted just now · Marcus T. <span style={{ color: GREEN }}>✓</span></span>
+        </div>
+      </div>
     </AbsoluteFill>
   )
 }
 
-const AnswerRow: React.FC<{
-  style: React.CSSProperties
-  rank: number
-  text: string
-  author: string
+// ─── Scene 3: Feed leaderboard battle (6–13s, 210 frames) ───────────────
+// Five Pulses visible. Hero starts at rank 4 (bottom), climbs to rank 0 (top).
+// Others shift accordingly. Single shared progress drives every card's Y.
+
+const FEED_CARD_HEIGHT = 162
+const FEED_CARD_GAP = 16
+const FEED_START_Y = 220
+
+const FEED_PULSES = [
+  { id: 'a', title: 'Streetlight out on Elm for 3 weeks', cat: 'Safety', catColor: PINK, startVotes: 89, endVotes: 89, startRank: 0, endRank: 1 },
+  { id: 'b', title: 'Crosswalk paint faded near the school', cat: 'Safety', catColor: PINK, startVotes: 67, endVotes: 67, startRank: 1, endRank: 2 },
+  { id: 'c', title: 'Trash pickup missed for 3 weeks', cat: 'Other', catColor: TEXT_MUTE, startVotes: 45, endVotes: 45, startRank: 2, endRank: 3 },
+  { id: 'd', title: 'Bus stop bench fell over', cat: 'Transit', catColor: BLUE, startVotes: 32, endVotes: 32, startRank: 3, endRank: 4 },
+  { id: 'hero', title: 'Massive potholes on Main & 9th', cat: 'Pothole', catColor: ORANGE, startVotes: 12, endVotes: 742, startRank: 4, endRank: 0, hero: true }
+]
+
+const SceneClimb: React.FC = () => {
+  const frame = useCurrentFrame()
+  const headerFade = interpolate(frame, [0, 14], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
+  // Shared progress that controls the entire reorder
+  const climbProgress = interpolate(frame, [30, 170], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: ENTER
+  })
+
+  return (
+    <AbsoluteFill style={{ background: BG }}>
+      <div style={{ opacity: headerFade }}>
+        <AppHeader />
+      </div>
+      <Caption text="When neighbors agree." startFrame={0} />
+
+      <div style={{ position: 'absolute', top: FEED_START_Y, left: 120, right: 120 }}>
+        {FEED_PULSES.map(p => {
+          const y = interpolate(
+            climbProgress,
+            [0, 1],
+            [p.startRank * (FEED_CARD_HEIGHT + FEED_CARD_GAP), p.endRank * (FEED_CARD_HEIGHT + FEED_CARD_GAP)],
+            { easing: ENTER }
+          )
+          // Hero card votes ticker
+          const votes = p.hero ? Math.floor(p.startVotes + (p.endVotes - p.startVotes) * climbProgress) : p.startVotes
+          const isOnTop = p.endRank === 0 && climbProgress > 0.6
+          return (
+            <FeedCard
+              key={p.id}
+              y={y}
+              title={p.title}
+              cat={p.cat}
+              catColor={p.catColor}
+              votes={votes}
+              hero={!!p.hero}
+              celebrate={!!p.hero && isOnTop}
+            />
+          )
+        })}
+      </div>
+    </AbsoluteFill>
+  )
+}
+
+const FeedCard: React.FC<{
+  y: number
+  title: string
+  cat: string
+  catColor: string
   votes: number
-  highlighted: boolean
-  showVerdict?: boolean
-  verdictPopStyle?: React.CSSProperties
-}> = ({ style, rank, text, author, votes, highlighted, showVerdict, verdictPopStyle }) => (
+  hero: boolean
+  celebrate: boolean
+}> = ({ y, title, cat, catColor, votes, hero, celebrate }) => (
   <div style={{
-    ...style,
-    background: highlighted ? `${INDIGO}1A` : BG_CARD,
-    borderRadius: 16,
+    position: 'absolute',
+    top: y,
+    left: 0,
+    right: 0,
+    height: FEED_CARD_HEIGHT,
+    background: BG_CARD,
+    borderRadius: 18,
+    border: hero
+      ? `1.5px solid ${celebrate ? PINK : ORANGE}66`
+      : `1px solid ${BORDER}`,
     padding: '20px 26px',
-    border: highlighted ? `1.5px solid ${INDIGO}` : `1px solid ${BORDER}`,
     display: 'flex',
     alignItems: 'center',
-    gap: 22,
+    gap: 24,
     fontFamily,
-    position: 'relative'
+    boxShadow: hero && celebrate ? `0 12px 50px ${PINK_GLOW}` : '0 4px 18px rgba(0,0,0,0.25)'
   }}>
+    {/* Vote pill */}
     <div style={{
-      width: 48,
-      height: 48,
-      borderRadius: 12,
-      background: highlighted ? INDIGO : 'rgba(255, 255, 255, 0.05)',
-      color: highlighted ? 'white' : TEXT_MUTE,
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: 22,
-      fontWeight: 800,
-      flexShrink: 0
-    }}>{rank}</div>
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{
-        fontSize: 20,
-        color: TEXT,
-        marginBottom: 6,
-        lineHeight: 1.35
-      }}>"{text}"</div>
-      <div style={{ fontSize: 14, color: TEXT_MUTE, fontWeight: 600 }}>
-        — {author} <span style={{ color: GREEN }}>✓</span>
-      </div>
-    </div>
-    <div style={{
-      display: 'inline-flex',
       flexDirection: 'column',
       alignItems: 'center',
       gap: 4,
-      padding: '12px 18px',
-      borderRadius: 12,
-      background: highlighted ? INDIGO : 'rgba(255, 255, 255, 0.05)',
-      color: highlighted ? 'white' : TEXT,
-      fontWeight: 800,
+      width: 96,
       flexShrink: 0,
-      minWidth: 86
+      padding: '10px 0',
+      borderRadius: 14,
+      background: hero && celebrate ? `${PINK}22` : 'rgba(255,255,255,0.04)',
+      border: hero && celebrate ? `1px solid ${PINK}` : `1px solid ${BORDER_STRONG}`
     }}>
-      <span style={{ fontSize: 22, fontVariantNumeric: 'tabular-nums' }}>{votes}</span>
-      <span style={{ fontSize: 11, opacity: 0.85, letterSpacing: '0.08em' }}>VOTES</span>
-    </div>
-    {showVerdict && rank === 1 && (
-      <div style={{
-        ...verdictPopStyle,
-        position: 'absolute',
-        top: -18,
-        right: 28,
-        padding: '6px 14px',
-        borderRadius: 10,
-        background: INDIGO,
-        color: 'white',
-        fontSize: 13,
+      <span style={{
+        fontSize: 30,
         fontWeight: 800,
-        letterSpacing: '0.12em',
-        textTransform: 'uppercase',
-        boxShadow: `0 8px 24px ${INDIGO}66`
-      }}>★ Verdict</div>
-    )}
+        color: hero && celebrate ? PINK : TEXT,
+        fontVariantNumeric: 'tabular-nums',
+        letterSpacing: '-0.02em'
+      }}>{fmtNum(votes)}</span>
+      <span style={{ fontSize: 11, color: TEXT_MUTE, fontWeight: 700, letterSpacing: '0.08em' }}>VOTES</span>
+    </div>
+
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+        <span style={{
+          padding: '4px 12px',
+          borderRadius: 6,
+          background: `${catColor}22`,
+          border: `1px solid ${catColor}44`,
+          color: catColor,
+          fontSize: 12,
+          fontWeight: 800,
+          letterSpacing: '0.04em',
+          textTransform: 'uppercase'
+        }}>{cat}</span>
+        {hero && celebrate && (
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '4px 12px',
+            borderRadius: 6,
+            background: PINK,
+            color: 'white',
+            fontSize: 12,
+            fontWeight: 800,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase'
+          }}>🔥 #1 Trending</span>
+        )}
+      </div>
+      <div style={{
+        fontSize: 24,
+        fontWeight: 700,
+        color: TEXT,
+        letterSpacing: '-0.01em',
+        lineHeight: 1.25,
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis'
+      }}>{title}</div>
+    </div>
   </div>
 )
 
-// ─── End card (26–30s) ───────────────────────────────────────────────────
+// ─── Scene 4: City response (13–17s, 120 frames) ─────────────────────────
+const SceneListens: React.FC = () => {
+  const frame = useCurrentFrame()
+  const headerFade = interpolate(frame, [0, 12], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
+  const cardEnter = useEnter(0, 22)
+  const statusPop = usePop(28, 16)
+  const notifSlide = useEnter(46, 22)
+  const commentSlide = useEnter(72, 22)
+
+  return (
+    <AbsoluteFill style={{ background: BG }}>
+      <div style={{ opacity: headerFade }}>
+        <AppHeader />
+      </div>
+      <Caption text="The city listens." startFrame={0} color={AMBER} />
+
+      {/* Pulse card with status badge appearing */}
+      <div style={{
+        ...cardEnter,
+        position: 'absolute',
+        top: 220,
+        left: 120,
+        right: 120,
+        background: BG_CARD,
+        borderRadius: 20,
+        border: `1px solid ${BORDER}`,
+        padding: '30px 36px',
+        fontFamily
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <span style={{
+            padding: '6px 14px',
+            borderRadius: 8,
+            background: `${ORANGE}22`,
+            border: `1px solid ${ORANGE}55`,
+            color: ORANGE,
+            fontSize: 14,
+            fontWeight: 800,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase'
+          }}>Pothole</span>
+          {/* Status pops in */}
+          <div style={{
+            ...statusPop,
+            padding: '6px 14px',
+            borderRadius: 8,
+            background: AMBER,
+            color: '#1a0e00',
+            fontSize: 14,
+            fontWeight: 800,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase'
+          }}>🔧 In progress</div>
+          <span style={{ fontSize: 14, color: TEXT_MUTE, marginLeft: 'auto' }}>742 votes · 24 replies</span>
+        </div>
+        <div style={{
+          fontSize: 28,
+          fontWeight: 800,
+          color: TEXT,
+          letterSpacing: '-0.015em'
+        }}>Massive potholes on Main &amp; 9th — bent my rim last week</div>
+      </div>
+
+      {/* Notification slides in from top */}
+      <div style={{
+        ...notifSlide,
+        position: 'absolute',
+        top: 480,
+        left: 120,
+        right: 120,
+        background: `linear-gradient(135deg, ${BLUE}30, ${BG_CARD})`,
+        borderRadius: 16,
+        border: `1px solid ${BLUE}55`,
+        padding: '18px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 18,
+        fontFamily
+      }}>
+        <div style={{
+          width: 56,
+          height: 56,
+          borderRadius: 14,
+          background: BLUE,
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 26,
+          flexShrink: 0
+        }}>🏛</div>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 4 }}>City Public Works · Acknowledged</div>
+          <div style={{ fontSize: 15, color: TEXT_MUTE }}>Scheduled for repaving this Friday.</div>
+        </div>
+      </div>
+
+      {/* Public Works comment slides in */}
+      <div style={{
+        ...commentSlide,
+        position: 'absolute',
+        top: 600,
+        left: 120,
+        right: 120,
+        background: BG_CARD,
+        borderRadius: 18,
+        border: `1px solid ${BORDER}`,
+        padding: '24px 28px',
+        display: 'flex',
+        gap: 18,
+        fontFamily
+      }}>
+        <div style={{
+          width: 56,
+          height: 56,
+          borderRadius: 28,
+          background: BLUE,
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 22,
+          fontWeight: 800,
+          flexShrink: 0
+        }}>PW</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+            <span style={{ fontSize: 17, fontWeight: 700, color: TEXT }}>Public Works</span>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '2px 10px',
+              borderRadius: 6,
+              background: `${BLUE}22`,
+              color: BLUE,
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: '0.04em'
+            }}>OFFICIAL</span>
+          </div>
+          <div style={{ fontSize: 17, color: TEXT_DIM, lineHeight: 1.5 }}>
+            Thanks for flagging. Crew rolling out at 6am Friday. Avoid the area between 8th and 10th.
+          </div>
+        </div>
+      </div>
+    </AbsoluteFill>
+  )
+}
+
+// ─── Scene 5: Before / After reveal (17–23s, 180 frames) ────────────────
+const SceneFixed: React.FC = () => {
+  const frame = useCurrentFrame()
+  const headerFade = interpolate(frame, [0, 12], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
+  const photoEnter = useEnter(0, 26)
+  // Wipe progress drives the left-to-right reveal of the "after" photo
+  const wipeProgress = interpolate(frame, [60, 130], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: SMOOTH
+  })
+  const statusPop = usePop(132, 16)
+  const labelBefore = interpolate(frame, [30, 50], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
+  const labelAfter = interpolate(frame, [80, 100], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
+
+  return (
+    <AbsoluteFill style={{ background: BG }}>
+      <div style={{ opacity: headerFade }}>
+        <AppHeader />
+      </div>
+      <Caption text="Problems get fixed." startFrame={0} color={GREEN} />
+
+      {/* Photo container with wipe */}
+      <div style={{
+        ...photoEnter,
+        position: 'absolute',
+        top: 220,
+        left: 120,
+        right: 120,
+        height: 640,
+        borderRadius: 22,
+        overflow: 'hidden',
+        border: `1px solid ${BORDER}`,
+        boxShadow: '0 16px 60px rgba(0,0,0,0.45)'
+      }}>
+        {/* BEFORE layer */}
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <PotholePhoto />
+        </div>
+        {/* AFTER layer — clipped from the left by wipeProgress */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          clipPath: `inset(0 0 0 ${(1 - wipeProgress) * 100}%)`
+        }}>
+          <RepavedPhoto />
+        </div>
+        {/* Wipe line */}
+        {wipeProgress > 0 && wipeProgress < 1 && (
+          <div style={{
+            position: 'absolute',
+            left: `${wipeProgress * 100}%`,
+            top: 0,
+            bottom: 0,
+            width: 4,
+            background: 'white',
+            boxShadow: `0 0 24px white, 0 0 48px ${GREEN}aa`,
+            transform: 'translateX(-2px)'
+          }} />
+        )}
+        {/* BEFORE label */}
+        <div style={{
+          position: 'absolute',
+          top: 24,
+          left: 24,
+          opacity: labelBefore,
+          padding: '8px 16px',
+          borderRadius: 8,
+          background: 'rgba(0,0,0,0.7)',
+          color: TEXT,
+          fontSize: 14,
+          fontWeight: 800,
+          letterSpacing: '0.16em',
+          textTransform: 'uppercase',
+          fontFamily
+        }}>Before</div>
+        {/* AFTER label */}
+        <div style={{
+          position: 'absolute',
+          top: 24,
+          right: 24,
+          opacity: labelAfter,
+          padding: '8px 16px',
+          borderRadius: 8,
+          background: GREEN,
+          color: '#04210d',
+          fontSize: 14,
+          fontWeight: 800,
+          letterSpacing: '0.16em',
+          textTransform: 'uppercase',
+          fontFamily
+        }}>After</div>
+        {/* Resolved status pops at the end */}
+        <div style={{
+          ...statusPop,
+          position: 'absolute',
+          bottom: 24,
+          right: 24,
+          padding: '10px 18px',
+          borderRadius: 12,
+          background: GREEN,
+          color: '#04210d',
+          fontSize: 16,
+          fontWeight: 800,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          fontFamily,
+          boxShadow: `0 8px 28px ${GREEN}66`,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 8
+        }}>✓ Resolved</div>
+      </div>
+    </AbsoluteFill>
+  )
+}
+
+// ─── Scene 6: Compliment lands (23–27s, 120 frames) ─────────────────────
+const SceneCelebrate: React.FC = () => {
+  const frame = useCurrentFrame()
+  const headerFade = interpolate(frame, [0, 12], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
+  const cardEnter = useEnter(0, 22)
+  const heartT1 = interpolate(frame, [40, 110], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH })
+  const heartT2 = interpolate(frame, [50, 120], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH })
+  const heartT3 = interpolate(frame, [60, 115], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH })
+  const votes = useTicker(20, 47, 218, 80)
+
+  // Flying hearts — float up + fade
+  const heartStyle = (t: number, dx: number) => ({
+    position: 'absolute' as const,
+    bottom: 140 + t * 200,
+    left: 960 + dx,
+    fontSize: 56,
+    opacity: interpolate(t, [0, 0.3, 1], [0, 1, 0]),
+    transform: `translateX(${Math.sin(t * Math.PI) * 12}px)`
+  })
+
+  return (
+    <AbsoluteFill style={{ background: BG }}>
+      <div style={{ opacity: headerFade }}>
+        <AppHeader />
+      </div>
+      <Caption text="And neighbors notice." startFrame={0} color={GREEN} />
+
+      {/* Compliment Pulse card */}
+      <div style={{
+        ...cardEnter,
+        position: 'absolute',
+        top: 260,
+        left: 240,
+        right: 240,
+        background: `linear-gradient(135deg, ${GREEN}10, ${BG_CARD})`,
+        borderRadius: 22,
+        border: `1.5px solid ${GREEN}55`,
+        padding: '36px 40px',
+        fontFamily,
+        boxShadow: `0 16px 60px ${GREEN}22`
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 }}>
+          <span style={{
+            padding: '6px 14px',
+            borderRadius: 8,
+            background: `${GREEN}22`,
+            border: `1px solid ${GREEN}66`,
+            color: GREEN,
+            fontSize: 14,
+            fontWeight: 800,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase'
+          }}>💚 Compliment</span>
+          <span style={{ fontSize: 14, color: TEXT_MUTE }}>· Main St &amp; 9th Ave</span>
+        </div>
+
+        <div style={{
+          fontSize: 38,
+          fontWeight: 800,
+          color: TEXT,
+          letterSpacing: '-0.02em',
+          lineHeight: 1.2,
+          marginBottom: 24
+        }}>Public Works fixed Main &amp; 9th. Smooth as butter now.</div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '14px 22px',
+            borderRadius: 14,
+            background: `${GREEN}22`,
+            border: `1px solid ${GREEN}`,
+            color: GREEN,
+            fontSize: 24,
+            fontWeight: 800,
+            fontVariantNumeric: 'tabular-nums'
+          }}>💚 {votes}</div>
+          <span style={{ fontSize: 17, color: TEXT_MUTE }}>by Desiree W. <span style={{ color: GREEN }}>✓ Verified</span></span>
+        </div>
+      </div>
+
+      {/* Flying hearts upward — staggered */}
+      <span style={heartStyle(heartT1, -260)}>💚</span>
+      <span style={heartStyle(heartT2, -80)}>💚</span>
+      <span style={heartStyle(heartT3, 140)}>💚</span>
+      <span style={heartStyle(heartT1, 280)}>💚</span>
+    </AbsoluteFill>
+  )
+}
+
+// ─── End card (27–30s, 90 frames) ────────────────────────────────────────
 const EndCard: React.FC = () => {
   const frame = useCurrentFrame()
-  const { fps } = useVideoConfig()
-  const brandPop = usePop(0)
-  const titleSlide = useSlideUp(14)
-  const urlSlide = useSlideUp(24)
-  const ctaSlide = useSlideUp(34)
-  // Continuous pulse on the brand mark
+  const brandPop = usePop(0, 22)
+  const titleSlide = useEnter(14, 22)
+  const urlSlide = useEnter(24, 20)
+  const ctaSlide = useEnter(36, 20)
+  // Continuous slow pulse on the brand mark
   const pulseScale = interpolate(
     frame % 60,
     [0, 30, 60],
@@ -989,10 +931,7 @@ const EndCard: React.FC = () => {
       fontFamily,
       background: BG
     }}>
-      <div style={{
-        ...brandPop,
-        marginBottom: 36
-      }}>
+      <div style={{ ...brandPop, marginBottom: 36 }}>
         <div style={{ transform: `scale(${pulseScale})` }}>
           <PulseLogo size={220} />
         </div>
@@ -1004,7 +943,7 @@ const EndCard: React.FC = () => {
         color: TEXT,
         letterSpacing: '-0.03em',
         textAlign: 'center'
-      }}>Make sure your<br />city hears you.</div>
+      }}>Your city.<br />Your voice.</div>
       <div style={{
         ...urlSlide,
         marginTop: 28,
@@ -1031,15 +970,13 @@ const EndCard: React.FC = () => {
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────
-export const PulsePromo: React.FC = () => {
-  return (
-    <AbsoluteFill style={{ background: BG, fontFamily }}>
-      <Sequence from={0}   durationInFrames={120}><Scene1Tap /></Sequence>
-      <Sequence from={120} durationInFrames={150}><Scene2Consensus /></Sequence>
-      <Sequence from={270} durationInFrames={150}><Scene3Comment /></Sequence>
-      <Sequence from={420} durationInFrames={210}><Scene4Verify /></Sequence>
-      <Sequence from={630} durationInFrames={150}><Scene5Verdict /></Sequence>
-      <Sequence from={780} durationInFrames={120}><EndCard /></Sequence>
-    </AbsoluteFill>
-  )
-}
+export const PulsePromo: React.FC = () => (
+  <AbsoluteFill style={{ background: BG, fontFamily }}>
+    <Sequence from={0}   durationInFrames={180}><SceneOpen /></Sequence>
+    <Sequence from={180} durationInFrames={210}><SceneClimb /></Sequence>
+    <Sequence from={390} durationInFrames={120}><SceneListens /></Sequence>
+    <Sequence from={510} durationInFrames={180}><SceneFixed /></Sequence>
+    <Sequence from={690} durationInFrames={120}><SceneCelebrate /></Sequence>
+    <Sequence from={810} durationInFrames={90}><EndCard /></Sequence>
+  </AbsoluteFill>
+)
