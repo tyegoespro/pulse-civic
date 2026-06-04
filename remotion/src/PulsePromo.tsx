@@ -10,6 +10,7 @@ import {
   staticFile
 } from 'remotion'
 import { loadFont as loadInter } from '@remotion/google-fonts/Inter'
+import { loadFont as loadSpaceMono } from '@remotion/google-fonts/SpaceMono'
 import {
   IconTrending,
   IconVerified,
@@ -24,7 +25,14 @@ import {
 } from './Icons'
 
 const { fontFamily } = loadInter()
+const { fontFamily: monoFamily } = loadSpaceMono()
 const HAS_PHOTOS = true
+
+// ─── Landing-page palette (used by SceneSplash) ──────────────────────────
+const PAPER = '#FAFAF7'
+const INK = '#09090B'
+const INK_SOFT = '#27272A'
+const INK_MUTE = '#A1A1AA'
 
 // ─── App palette ─────────────────────────────────────────────────────────
 const BG = '#0F0F1A'
@@ -363,6 +371,145 @@ const Chip: React.FC<{ color: string; label: string; icon?: React.ReactNode }> =
     {label}
   </span>
 )
+
+// ─── Splash: Landing-page editorial opener (0–3s) ───────────────────────
+// Paper background, Space Mono, 2px ink masthead with PULSE wordmark and
+// "OSHKOSH, WI · LIVE" kicker, big editorial headline lands word-by-word.
+// Hard cut into the dark app demo at the end.
+const SceneSplash: React.FC = () => {
+  const frame = useCurrentFrame()
+
+  // Masthead drops in
+  const mastheadT = interpolate(frame, [0, 18], [0, 1], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER
+  })
+  // Live dot breathing
+  const liveDot = interpolate(frame % 48, [0, 24, 48], [1, 1.45, 1], { easing: Easing.inOut(Easing.cubic) })
+  const liveDotOpacity = interpolate(frame % 48, [0, 24, 48], [1, 0.55, 1], { easing: Easing.inOut(Easing.cubic) })
+
+  // Headline words start landing after the masthead settles
+  const HEADLINE_START = 22
+  // Hold/cut: gentle paper-to-black wash near the end, so it cuts hard into SceneOpen
+  const flashIn = interpolate(frame, [78, 90], [0, 1], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH
+  })
+
+  // Kicker (top of headline area)
+  const kickerT = interpolate(frame, [16, 32], [0, 1], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER
+  })
+
+  return (
+    <AbsoluteFill style={{ background: PAPER, fontFamily: monoFamily, color: INK }}>
+      {/* MASTHEAD — 2px solid ink underline, PULSE wordmark + Oshkosh kicker */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        padding: '32px 56px 24px',
+        borderBottom: `2px solid ${INK}`,
+        display: 'flex',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        opacity: mastheadT,
+        transform: `translateY(${interpolate(mastheadT, [0, 1], [-20, 0])}px)`
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+          <span style={{ color: PINK, display: 'inline-flex', alignItems: 'center' }}>
+            <PulseLogo size={36} />
+          </span>
+          <span style={{
+            fontSize: 36,
+            fontWeight: 700,
+            letterSpacing: '-0.04em',
+            color: INK,
+            lineHeight: 1
+          }}>PULSE</span>
+        </div>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 12,
+          fontSize: 14,
+          fontWeight: 700,
+          color: INK_MUTE,
+          textTransform: 'uppercase',
+          letterSpacing: '0.22em'
+        }}>
+          Oshkosh, WI
+          <span style={{ opacity: 0.4 }}>·</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              width: 9,
+              height: 9,
+              borderRadius: '50%',
+              background: GREEN,
+              display: 'inline-block',
+              transform: `scale(${liveDot})`,
+              opacity: liveDotOpacity
+            }} />
+            Live
+          </span>
+        </div>
+      </div>
+
+      {/* Kicker tag (mono caps, pink) */}
+      <div style={{
+        position: 'absolute',
+        top: 158,
+        left: 56,
+        opacity: kickerT,
+        transform: `translateY(${interpolate(kickerT, [0, 1], [12, 0])}px)`,
+        fontSize: 13,
+        fontWeight: 700,
+        color: PINK,
+        letterSpacing: '0.28em',
+        textTransform: 'uppercase'
+      }}>
+        <span style={{
+          display: 'inline-block',
+          width: 28,
+          height: 2,
+          background: PINK,
+          verticalAlign: 'middle',
+          marginRight: 14
+        }} />
+        Issue №01 — A civic dispatch
+      </div>
+
+      {/* HEADLINE — the actual landing-page hero line, landing word by word */}
+      <div style={{
+        position: 'absolute',
+        top: 240,
+        left: 56,
+        right: 56,
+        fontSize: 112,
+        fontWeight: 700,
+        lineHeight: 0.94,
+        letterSpacing: '-0.045em',
+        color: INK,
+        maxWidth: 1700,
+        fontFamily: monoFamily
+      }}>
+        <WordReveal
+          text="The same twelve people show up to every council meeting."
+          startFrame={HEADLINE_START}
+          perWordStaggerFrames={4}
+        />
+      </div>
+
+      {/* Hard-cut paper-to-ink wash at the very end so the next scene snaps in */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: BG,
+        opacity: flashIn,
+        pointerEvents: 'none'
+      }} />
+    </AbsoluteFill>
+  )
+}
 
 // ─── Scene 1: Photo reveal → Pulse card (0–6s) ───────────────────────────
 const SceneOpen: React.FC = () => {
@@ -1220,11 +1367,12 @@ const EndCard: React.FC = () => {
 // ─── Main ────────────────────────────────────────────────────────────────
 export const PulsePromo: React.FC = () => (
   <AbsoluteFill style={{ background: BG, fontFamily }}>
-    <Sequence from={0}   durationInFrames={180}><SceneOpen /></Sequence>
-    <Sequence from={180} durationInFrames={210}><SceneClimb /></Sequence>
-    <Sequence from={390} durationInFrames={120}><SceneListens /></Sequence>
-    <Sequence from={510} durationInFrames={180}><SceneFixed /></Sequence>
-    <Sequence from={690} durationInFrames={120}><SceneCelebrate /></Sequence>
-    <Sequence from={810} durationInFrames={90}><EndCard /></Sequence>
+    <Sequence from={0}   durationInFrames={90}><SceneSplash /></Sequence>
+    <Sequence from={90}  durationInFrames={180}><SceneOpen /></Sequence>
+    <Sequence from={270} durationInFrames={210}><SceneClimb /></Sequence>
+    <Sequence from={480} durationInFrames={120}><SceneListens /></Sequence>
+    <Sequence from={600} durationInFrames={180}><SceneFixed /></Sequence>
+    <Sequence from={780} durationInFrames={120}><SceneCelebrate /></Sequence>
+    <Sequence from={900} durationInFrames={90}><EndCard /></Sequence>
   </AbsoluteFill>
 )

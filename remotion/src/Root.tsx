@@ -9,7 +9,7 @@ export const Root = () => (
   <Composition
     id="pulse-promo"
     component={PulsePromo}
-    durationInFrames={900}
+    durationInFrames={990}
     fps={30}
     width={1920}
     height={1080}
