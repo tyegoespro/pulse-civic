@@ -32,19 +32,54 @@ if (!apiKey || apiKey === 'your_gemini_key_here') {
   process.exit(1)
 }
 
-// ─── Image generation via Gemini 2.5 Flash Image REST API ────────────────
-const MODEL = 'gemini-2.5-flash-image-preview'
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`
+// ─── Image generation ─────────────────────────────────────────────────────
+// Tries Imagen 4 (predict endpoint, text-only) first. If reference images
+// are passed we fall back to a Gemini image model (generateContent) since
+// Imagen doesn't accept image inputs.
+
+const callImagen = async (prompt) => {
+  const model = 'imagen-4.0-fast-generate-001'
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:predict?key=${apiKey}`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      instances: [{ prompt }],
+      parameters: { sampleCount: 1, aspectRatio: '16:9' }
+    })
+  })
+  const json = await res.json()
+  if (!res.ok) {
+    throw new Error(`Imagen HTTP ${res.status}: ${JSON.stringify(json).slice(0, 500)}`)
+  }
+  const pred = json.predictions?.[0]
+  const b64 = pred?.bytesBase64Encoded || pred?.image?.bytesBase64Encoded
+  if (!b64) throw new Error(`No image returned. Response: ${JSON.stringify(json).slice(0, 500)}`)
+  return Buffer.from(b64, 'base64')
+}
+
+// Free public image gen (no auth, no key) — Pollinations. Their free tier
+// works only when called WITHOUT premium query params (width/height/model/seed
+// all return 402). Default dimensions are 1024×1024 which is fine — Remotion
+// scales for display anyway.
+const callPollinations = async (prompt) => {
+  const encoded = encodeURIComponent(prompt)
+  const url = `https://image.pollinations.ai/prompt/${encoded}`
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`Pollinations HTTP ${res.status}`)
+  const ab = await res.arrayBuffer()
+  return Buffer.from(ab)
+}
 
 const callGemini = async (parts) => {
-  const res = await fetch(ENDPOINT, {
+  const model = 'gemini-2.5-flash-image'
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       contents: [{ role: 'user', parts }],
-      generationConfig: {
-        responseModalities: ['IMAGE']
-      }
+      generationConfig: { responseModalities: ['IMAGE'] }
     })
   })
   const json = await res.json()
@@ -72,29 +107,34 @@ fs.mkdirSync(photosDir, { recursive: true })
 const beforePath = path.join(photosDir, 'before.jpg')
 const afterPath = path.join(photosDir, 'after.jpg')
 
+// Try Imagen/Gemini first (paid), fall back to Pollinations (free).
+// Same seed for both images so the underlying scene matches as closely as possible.
+const SEED = 7
+
+const tryWithFallback = async (label, prompt) => {
+  try {
+    return { buf: await callImagen(prompt), source: 'Imagen 4 Fast' }
+  } catch (err) {
+    console.log(`  ! ${label} via Imagen failed (${err.message.slice(0, 70)}…)`)
+    console.log(`  → Falling back to Pollinations (free)…`)
+    return { buf: await callPollinations(prompt, SEED), source: 'Pollinations Flux' }
+  }
+}
+
 if (!fs.existsSync(beforePath)) {
-  console.log('→ Generating before.jpg via Gemini 2.5 Flash Image…')
-  const buf = await callGemini([{ text: BEFORE_PROMPT }])
+  console.log('→ Generating before.jpg…')
+  const { buf, source } = await tryWithFallback('before', BEFORE_PROMPT)
   fs.writeFileSync(beforePath, buf)
-  console.log(`  ✓ ${beforePath} (${(buf.length / 1024).toFixed(0)} KB)`)
+  console.log(`  ✓ ${beforePath} (${(buf.length / 1024).toFixed(0)} KB via ${source})`)
 } else {
   console.log(`  ✓ ${beforePath} (exists, skipping)`)
 }
 
 if (!fs.existsSync(afterPath)) {
-  console.log('→ Generating after.jpg with before.jpg as reference…')
-  const referenceImage = fs.readFileSync(beforePath).toString('base64')
-  const buf = await callGemini([
-    {
-      inlineData: {
-        mimeType: 'image/jpeg',
-        data: referenceImage
-      }
-    },
-    { text: AFTER_PROMPT }
-  ])
+  console.log('→ Generating after.jpg…')
+  const { buf, source } = await tryWithFallback('after', AFTER_PROMPT)
   fs.writeFileSync(afterPath, buf)
-  console.log(`  ✓ ${afterPath} (${(buf.length / 1024).toFixed(0)} KB)`)
+  console.log(`  ✓ ${afterPath} (${(buf.length / 1024).toFixed(0)} KB via ${source})`)
 } else {
   console.log(`  ✓ ${afterPath} (exists, skipping)`)
 }

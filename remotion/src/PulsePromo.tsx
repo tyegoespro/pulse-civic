@@ -28,7 +28,7 @@ const { fontFamily } = loadInter()
 // Flip to `true` after running `node scripts/generate-photos.mjs` so the
 // before/after scenes use the Gemini-generated photos instead of the
 // stylized SVG fallbacks.
-const HAS_PHOTOS = false
+const HAS_PHOTOS = true
 
 // ─── App palette (Pulse PWA) ─────────────────────────────────────────────
 const BG = '#0F0F1A'
