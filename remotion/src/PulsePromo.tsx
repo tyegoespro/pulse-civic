@@ -129,42 +129,63 @@ const Particles: React.FC<{ count?: number; opacity?: number }> = ({ count = 18,
   )
 }
 
-// Confetti burst — used at the "Resolved" celebration
-const Confetti: React.FC<{ startFrame: number; x?: number; y?: number; color?: string }> = ({
-  startFrame,
-  x = 960,
-  y = 540,
-  color = GREEN
-}) => {
+// Centered editorial rubber-stamp — used at the "Resolved" moment in
+// SceneFixed instead of confetti. Public-notice aesthetic: thick ink-on-paper
+// border, slight rotation jitter like a hand-stamped impression, civic tag.
+const ResolvedStamp: React.FC<{ startFrame: number }> = ({ startFrame }) => {
   const frame = useCurrentFrame()
-  const localFrame = frame - startFrame
-  if (localFrame < 0 || localFrame > 100) return null
-  const pieces = 24
-  const colors = [color, PINK, AMBER, INDIGO, BLUE]
+  const local = frame - startFrame
+  if (local < 0) return null
+  const t = interpolate(local, [0, 22], [0, 1], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SOFT_POP
+  })
+  const opacity = interpolate(local, [0, 8], [0, 1], { extrapolateRight: 'clamp' })
+  const rotation = interpolate(t, [0, 1], [-12, -4])
+  const scale = interpolate(t, [0, 1], [1.55, 1])
+
   return (
-    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 200 }}>
-      {Array.from({ length: pieces }).map((_, i) => {
-        const angle = (i / pieces) * Math.PI * 2
-        const distance = interpolate(localFrame, [0, 60], [0, 400 + (i % 4) * 80], {
-          extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic)
-        })
-        const dropY = interpolate(localFrame, [0, 100], [0, 200], { extrapolateRight: 'clamp' })
-        const rotate = (localFrame * 6 + i * 30) % 360
-        const opacity = interpolate(localFrame, [0, 12, 80, 100], [0, 1, 1, 0], { extrapolateRight: 'clamp' })
-        return (
-          <div key={i} style={{
-            position: 'absolute',
-            left: x + Math.cos(angle) * distance - 6,
-            top: y + Math.sin(angle) * distance + dropY - 4,
-            width: 12,
-            height: 8,
-            background: colors[i % colors.length],
-            transform: `rotate(${rotate}deg)`,
-            opacity,
-            borderRadius: 1
-          }} />
-        )
-      })}
+    <div style={{
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      transform: `translate(-50%, -50%) rotate(${rotation}deg) scale(${scale})`,
+      padding: '34px 72px 38px',
+      border: `6px solid ${GREEN}`,
+      borderRadius: 6,
+      background: 'rgba(8, 18, 12, 0.88)',
+      backdropFilter: 'blur(6px)',
+      fontFamily: monoFamily,
+      opacity,
+      zIndex: 150,
+      boxShadow: `0 0 80px ${GREEN}55, 0 24px 90px rgba(0,0,0,0.55), inset 0 0 0 2px rgba(255,255,255,0.04)`,
+      textAlign: 'center'
+    }}>
+      <div style={{
+        fontSize: 14,
+        fontWeight: 700,
+        color: GREEN,
+        letterSpacing: '0.32em',
+        textTransform: 'uppercase',
+        marginBottom: 10,
+        opacity: 0.9
+      }}>City of Oshkosh · Public Works</div>
+      <div style={{
+        fontSize: 124,
+        fontWeight: 700,
+        color: GREEN,
+        letterSpacing: '-0.045em',
+        textTransform: 'uppercase',
+        lineHeight: 1,
+        textShadow: `0 0 28px ${GREEN}66`
+      }}>RESOLVED</div>
+      <div style={{
+        fontSize: 14,
+        fontWeight: 700,
+        color: 'rgba(255,255,255,0.65)',
+        letterSpacing: '0.22em',
+        textTransform: 'uppercase',
+        marginTop: 14
+      }}>Issue closed · 06.03.26</div>
     </div>
   )
 }
@@ -326,28 +347,74 @@ const AppHeader: React.FC = () => {
   )
 }
 
+// Chapter title — big editorial Space Mono caption that ties each scene back
+// to the landing-page dispatch vibe. Used to live as a 14px kicker; rebuilt
+// at 56px so it actually reads in the rendered video.
 const Caption: React.FC<{ text: string; color?: string; startFrame: number }> = ({
   text, color = PINK, startFrame
 }) => {
+  const frame = useCurrentFrame()
   const slide = useEnter(startFrame, 22)
+  // Per-character reveal: each char fades + un-blurs sequentially. Subtle, not flashy.
+  const chars = text.split('')
+  const ruleWidth = interpolate(frame, [startFrame, startFrame + 26], [0, 72], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER
+  })
+
   return (
     <div style={{
       ...slide,
       position: 'absolute',
-      top: 122,
+      top: 130,
       left: 64,
       right: 64,
-      fontFamily,
-      fontSize: 14,
-      fontWeight: 800,
-      color,
-      letterSpacing: '0.26em',
-      textTransform: 'uppercase',
-      zIndex: 70,
-      textShadow: `0 0 16px ${color}66`
+      fontFamily: monoFamily,
+      zIndex: 70
     }}>
-      <span style={{ display: 'inline-block', width: 36, height: 2, background: color, verticalAlign: 'middle', marginRight: 14, boxShadow: `0 0 12px ${color}` }} />
-      {text}
+      {/* Pink dispatch kicker rail */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        marginBottom: 14,
+        fontSize: 13,
+        fontWeight: 700,
+        color,
+        letterSpacing: '0.32em',
+        textTransform: 'uppercase'
+      }}>
+        <span style={{
+          display: 'inline-block',
+          width: ruleWidth,
+          height: 2,
+          background: color
+        }} />
+        Dispatch
+      </div>
+      {/* Big chapter title */}
+      <div style={{
+        fontSize: 56,
+        fontWeight: 700,
+        color: TEXT,
+        letterSpacing: '-0.035em',
+        lineHeight: 1,
+        textTransform: 'uppercase'
+      }}>
+        {chars.map((ch, i) => {
+          const t = interpolate(frame, [startFrame + 18 + i * 1.6, startFrame + 30 + i * 1.6], [0, 1], {
+            extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER
+          })
+          return (
+            <span key={i} style={{
+              display: 'inline-block',
+              opacity: t,
+              transform: `translateY(${interpolate(t, [0, 1], [10, 0])}px)`,
+              filter: `blur(${interpolate(t, [0, 1], [3, 0])}px)`,
+              whiteSpace: 'pre'
+            }}>{ch}</span>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -1027,7 +1094,6 @@ const SceneFixed: React.FC = () => {
     extrapolateRight: 'clamp',
     easing: SMOOTH
   })
-  const statusPop = usePop(132, 16)
   const labelBefore = interpolate(frame, [30, 50], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
   const labelAfter = interpolate(frame, [80, 100], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
 
@@ -1130,32 +1196,11 @@ const SceneFixed: React.FC = () => {
           fontFamily,
           boxShadow: `0 8px 32px ${GREEN}77`
         }}>After</div>
-        <div style={{
-          ...statusPop,
-          position: 'absolute',
-          bottom: 24,
-          right: 24,
-          padding: '12px 22px',
-          borderRadius: 14,
-          background: GREEN,
-          color: '#04210d',
-          fontSize: 16,
-          fontWeight: 800,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          fontFamily,
-          boxShadow: `0 12px 40px ${GREEN}88`,
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 10
-        }}>
-          <IconVerified size={16} />
-          Resolved
-        </div>
       </div>
 
-      {/* Celebration confetti when Resolved pops */}
-      <Confetti startFrame={132} x={1660} y={760} color={GREEN} />
+      {/* Editorial rubber stamp — dead center, replaces the bottom-right
+          badge + AI-slop confetti. Public-notice aesthetic. */}
+      <ResolvedStamp startFrame={132} />
 
       <Vignette strength={0.4} />
     </AbsoluteFill>
