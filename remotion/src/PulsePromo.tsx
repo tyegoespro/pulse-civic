@@ -1,17 +1,36 @@
+import React from 'react'
 import {
   AbsoluteFill,
   Sequence,
   useCurrentFrame,
   useVideoConfig,
   interpolate,
-  spring,
-  Easing
+  Easing,
+  Img,
+  staticFile
 } from 'remotion'
 import { loadFont as loadInter } from '@remotion/google-fonts/Inter'
+import {
+  IconTrending,
+  IconVerified,
+  IconMegaphone,
+  IconRefresh,
+  IconCompliment,
+  IconPothole,
+  IconGlobe,
+  IconComments,
+  IconArrowUp,
+  PulseLogo
+} from './Icons'
 
 const { fontFamily } = loadInter()
 
-// ─── App palette ─────────────────────────────────────────────────────────
+// Flip to `true` after running `node scripts/generate-photos.mjs` so the
+// before/after scenes use the Gemini-generated photos instead of the
+// stylized SVG fallbacks.
+const HAS_PHOTOS = false
+
+// ─── App palette (Pulse PWA) ─────────────────────────────────────────────
 const BG = '#0F0F1A'
 const BG_CARD = '#1A1A2E'
 const BORDER = 'rgba(255, 255, 255, 0.08)'
@@ -28,7 +47,7 @@ const AMBER = '#F59E0B'
 const BLUE = '#3B82F6'
 const ORANGE = '#FF6B35'
 
-// ─── Easings (from the skill's recommended curves) ───────────────────────
+// ─── Easings (from the skill's timing rules) ─────────────────────────────
 const ENTER = Easing.bezier(0.16, 1, 0.3, 1)
 const SMOOTH = Easing.bezier(0.45, 0, 0.55, 1)
 const SOFT_POP = Easing.bezier(0.34, 1.56, 0.64, 1)
@@ -76,124 +95,61 @@ const useTicker = (startFrame: number, fromValue: number, toValue: number, durat
 
 const fmtNum = (n: number) => n.toLocaleString('en-US')
 
-// ─── UI atoms ────────────────────────────────────────────────────────────
+// ─── Photo helpers ───────────────────────────────────────────────────────
+// Renders a Gemini-generated street photo when available, falls back to a
+// stylized SVG illustration so the video still runs end-to-end without it.
 
-const PulseLogo: React.FC<{ size?: number }> = ({ size = 32 }) => (
-  <svg width={size} height={size} viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-    <rect width="32" height="32" rx="7" fill={BG_CARD} />
-    <polyline
-      points="4,18 9,18 12,10 16,22 20,14 23,18 28,18"
-      fill="none"
-      stroke={PINK}
-      strokeWidth="2.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-)
+const BeforePhoto: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
+  if (HAS_PHOTOS) {
+    return (
+      <Img
+        src={staticFile('photos/before.jpg')}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', ...style }}
+      />
+    )
+  }
+  return <PotholeFallback style={style} />
+}
 
-// Stylized pothole photo — recognizable as a road problem without being photoreal
-const PotholePhoto: React.FC<{ style?: React.CSSProperties }> = ({ style }) => (
+const AfterPhoto: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
+  if (HAS_PHOTOS) {
+    return (
+      <Img
+        src={staticFile('photos/after.jpg')}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', ...style }}
+      />
+    )
+  }
+  return <RepavedFallback style={style} />
+}
+
+// SVG fallback illustrations (only used if HAS_PHOTOS = false)
+const PotholeFallback: React.FC<{ style?: React.CSSProperties }> = ({ style }) => (
   <svg viewBox="0 0 800 500" style={{ width: '100%', height: '100%', display: 'block', ...style }} xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="potSky" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stopColor="#4a5d76" />
-        <stop offset="1" stopColor="#2e4055" />
-      </linearGradient>
-      <linearGradient id="potRoad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stopColor="#3a3a3a" />
-        <stop offset="0.5" stopColor="#2a2a2a" />
-        <stop offset="1" stopColor="#1a1a1a" />
-      </linearGradient>
-      <radialGradient id="potHole" cx="0.5" cy="0.5">
-        <stop offset="0" stopColor="#000" />
-        <stop offset="0.55" stopColor="#050505" />
-        <stop offset="1" stopColor="#1a1a1a" />
-      </radialGradient>
+      <linearGradient id="pSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#4a5d76" /><stop offset="1" stopColor="#2e4055" /></linearGradient>
+      <linearGradient id="pRoad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3a3a3a" /><stop offset="1" stopColor="#1a1a1a" /></linearGradient>
+      <radialGradient id="pHole" cx="0.5" cy="0.5"><stop offset="0" stopColor="#000" /><stop offset="1" stopColor="#1a1a1a" /></radialGradient>
     </defs>
-    {/* Sky */}
-    <rect width="800" height="170" fill="url(#potSky)" />
-    {/* Distant buildings silhouette */}
-    <path d="M0,150 L80,150 L80,118 L140,118 L140,140 L210,140 L210,108 L290,108 L290,150 L370,150 L370,124 L450,124 L450,150 L540,150 L540,118 L610,118 L610,150 L700,150 L700,134 L800,134 L800,170 L0,170 Z" fill="#1e2a3a" />
-    {/* Road */}
-    <rect x="0" y="170" width="800" height="330" fill="url(#potRoad)" />
-    {/* Asphalt texture — random small dots */}
-    <g fill="#0d0d0d" opacity="0.5">
-      <circle cx="80" cy="220" r="2" /><circle cx="180" cy="265" r="3" /><circle cx="260" cy="240" r="2" />
-      <circle cx="340" cy="300" r="2" /><circle cx="490" cy="245" r="3" /><circle cx="610" cy="265" r="2" />
-      <circle cx="720" cy="240" r="2" /><circle cx="140" cy="360" r="3" /><circle cx="280" cy="380" r="2" />
-      <circle cx="540" cy="340" r="2" /><circle cx="680" cy="380" r="3" /><circle cx="90" cy="430" r="2" />
-      <circle cx="220" cy="445" r="3" /><circle cx="380" cy="425" r="2" /><circle cx="540" cy="450" r="3" />
-      <circle cx="700" cy="440" r="2" />
-    </g>
-    {/* Cracks radiating from pothole */}
-    <g stroke="#0a0a0a" strokeWidth="2.5" fill="none" opacity="0.85">
-      <path d="M120,320 L240,300 L320,310" />
-      <path d="M480,280 L580,290 L680,310" />
-      <path d="M200,420 L320,400 L380,390" />
-      <path d="M520,420 L620,410 L700,400" />
-    </g>
-    {/* The pothole */}
-    <ellipse cx="400" cy="370" rx="195" ry="92" fill="url(#potHole)" />
-    {/* Pothole rim — slightly raised broken edge */}
-    <ellipse cx="400" cy="365" rx="198" ry="93" fill="none" stroke="#0a0a0a" strokeWidth="3" />
-    {/* Yellow centerline broken */}
-    <rect x="380" y="200" width="40" height="14" fill="#FFD700" opacity="0.85" />
-    <rect x="380" y="240" width="40" height="14" fill="#FFD700" opacity="0.85" />
-    <rect x="380" y="475" width="40" height="14" fill="#FFD700" opacity="0.85" />
-    {/* White edge lines */}
-    <rect x="70" y="195" width="6" height="300" fill="#e8e8e8" opacity="0.55" />
-    <rect x="724" y="195" width="6" height="300" fill="#e8e8e8" opacity="0.55" />
-    {/* Top edge highlight */}
-    <rect x="0" y="170" width="800" height="2" fill="#5a5a5a" />
+    <rect width="800" height="170" fill="url(#pSky)" />
+    <path d="M0,150 L120,150 L120,120 L210,120 L210,140 L290,140 L290,110 L370,110 L370,150 L450,150 L450,128 L540,128 L540,150 L800,150 L800,170 L0,170 Z" fill="#1e2a3a" />
+    <rect x="0" y="170" width="800" height="330" fill="url(#pRoad)" />
+    <ellipse cx="400" cy="370" rx="195" ry="92" fill="url(#pHole)" />
   </svg>
 )
-
-// Stylized repaved/smooth road photo — same composition, fresh
-const RepavedPhoto: React.FC<{ style?: React.CSSProperties }> = ({ style }) => (
+const RepavedFallback: React.FC<{ style?: React.CSSProperties }> = ({ style }) => (
   <svg viewBox="0 0 800 500" style={{ width: '100%', height: '100%', display: 'block', ...style }} xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="rpSky" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stopColor="#7b9ab9" />
-        <stop offset="1" stopColor="#5a7d9e" />
-      </linearGradient>
-      <linearGradient id="rpRoad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stopColor="#3a3a40" />
-        <stop offset="0.5" stopColor="#22222a" />
-        <stop offset="1" stopColor="#15151c" />
-      </linearGradient>
-      <linearGradient id="rpShine" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stopColor="rgba(255,255,255,0.12)" />
-        <stop offset="0.5" stopColor="rgba(255,255,255,0)" />
-        <stop offset="1" stopColor="rgba(255,255,255,0.04)" />
-      </linearGradient>
+      <linearGradient id="rSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#7b9ab9" /><stop offset="1" stopColor="#5a7d9e" /></linearGradient>
+      <linearGradient id="rRoad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3a3a40" /><stop offset="1" stopColor="#15151c" /></linearGradient>
     </defs>
-    {/* Brighter sky — sunnier day */}
-    <rect width="800" height="170" fill="url(#rpSky)" />
-    {/* Same buildings */}
-    <path d="M0,150 L80,150 L80,118 L140,118 L140,140 L210,140 L210,108 L290,108 L290,150 L370,150 L370,124 L450,124 L450,150 L540,150 L540,118 L610,118 L610,150 L700,150 L700,134 L800,134 L800,170 L0,170 Z" fill="#3a4a5e" />
-    {/* Fresh asphalt — smooth, no texture noise, slight sheen */}
-    <rect x="0" y="170" width="800" height="330" fill="url(#rpRoad)" />
-    <rect x="0" y="170" width="800" height="330" fill="url(#rpShine)" />
-    {/* Clean yellow centerline — full dashes, no breaks */}
-    <rect x="380" y="200" width="40" height="14" fill="#FFE600" />
-    <rect x="380" y="234" width="40" height="14" fill="#FFE600" />
-    <rect x="380" y="268" width="40" height="14" fill="#FFE600" />
-    <rect x="380" y="302" width="40" height="14" fill="#FFE600" />
-    <rect x="380" y="336" width="40" height="14" fill="#FFE600" />
-    <rect x="380" y="370" width="40" height="14" fill="#FFE600" />
-    <rect x="380" y="404" width="40" height="14" fill="#FFE600" />
-    <rect x="380" y="438" width="40" height="14" fill="#FFE600" />
-    <rect x="380" y="472" width="40" height="14" fill="#FFE600" />
-    {/* Crisp white edge lines — wider, brighter */}
-    <rect x="70" y="195" width="6" height="300" fill="#FFFFFF" opacity="0.9" />
-    <rect x="724" y="195" width="6" height="300" fill="#FFFFFF" opacity="0.9" />
-    {/* Top edge of fresh asphalt — slight gloss line */}
-    <rect x="0" y="170" width="800" height="3" fill="#6a6a72" />
+    <rect width="800" height="170" fill="url(#rSky)" />
+    <path d="M0,150 L120,150 L120,120 L210,120 L210,140 L290,140 L290,110 L370,110 L370,150 L450,150 L450,128 L540,128 L540,150 L800,150 L800,170 L0,170 Z" fill="#3a4a5e" />
+    <rect x="0" y="170" width="800" height="330" fill="url(#rRoad)" />
   </svg>
 )
 
-// App header — minimal, no Oshkosh reference
+// ─── App header (no Oshkosh, no emojis) ─────────────────────────────────
 const AppHeader: React.FC = () => (
   <div style={{
     position: 'absolute',
@@ -225,7 +181,7 @@ const AppHeader: React.FC = () => (
       fontWeight: 700,
       letterSpacing: '0.04em'
     }}>
-      <div style={{ width: 8, height: 8, borderRadius: 4, background: GREEN }} />
+      <IconVerified size={14} />
       <span>Verified resident</span>
     </div>
   </div>
@@ -264,45 +220,52 @@ const Caption: React.FC<{ text: string; color?: string; startFrame: number }> = 
   )
 }
 
-// ─── Scene 1 + 2: Photo reveal → Pulse card (0–6s) ────────────────────────
+// Category chip used inside Pulse cards
+const Chip: React.FC<{ color: string; label: string; icon?: React.ReactNode }> = ({ color, label, icon }) => (
+  <span style={{
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '6px 14px',
+    borderRadius: 8,
+    background: `${color}22`,
+    border: `1px solid ${color}55`,
+    color,
+    fontSize: 14,
+    fontWeight: 800,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase'
+  }}>
+    {icon}
+    {label}
+  </span>
+)
+
+// ─── Scene 1: Photo reveal → Pulse card (0–6s) ───────────────────────────
 const SceneOpen: React.FC = () => {
   const frame = useCurrentFrame()
-  // Phase 1 (0–30): fullscreen photo fades in
-  // Phase 2 (30–90): photo shrinks + slides into card, card UI appears around it
   const photoFade = interpolate(frame, [0, 18], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-    easing: ENTER
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER
   })
-  // Hold the photo fullscreen for a beat, then animate it into the card
   const pullback = interpolate(frame, [40, 100], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-    easing: ENTER
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER
   })
-  // Photo target: 480×300 inside a card at top:280, left:120, so the photo
-  // sits at top:432 (after category row + title)
-  // 1920×1080 to 480×300: scale = 0.435 roughly
   const photoScale = interpolate(pullback, [0, 1], [1, 0.36])
   const photoTranslateX = interpolate(pullback, [0, 1], [0, -540])
   const photoTranslateY = interpolate(pullback, [0, 1], [0, 60])
 
   const headerFade = interpolate(frame, [70, 100], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
   const cardChromeFade = interpolate(frame, [80, 115], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
-  const captionStart = 100
-
-  // Vote count subtle pop when card is fully revealed
   const tickerVotes = useTicker(118, 11, 12, 14)
 
   return (
     <AbsoluteFill style={{ background: BG }}>
-      {/* App header fades up under the photo zoom-out */}
       <div style={{ opacity: headerFade }}>
         <AppHeader />
       </div>
-      <Caption text="Post what you see." startFrame={captionStart} />
+      <Caption text="Post what you see." startFrame={100} />
 
-      {/* The photo lives in absolute space — starts fullscreen, animates into card */}
+      {/* Photo: starts fullscreen, animates into card position */}
       <div style={{
         position: 'absolute',
         top: 0,
@@ -314,10 +277,10 @@ const SceneOpen: React.FC = () => {
         transformOrigin: 'center center',
         pointerEvents: 'none'
       }}>
-        <PotholePhoto />
+        <BeforePhoto />
       </div>
 
-      {/* The card chrome appears AROUND the photo once it's parked */}
+      {/* Card chrome appears around the photo */}
       <div style={{
         position: 'absolute',
         top: 240,
@@ -329,26 +292,13 @@ const SceneOpen: React.FC = () => {
         padding: '32px 36px',
         boxShadow: '0 12px 50px rgba(0,0,0,0.4)',
         opacity: cardChromeFade,
-        fontFamily,
-        zIndex: 0
+        fontFamily
       }}>
-        {/* Category + location chip */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-          <span style={{
-            padding: '6px 14px',
-            borderRadius: 8,
-            background: `${ORANGE}22`,
-            border: `1px solid ${ORANGE}55`,
-            color: ORANGE,
-            fontSize: 14,
-            fontWeight: 800,
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase'
-          }}>Pothole</span>
+          <Chip color={ORANGE} label="Pothole" icon={<IconPothole size={14} />} />
           <span style={{ fontSize: 16, color: TEXT_MUTE }}>· Main St &amp; 9th Ave</span>
         </div>
 
-        {/* Title + body */}
         <div style={{
           fontSize: 30,
           fontWeight: 800,
@@ -358,7 +308,7 @@ const SceneOpen: React.FC = () => {
           lineHeight: 1.25
         }}>Massive potholes on Main &amp; 9th — bent my rim last week</div>
 
-        {/* Photo slot — the actual SVG above will land here visually once pullback completes */}
+        {/* Photo slot inside the card — appears after the pullback completes */}
         <div style={{
           width: '100%',
           height: 480,
@@ -368,12 +318,10 @@ const SceneOpen: React.FC = () => {
           marginBottom: 22,
           opacity: cardChromeFade
         }}>
-          {/* Show the photo statically inside the card AFTER the pullback completes */}
-          {frame > 95 && <PotholePhoto />}
+          {frame > 95 && <BeforePhoto />}
         </div>
 
-        {/* Vote bar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 22, opacity: cardChromeFade }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -386,17 +334,21 @@ const SceneOpen: React.FC = () => {
             fontSize: 22,
             fontWeight: 800,
             fontVariantNumeric: 'tabular-nums'
-          }}>▲ {tickerVotes}</div>
-          <span style={{ fontSize: 16, color: TEXT_MUTE }}>posted just now · Marcus T. <span style={{ color: GREEN }}>✓</span></span>
+          }}>
+            <IconArrowUp size={20} />
+            {tickerVotes}
+          </div>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 16, color: TEXT_MUTE }}>
+            posted just now · Marcus T.
+            <IconVerified size={14} style={{ color: GREEN }} />
+          </span>
         </div>
       </div>
     </AbsoluteFill>
   )
 }
 
-// ─── Scene 3: Feed leaderboard battle (6–13s, 210 frames) ───────────────
-// Five Pulses visible. Hero starts at rank 4 (bottom), climbs to rank 0 (top).
-// Others shift accordingly. Single shared progress drives every card's Y.
+// ─── Scene 2: Leaderboard battle (6–13s) ─────────────────────────────────
 
 const FEED_CARD_HEIGHT = 162
 const FEED_CARD_GAP = 16
@@ -413,7 +365,6 @@ const FEED_PULSES = [
 const SceneClimb: React.FC = () => {
   const frame = useCurrentFrame()
   const headerFade = interpolate(frame, [0, 14], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
-  // Shared progress that controls the entire reorder
   const climbProgress = interpolate(frame, [30, 170], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
@@ -435,7 +386,6 @@ const SceneClimb: React.FC = () => {
             [p.startRank * (FEED_CARD_HEIGHT + FEED_CARD_GAP), p.endRank * (FEED_CARD_HEIGHT + FEED_CARD_GAP)],
             { easing: ENTER }
           )
-          // Hero card votes ticker
           const votes = p.hero ? Math.floor(p.startVotes + (p.endVotes - p.startVotes) * climbProgress) : p.startVotes
           const isOnTop = p.endRank === 0 && climbProgress > 0.6
           return (
@@ -483,7 +433,6 @@ const FeedCard: React.FC<{
     fontFamily,
     boxShadow: hero && celebrate ? `0 12px 50px ${PINK_GLOW}` : '0 4px 18px rgba(0,0,0,0.25)'
   }}>
-    {/* Vote pill */}
     <div style={{
       display: 'flex',
       flexDirection: 'column',
@@ -508,22 +457,12 @@ const FeedCard: React.FC<{
 
     <div style={{ flex: 1, minWidth: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-        <span style={{
-          padding: '4px 12px',
-          borderRadius: 6,
-          background: `${catColor}22`,
-          border: `1px solid ${catColor}44`,
-          color: catColor,
-          fontSize: 12,
-          fontWeight: 800,
-          letterSpacing: '0.04em',
-          textTransform: 'uppercase'
-        }}>{cat}</span>
+        <Chip color={catColor} label={cat} />
         {hero && celebrate && (
           <span style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 6,
+            gap: 8,
             padding: '4px 12px',
             borderRadius: 6,
             background: PINK,
@@ -532,7 +471,10 @@ const FeedCard: React.FC<{
             fontWeight: 800,
             letterSpacing: '0.06em',
             textTransform: 'uppercase'
-          }}>🔥 #1 Trending</span>
+          }}>
+            <IconTrending size={14} />
+            #1 Trending
+          </span>
         )}
       </div>
       <div style={{
@@ -549,7 +491,7 @@ const FeedCard: React.FC<{
   </div>
 )
 
-// ─── Scene 4: City response (13–17s, 120 frames) ─────────────────────────
+// ─── Scene 3: City response (13–17s) ─────────────────────────────────────
 const SceneListens: React.FC = () => {
   const frame = useCurrentFrame()
   const headerFade = interpolate(frame, [0, 12], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
@@ -565,7 +507,7 @@ const SceneListens: React.FC = () => {
       </div>
       <Caption text="The city listens." startFrame={0} color={AMBER} />
 
-      {/* Pulse card with status badge appearing */}
+      {/* Pulse card with status badge */}
       <div style={{
         ...cardEnter,
         position: 'absolute',
@@ -579,20 +521,12 @@ const SceneListens: React.FC = () => {
         fontFamily
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <span style={{
-            padding: '6px 14px',
-            borderRadius: 8,
-            background: `${ORANGE}22`,
-            border: `1px solid ${ORANGE}55`,
-            color: ORANGE,
-            fontSize: 14,
-            fontWeight: 800,
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase'
-          }}>Pothole</span>
-          {/* Status pops in */}
+          <Chip color={ORANGE} label="Pothole" icon={<IconPothole size={14} />} />
           <div style={{
             ...statusPop,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
             padding: '6px 14px',
             borderRadius: 8,
             background: AMBER,
@@ -601,8 +535,20 @@ const SceneListens: React.FC = () => {
             fontWeight: 800,
             letterSpacing: '0.04em',
             textTransform: 'uppercase'
-          }}>🔧 In progress</div>
-          <span style={{ fontSize: 14, color: TEXT_MUTE, marginLeft: 'auto' }}>742 votes · 24 replies</span>
+          }}>
+            <IconRefresh size={14} />
+            In progress
+          </div>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 18, fontSize: 14, color: TEXT_MUTE, marginLeft: 'auto' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <IconArrowUp size={14} />
+              742
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <IconComments size={14} />
+              24
+            </span>
+          </span>
         </div>
         <div style={{
           fontSize: 28,
@@ -612,7 +558,7 @@ const SceneListens: React.FC = () => {
         }}>Massive potholes on Main &amp; 9th — bent my rim last week</div>
       </div>
 
-      {/* Notification slides in from top */}
+      {/* City Public Works notification */}
       <div style={{
         ...notifSlide,
         position: 'absolute',
@@ -637,16 +583,17 @@ const SceneListens: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 26,
           flexShrink: 0
-        }}>🏛</div>
+        }}>
+          <IconGlobe size={28} />
+        </div>
         <div>
           <div style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 4 }}>City Public Works · Acknowledged</div>
           <div style={{ fontSize: 15, color: TEXT_MUTE }}>Scheduled for repaving this Friday.</div>
         </div>
       </div>
 
-      {/* Public Works comment slides in */}
+      {/* Public Works comment */}
       <div style={{
         ...commentSlide,
         position: 'absolute',
@@ -680,7 +627,7 @@ const SceneListens: React.FC = () => {
             <span style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 4,
+              gap: 6,
               padding: '2px 10px',
               borderRadius: 6,
               background: `${BLUE}22`,
@@ -688,7 +635,10 @@ const SceneListens: React.FC = () => {
               fontSize: 11,
               fontWeight: 800,
               letterSpacing: '0.04em'
-            }}>OFFICIAL</span>
+            }}>
+              <IconVerified size={11} />
+              OFFICIAL
+            </span>
           </div>
           <div style={{ fontSize: 17, color: TEXT_DIM, lineHeight: 1.5 }}>
             Thanks for flagging. Crew rolling out at 6am Friday. Avoid the area between 8th and 10th.
@@ -699,12 +649,11 @@ const SceneListens: React.FC = () => {
   )
 }
 
-// ─── Scene 5: Before / After reveal (17–23s, 180 frames) ────────────────
+// ─── Scene 4: Before/After wipe (17–23s) ─────────────────────────────────
 const SceneFixed: React.FC = () => {
   const frame = useCurrentFrame()
   const headerFade = interpolate(frame, [0, 12], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
   const photoEnter = useEnter(0, 26)
-  // Wipe progress drives the left-to-right reveal of the "after" photo
   const wipeProgress = interpolate(frame, [60, 130], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
@@ -721,7 +670,6 @@ const SceneFixed: React.FC = () => {
       </div>
       <Caption text="Problems get fixed." startFrame={0} color={GREEN} />
 
-      {/* Photo container with wipe */}
       <div style={{
         ...photoEnter,
         position: 'absolute',
@@ -736,7 +684,7 @@ const SceneFixed: React.FC = () => {
       }}>
         {/* BEFORE layer */}
         <div style={{ position: 'absolute', inset: 0 }}>
-          <PotholePhoto />
+          <BeforePhoto style={{ width: '100%', height: '100%' }} />
         </div>
         {/* AFTER layer — clipped from the left by wipeProgress */}
         <div style={{
@@ -744,7 +692,7 @@ const SceneFixed: React.FC = () => {
           inset: 0,
           clipPath: `inset(0 0 0 ${(1 - wipeProgress) * 100}%)`
         }}>
-          <RepavedPhoto />
+          <AfterPhoto style={{ width: '100%', height: '100%' }} />
         </div>
         {/* Wipe line */}
         {wipeProgress > 0 && wipeProgress < 1 && (
@@ -759,7 +707,6 @@ const SceneFixed: React.FC = () => {
             transform: 'translateX(-2px)'
           }} />
         )}
-        {/* BEFORE label */}
         <div style={{
           position: 'absolute',
           top: 24,
@@ -775,7 +722,6 @@ const SceneFixed: React.FC = () => {
           textTransform: 'uppercase',
           fontFamily
         }}>Before</div>
-        {/* AFTER label */}
         <div style={{
           position: 'absolute',
           top: 24,
@@ -791,7 +737,6 @@ const SceneFixed: React.FC = () => {
           textTransform: 'uppercase',
           fontFamily
         }}>After</div>
-        {/* Resolved status pops at the end */}
         <div style={{
           ...statusPop,
           position: 'absolute',
@@ -809,14 +754,17 @@ const SceneFixed: React.FC = () => {
           boxShadow: `0 8px 28px ${GREEN}66`,
           display: 'inline-flex',
           alignItems: 'center',
-          gap: 8
-        }}>✓ Resolved</div>
+          gap: 10
+        }}>
+          <IconVerified size={16} />
+          Resolved
+        </div>
       </div>
     </AbsoluteFill>
   )
 }
 
-// ─── Scene 6: Compliment lands (23–27s, 120 frames) ─────────────────────
+// ─── Scene 5: Compliment Pulse (23–27s) ──────────────────────────────────
 const SceneCelebrate: React.FC = () => {
   const frame = useCurrentFrame()
   const headerFade = interpolate(frame, [0, 12], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
@@ -824,16 +772,16 @@ const SceneCelebrate: React.FC = () => {
   const heartT1 = interpolate(frame, [40, 110], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH })
   const heartT2 = interpolate(frame, [50, 120], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH })
   const heartT3 = interpolate(frame, [60, 115], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH })
+  const heartT4 = interpolate(frame, [45, 105], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH })
   const votes = useTicker(20, 47, 218, 80)
 
-  // Flying hearts — float up + fade
-  const heartStyle = (t: number, dx: number) => ({
-    position: 'absolute' as const,
-    bottom: 140 + t * 200,
+  const heartStyle = (t: number, dx: number): React.CSSProperties => ({
+    position: 'absolute',
+    bottom: 140 + t * 280,
     left: 960 + dx,
-    fontSize: 56,
-    opacity: interpolate(t, [0, 0.3, 1], [0, 1, 0]),
-    transform: `translateX(${Math.sin(t * Math.PI) * 12}px)`
+    opacity: interpolate(t, [0, 0.2, 0.85, 1], [0, 1, 1, 0]),
+    transform: `translateX(${Math.sin(t * Math.PI) * 16}px)`,
+    color: GREEN
   })
 
   return (
@@ -843,7 +791,6 @@ const SceneCelebrate: React.FC = () => {
       </div>
       <Caption text="And neighbors notice." startFrame={0} color={GREEN} />
 
-      {/* Compliment Pulse card */}
       <div style={{
         ...cardEnter,
         position: 'absolute',
@@ -858,17 +805,7 @@ const SceneCelebrate: React.FC = () => {
         boxShadow: `0 16px 60px ${GREEN}22`
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 }}>
-          <span style={{
-            padding: '6px 14px',
-            borderRadius: 8,
-            background: `${GREEN}22`,
-            border: `1px solid ${GREEN}66`,
-            color: GREEN,
-            fontSize: 14,
-            fontWeight: 800,
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase'
-          }}>💚 Compliment</span>
+          <Chip color={GREEN} label="Compliment" icon={<IconCompliment size={14} />} />
           <span style={{ fontSize: 14, color: TEXT_MUTE }}>· Main St &amp; 9th Ave</span>
         </div>
 
@@ -894,28 +831,34 @@ const SceneCelebrate: React.FC = () => {
             fontSize: 24,
             fontWeight: 800,
             fontVariantNumeric: 'tabular-nums'
-          }}>💚 {votes}</div>
-          <span style={{ fontSize: 17, color: TEXT_MUTE }}>by Desiree W. <span style={{ color: GREEN }}>✓ Verified</span></span>
+          }}>
+            <IconCompliment size={22} />
+            {votes}
+          </div>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 17, color: TEXT_MUTE }}>
+            by Desiree W.
+            <IconVerified size={15} style={{ color: GREEN }} />
+            <span style={{ color: GREEN, fontWeight: 700 }}>Verified</span>
+          </span>
         </div>
       </div>
 
-      {/* Flying hearts upward — staggered */}
-      <span style={heartStyle(heartT1, -260)}>💚</span>
-      <span style={heartStyle(heartT2, -80)}>💚</span>
-      <span style={heartStyle(heartT3, 140)}>💚</span>
-      <span style={heartStyle(heartT1, 280)}>💚</span>
+      {/* Floating verified-check hearts (using compliment thumb icon for variety) */}
+      <div style={heartStyle(heartT1, -260)}><IconCompliment size={64} /></div>
+      <div style={heartStyle(heartT2, -80)}><IconCompliment size={56} /></div>
+      <div style={heartStyle(heartT3, 140)}><IconCompliment size={60} /></div>
+      <div style={heartStyle(heartT4, 280)}><IconCompliment size={52} /></div>
     </AbsoluteFill>
   )
 }
 
-// ─── End card (27–30s, 90 frames) ────────────────────────────────────────
+// ─── End card (27–30s) ───────────────────────────────────────────────────
 const EndCard: React.FC = () => {
   const frame = useCurrentFrame()
   const brandPop = usePop(0, 22)
   const titleSlide = useEnter(14, 22)
   const urlSlide = useEnter(24, 20)
   const ctaSlide = useEnter(36, 20)
-  // Continuous slow pulse on the brand mark
   const pulseScale = interpolate(
     frame % 60,
     [0, 30, 60],
