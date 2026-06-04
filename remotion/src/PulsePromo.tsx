@@ -24,15 +24,12 @@ import {
 } from './Icons'
 
 const { fontFamily } = loadInter()
-
-// Flip to `true` after running `node scripts/generate-photos.mjs` so the
-// before/after scenes use the Gemini-generated photos instead of the
-// stylized SVG fallbacks.
 const HAS_PHOTOS = true
 
-// ─── App palette (Pulse PWA) ─────────────────────────────────────────────
+// ─── App palette ─────────────────────────────────────────────────────────
 const BG = '#0F0F1A'
 const BG_CARD = '#1A1A2E'
+const BG_DEEP = '#080812'
 const BORDER = 'rgba(255, 255, 255, 0.08)'
 const BORDER_STRONG = 'rgba(255, 255, 255, 0.16)'
 const TEXT = '#F5F5FA'
@@ -47,7 +44,6 @@ const AMBER = '#F59E0B'
 const BLUE = '#3B82F6'
 const ORANGE = '#FF6B35'
 
-// ─── Easings (from the skill's timing rules) ─────────────────────────────
 const ENTER = Easing.bezier(0.16, 1, 0.3, 1)
 const SMOOTH = Easing.bezier(0.45, 0, 0.55, 1)
 const SOFT_POP = Easing.bezier(0.34, 1.56, 0.64, 1)
@@ -56,26 +52,17 @@ const SOFT_POP = Easing.bezier(0.34, 1.56, 0.64, 1)
 
 const useEnter = (startFrame: number, durationFrames = 24) => {
   const frame = useCurrentFrame()
-  const t = interpolate(
-    frame,
-    [startFrame, startFrame + durationFrames],
-    [0, 1],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER }
-  )
-  return {
-    opacity: t,
-    transform: `translateY(${interpolate(t, [0, 1], [22, 0])}px)`
-  }
+  const t = interpolate(frame, [startFrame, startFrame + durationFrames], [0, 1], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER
+  })
+  return { opacity: t, transform: `translateY(${interpolate(t, [0, 1], [22, 0])}px)` }
 }
 
 const usePop = (startFrame: number, durationFrames = 18) => {
   const frame = useCurrentFrame()
-  const t = interpolate(
-    frame,
-    [startFrame, startFrame + durationFrames],
-    [0, 1],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SOFT_POP }
-  )
+  const t = interpolate(frame, [startFrame, startFrame + durationFrames], [0, 1], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SOFT_POP
+  })
   return {
     opacity: interpolate(t, [0, 0.5, 1], [0, 1, 1]),
     transform: `scale(${interpolate(t, [0, 1], [0.6, 1])})`
@@ -84,113 +71,283 @@ const usePop = (startFrame: number, durationFrames = 18) => {
 
 const useTicker = (startFrame: number, fromValue: number, toValue: number, durationFrames = 30) => {
   const frame = useCurrentFrame()
-  const t = interpolate(
-    frame,
-    [startFrame, startFrame + durationFrames],
-    [0, 1],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER }
-  )
+  const t = interpolate(frame, [startFrame, startFrame + durationFrames], [0, 1], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER
+  })
   return Math.floor(fromValue + (toValue - fromValue) * t)
 }
 
 const fmtNum = (n: number) => n.toLocaleString('en-US')
 
-// ─── Photo helpers ───────────────────────────────────────────────────────
-// Renders a Gemini-generated street photo when available, falls back to a
-// stylized SVG illustration so the video still runs end-to-end without it.
+// ─── Atmosphere atoms — present on every scene ──────────────────────────
+
+const Vignette: React.FC<{ strength?: number }> = ({ strength = 0.55 }) => (
+  <div style={{
+    position: 'absolute',
+    inset: 0,
+    pointerEvents: 'none',
+    background: `radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,${strength}) 100%)`,
+    zIndex: 100
+  }} />
+)
+
+// Floating dust particles — subtle background life
+const Particles: React.FC<{ count?: number; opacity?: number }> = ({ count = 18, opacity = 0.18 }) => {
+  const frame = useCurrentFrame()
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 50 }}>
+      {Array.from({ length: count }).map((_, i) => {
+        const seed = i * 137.5
+        const baseX = (Math.sin(seed) * 0.5 + 0.5) * 1920
+        const driftX = Math.sin((frame + seed) / 80) * 60
+        const baseY = 1080 - ((frame * 0.4 + seed * 30) % 1200)
+        const size = 2 + (i % 4)
+        const alpha = opacity * (0.4 + 0.6 * Math.sin((frame + seed) / 40))
+        return (
+          <div key={i} style={{
+            position: 'absolute',
+            left: baseX + driftX,
+            top: baseY,
+            width: size,
+            height: size,
+            borderRadius: size,
+            background: 'white',
+            opacity: alpha,
+            boxShadow: `0 0 ${size * 4}px rgba(255,255,255,${alpha})`
+          }} />
+        )
+      })}
+    </div>
+  )
+}
+
+// Sweep light leak — drifts across when a scene opens
+const LightLeak: React.FC<{ color?: string; startFrame?: number; duration?: number }> = ({
+  color = PINK_GLOW,
+  startFrame = 0,
+  duration = 50
+}) => {
+  const frame = useCurrentFrame()
+  const t = interpolate(frame, [startFrame, startFrame + duration], [0, 1], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH
+  })
+  const x = interpolate(t, [0, 1], [-600, 2400])
+  const opacity = interpolate(t, [0, 0.3, 0.7, 1], [0, 0.6, 0.6, 0])
+  return (
+    <div style={{
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      left: x,
+      width: 800,
+      pointerEvents: 'none',
+      background: `radial-gradient(ellipse at center, ${color} 0%, transparent 70%)`,
+      filter: 'blur(40px)',
+      opacity,
+      zIndex: 60
+    }} />
+  )
+}
+
+// Confetti burst — used at the "Resolved" celebration
+const Confetti: React.FC<{ startFrame: number; x?: number; y?: number; color?: string }> = ({
+  startFrame,
+  x = 960,
+  y = 540,
+  color = GREEN
+}) => {
+  const frame = useCurrentFrame()
+  const localFrame = frame - startFrame
+  if (localFrame < 0 || localFrame > 100) return null
+  const pieces = 24
+  const colors = [color, PINK, AMBER, INDIGO, BLUE]
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 200 }}>
+      {Array.from({ length: pieces }).map((_, i) => {
+        const angle = (i / pieces) * Math.PI * 2
+        const distance = interpolate(localFrame, [0, 60], [0, 400 + (i % 4) * 80], {
+          extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic)
+        })
+        const dropY = interpolate(localFrame, [0, 100], [0, 200], { extrapolateRight: 'clamp' })
+        const rotate = (localFrame * 6 + i * 30) % 360
+        const opacity = interpolate(localFrame, [0, 12, 80, 100], [0, 1, 1, 0], { extrapolateRight: 'clamp' })
+        return (
+          <div key={i} style={{
+            position: 'absolute',
+            left: x + Math.cos(angle) * distance - 6,
+            top: y + Math.sin(angle) * distance + dropY - 4,
+            width: 12,
+            height: 8,
+            background: colors[i % colors.length],
+            transform: `rotate(${rotate}deg)`,
+            opacity,
+            borderRadius: 1
+          }} />
+        )
+      })}
+    </div>
+  )
+}
+
+// ─── Photos (Imagen-generated, falls back to SVG when HAS_PHOTOS = false) ─
 
 const BeforePhoto: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
   if (HAS_PHOTOS) {
-    return (
-      <Img
-        src={staticFile('photos/before.jpg')}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', ...style }}
-      />
-    )
+    return <Img src={staticFile('photos/before.jpg')} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', ...style }} />
   }
-  return <PotholeFallback style={style} />
+  return <SvgFallback color="#3a3a3a" hasHole style={style} />
 }
-
 const AfterPhoto: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
   if (HAS_PHOTOS) {
-    return (
-      <Img
-        src={staticFile('photos/after.jpg')}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', ...style }}
-      />
-    )
+    return <Img src={staticFile('photos/after.jpg')} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', ...style }} />
   }
-  return <RepavedFallback style={style} />
+  return <SvgFallback color="#2a2a30" style={style} />
+}
+const SvgFallback: React.FC<{ color: string; hasHole?: boolean; style?: React.CSSProperties }> = ({ color, hasHole, style }) => (
+  <svg viewBox="0 0 800 500" style={{ width: '100%', height: '100%', display: 'block', ...style }}>
+    <rect width="800" height="170" fill="#3a4a5e" />
+    <rect x="0" y="170" width="800" height="330" fill={color} />
+    {hasHole && <ellipse cx="400" cy="370" rx="195" ry="92" fill="#000" />}
+  </svg>
+)
+
+// Camera drift on a photo — slow pan + zoom (Ken Burns)
+const KenBurns: React.FC<{ children: React.ReactNode; startFrame: number; durationFrames: number; intensity?: number }> = ({
+  children, startFrame, durationFrames, intensity = 1
+}) => {
+  const frame = useCurrentFrame()
+  const t = interpolate(frame, [startFrame, startFrame + durationFrames], [0, 1], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH
+  })
+  const scale = 1 + 0.08 * t * intensity
+  const x = -8 * t * intensity
+  const y = -4 * t * intensity
+  return (
+    <div style={{ width: '100%', height: '100%', overflow: 'hidden', transform: `translate(${x}px, ${y}px) scale(${scale})` }}>
+      {children}
+    </div>
+  )
 }
 
-// SVG fallback illustrations (only used if HAS_PHOTOS = false)
-const PotholeFallback: React.FC<{ style?: React.CSSProperties }> = ({ style }) => (
-  <svg viewBox="0 0 800 500" style={{ width: '100%', height: '100%', display: 'block', ...style }} xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="pSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#4a5d76" /><stop offset="1" stopColor="#2e4055" /></linearGradient>
-      <linearGradient id="pRoad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3a3a3a" /><stop offset="1" stopColor="#1a1a1a" /></linearGradient>
-      <radialGradient id="pHole" cx="0.5" cy="0.5"><stop offset="0" stopColor="#000" /><stop offset="1" stopColor="#1a1a1a" /></radialGradient>
-    </defs>
-    <rect width="800" height="170" fill="url(#pSky)" />
-    <path d="M0,150 L120,150 L120,120 L210,120 L210,140 L290,140 L290,110 L370,110 L370,150 L450,150 L450,128 L540,128 L540,150 L800,150 L800,170 L0,170 Z" fill="#1e2a3a" />
-    <rect x="0" y="170" width="800" height="330" fill="url(#pRoad)" />
-    <ellipse cx="400" cy="370" rx="195" ry="92" fill="url(#pHole)" />
-  </svg>
-)
-const RepavedFallback: React.FC<{ style?: React.CSSProperties }> = ({ style }) => (
-  <svg viewBox="0 0 800 500" style={{ width: '100%', height: '100%', display: 'block', ...style }} xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="rSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#7b9ab9" /><stop offset="1" stopColor="#5a7d9e" /></linearGradient>
-      <linearGradient id="rRoad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3a3a40" /><stop offset="1" stopColor="#15151c" /></linearGradient>
-    </defs>
-    <rect width="800" height="170" fill="url(#rSky)" />
-    <path d="M0,150 L120,150 L120,120 L210,120 L210,140 L290,140 L290,110 L370,110 L370,150 L450,150 L450,128 L540,128 L540,150 L800,150 L800,170 L0,170 Z" fill="#3a4a5e" />
-    <rect x="0" y="170" width="800" height="330" fill="url(#rRoad)" />
-  </svg>
-)
+// Per-word reveal — splits a string into words, staggers entrance
+const WordReveal: React.FC<{ text: string; startFrame: number; perWordStaggerFrames?: number; style?: React.CSSProperties }> = ({
+  text, startFrame, perWordStaggerFrames = 4, style
+}) => {
+  const words = text.split(' ')
+  return (
+    <span style={{ display: 'inline-block', ...style }}>
+      {words.map((w, i) => (
+        <WordPiece key={i} text={w + (i < words.length - 1 ? ' ' : '')} startFrame={startFrame + i * perWordStaggerFrames} />
+      ))}
+    </span>
+  )
+}
+const WordPiece: React.FC<{ text: string; startFrame: number }> = ({ text, startFrame }) => {
+  const frame = useCurrentFrame()
+  const t = interpolate(frame, [startFrame, startFrame + 18], [0, 1], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER
+  })
+  return (
+    <span style={{
+      display: 'inline-block',
+      opacity: t,
+      transform: `translateY(${interpolate(t, [0, 1], [16, 0])}px)`,
+      filter: `blur(${interpolate(t, [0, 1], [6, 0])}px)`,
+      whiteSpace: 'pre'
+    }}>{text}</span>
+  )
+}
 
-// ─── App header (no Oshkosh, no emojis) ─────────────────────────────────
-const AppHeader: React.FC = () => (
-  <div style={{
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    padding: '28px 64px 22px',
-    borderBottom: `1px solid ${BORDER}`,
-    background: BG,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    fontFamily
-  }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-      <PulseLogo size={36} />
-      <span style={{ fontSize: 28, fontWeight: 800, color: TEXT, letterSpacing: '-0.02em' }}>Pulse</span>
-    </div>
+// Number with glow halo when changing
+const GlowNumber: React.FC<{ value: number; color: string; size: number; weight?: number }> = ({ value, color, size, weight = 800 }) => {
+  return (
+    <span style={{
+      fontSize: size,
+      fontWeight: weight,
+      color,
+      fontVariantNumeric: 'tabular-nums',
+      letterSpacing: '-0.02em',
+      textShadow: `0 0 ${size * 0.5}px ${color}66, 0 0 ${size * 1.2}px ${color}33`
+    }}>{fmtNum(value)}</span>
+  )
+}
+
+// "+N" floating indicator
+const VotePop: React.FC<{ value: number; startFrame: number; x: number; y: number; color?: string }> = ({
+  value, startFrame, x, y, color = PINK
+}) => {
+  const frame = useCurrentFrame()
+  const local = frame - startFrame
+  if (local < 0 || local > 50) return null
+  const t = interpolate(local, [0, 50], [0, 1], { extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic) })
+  const opacity = interpolate(local, [0, 6, 40, 50], [0, 1, 1, 0], { extrapolateRight: 'clamp' })
+  return (
     <div style={{
-      display: 'inline-flex',
+      position: 'absolute',
+      left: x,
+      top: y - t * 80,
+      fontSize: 22,
+      fontWeight: 800,
+      color,
+      opacity,
+      letterSpacing: '-0.01em',
+      pointerEvents: 'none',
+      textShadow: `0 0 12px ${color}aa`,
+      fontFamily,
+      transform: `scale(${interpolate(t, [0, 0.3, 1], [0.5, 1.1, 1])})`
+    }}>+{value}</div>
+  )
+}
+
+// ─── App header ──────────────────────────────────────────────────────────
+const AppHeader: React.FC = () => {
+  const frame = useCurrentFrame()
+  const dotPulse = interpolate(frame % 60, [0, 30, 60], [1, 1.3, 1], { easing: Easing.inOut(Easing.cubic) })
+  return (
+    <div style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      padding: '28px 64px 22px',
+      borderBottom: `1px solid ${BORDER}`,
+      background: `linear-gradient(180deg, ${BG} 0%, rgba(15,15,26,0.96) 100%)`,
+      backdropFilter: 'blur(8px)',
+      display: 'flex',
       alignItems: 'center',
-      gap: 8,
-      padding: '8px 16px',
-      borderRadius: 24,
-      background: `${GREEN}1A`,
-      border: `1px solid ${GREEN}44`,
-      color: GREEN,
-      fontSize: 14,
-      fontWeight: 700,
-      letterSpacing: '0.04em'
+      justifyContent: 'space-between',
+      fontFamily,
+      zIndex: 80
     }}>
-      <IconVerified size={14} />
-      <span>Verified resident</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ transform: `scale(${dotPulse})` }}>
+          <PulseLogo size={36} />
+        </div>
+        <span style={{ fontSize: 28, fontWeight: 800, color: TEXT, letterSpacing: '-0.02em' }}>Pulse</span>
+      </div>
+      <div style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '8px 16px',
+        borderRadius: 24,
+        background: `${GREEN}1A`,
+        border: `1px solid ${GREEN}44`,
+        color: GREEN,
+        fontSize: 14,
+        fontWeight: 700,
+        letterSpacing: '0.04em',
+        boxShadow: `0 0 24px ${GREEN}22`
+      }}>
+        <IconVerified size={14} />
+        <span>Verified resident</span>
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 const Caption: React.FC<{ text: string; color?: string; startFrame: number }> = ({
-  text,
-  color = PINK,
-  startFrame
+  text, color = PINK, startFrame
 }) => {
   const slide = useEnter(startFrame, 22)
   return (
@@ -205,22 +362,16 @@ const Caption: React.FC<{ text: string; color?: string; startFrame: number }> = 
       fontWeight: 800,
       color,
       letterSpacing: '0.26em',
-      textTransform: 'uppercase'
+      textTransform: 'uppercase',
+      zIndex: 70,
+      textShadow: `0 0 16px ${color}66`
     }}>
-      <span style={{
-        display: 'inline-block',
-        width: 36,
-        height: 2,
-        background: color,
-        verticalAlign: 'middle',
-        marginRight: 14
-      }} />
+      <span style={{ display: 'inline-block', width: 36, height: 2, background: color, verticalAlign: 'middle', marginRight: 14, boxShadow: `0 0 12px ${color}` }} />
       {text}
     </div>
   )
 }
 
-// Category chip used inside Pulse cards
 const Chip: React.FC<{ color: string; label: string; icon?: React.ReactNode }> = ({ color, label, icon }) => (
   <span style={{
     display: 'inline-flex',
@@ -250,37 +401,50 @@ const SceneOpen: React.FC = () => {
   const pullback = interpolate(frame, [40, 100], [0, 1], {
     extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER
   })
+  // Fullscreen photo fully gone by frame 90 — no lingering behind the card.
+  const fullscreenFade = interpolate(frame, [72, 90], [1, 0], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH
+  })
   const photoScale = interpolate(pullback, [0, 1], [1, 0.36])
   const photoTranslateX = interpolate(pullback, [0, 1], [0, -540])
   const photoTranslateY = interpolate(pullback, [0, 1], [0, 60])
 
-  const headerFade = interpolate(frame, [70, 100], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
-  const cardChromeFade = interpolate(frame, [80, 115], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
+  const headerFade = interpolate(frame, [60, 90], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
+  const cardChromeFade = interpolate(frame, [70, 100], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
   const tickerVotes = useTicker(118, 11, 12, 14)
 
   return (
     <AbsoluteFill style={{ background: BG }}>
+      <LightLeak color={ORANGE + '88'} startFrame={0} duration={60} />
+      <Particles count={14} opacity={0.12} />
+
       <div style={{ opacity: headerFade }}>
         <AppHeader />
       </div>
       <Caption text="Post what you see." startFrame={100} />
 
-      {/* Photo: starts fullscreen, animates into card position */}
+      {/* Fullscreen photo — fades out as it lands in the card */}
       <div style={{
         position: 'absolute',
-        top: 0,
-        left: 0,
-        width: 1920,
-        height: 1080,
-        opacity: photoFade,
+        top: 0, left: 0,
+        width: 1920, height: 1080,
+        opacity: photoFade * fullscreenFade,
         transform: `translate(${photoTranslateX}px, ${photoTranslateY}px) scale(${photoScale})`,
         transformOrigin: 'center center',
         pointerEvents: 'none'
       }}>
-        <BeforePhoto />
+        <KenBurns startFrame={0} durationFrames={90} intensity={0.6}>
+          <BeforePhoto />
+        </KenBurns>
+        {/* Photo-specific vignette */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%)',
+          pointerEvents: 'none'
+        }} />
       </div>
 
-      {/* Card chrome appears around the photo */}
+      {/* Card chrome */}
       <div style={{
         position: 'absolute',
         top: 240,
@@ -290,7 +454,7 @@ const SceneOpen: React.FC = () => {
         borderRadius: 22,
         border: `1px solid ${BORDER}`,
         padding: '32px 36px',
-        boxShadow: '0 12px 50px rgba(0,0,0,0.4)',
+        boxShadow: `0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px ${BORDER}, inset 0 1px 0 rgba(255,255,255,0.04)`,
         opacity: cardChromeFade,
         fontFamily
       }}>
@@ -300,15 +464,10 @@ const SceneOpen: React.FC = () => {
         </div>
 
         <div style={{
-          fontSize: 30,
-          fontWeight: 800,
-          color: TEXT,
-          marginBottom: 22,
-          letterSpacing: '-0.015em',
-          lineHeight: 1.25
+          fontSize: 30, fontWeight: 800, color: TEXT,
+          marginBottom: 22, letterSpacing: '-0.015em', lineHeight: 1.25
         }}>Massive potholes on Main &amp; 9th — bent my rim last week</div>
 
-        {/* Photo slot inside the card — appears after the pullback completes */}
         <div style={{
           width: '100%',
           height: 480,
@@ -316,9 +475,10 @@ const SceneOpen: React.FC = () => {
           background: '#000',
           overflow: 'hidden',
           marginBottom: 22,
-          opacity: cardChromeFade
+          opacity: cardChromeFade,
+          boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.04)'
         }}>
-          {frame > 95 && <BeforePhoto />}
+          {frame > 95 && <KenBurns startFrame={95} durationFrames={90} intensity={0.4}><BeforePhoto /></KenBurns>}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
@@ -328,12 +488,13 @@ const SceneOpen: React.FC = () => {
             gap: 10,
             padding: '10px 18px',
             borderRadius: 12,
-            background: 'rgba(255,255,255,0.05)',
-            border: `1px solid ${BORDER_STRONG}`,
-            color: TEXT,
+            background: `${PINK}1A`,
+            border: `1px solid ${PINK}55`,
+            color: PINK,
             fontSize: 22,
             fontWeight: 800,
-            fontVariantNumeric: 'tabular-nums'
+            fontVariantNumeric: 'tabular-nums',
+            boxShadow: `0 0 24px ${PINK}33`
           }}>
             <IconArrowUp size={20} />
             {tickerVotes}
@@ -344,152 +505,235 @@ const SceneOpen: React.FC = () => {
           </span>
         </div>
       </div>
+
+      <Vignette strength={0.45} />
     </AbsoluteFill>
   )
 }
 
-// ─── Scene 2: Leaderboard battle (6–13s) ─────────────────────────────────
+// ─── Scene 2: Real leaderboard battle (6–13s) ───────────────────────────
+// All Pulses get votes — the hero just gets MORE. Each Pulse has a series
+// of "vote moments" — frame where it ticks up by N. Position is derived
+// from current votes, so cards physically reshuffle as the battle plays out.
 
 const FEED_CARD_HEIGHT = 162
 const FEED_CARD_GAP = 16
-const FEED_START_Y = 220
+const SCENE_CLIMB_LENGTH = 210
 
-const FEED_PULSES = [
-  { id: 'a', title: 'Streetlight out on Elm for 3 weeks', cat: 'Safety', catColor: PINK, startVotes: 89, endVotes: 89, startRank: 0, endRank: 1 },
-  { id: 'b', title: 'Crosswalk paint faded near the school', cat: 'Safety', catColor: PINK, startVotes: 67, endVotes: 67, startRank: 1, endRank: 2 },
-  { id: 'c', title: 'Trash pickup missed for 3 weeks', cat: 'Other', catColor: TEXT_MUTE, startVotes: 45, endVotes: 45, startRank: 2, endRank: 3 },
-  { id: 'd', title: 'Bus stop bench fell over', cat: 'Transit', catColor: BLUE, startVotes: 32, endVotes: 32, startRank: 3, endRank: 4 },
-  { id: 'hero', title: 'Massive potholes on Main & 9th', cat: 'Pothole', catColor: ORANGE, startVotes: 12, endVotes: 742, startRank: 4, endRank: 0, hero: true }
+// Each Pulse: timeline of [frame, deltaVotes] pairs. Frames are scene-local.
+type Vote = [number, number]
+const FEED_TIMELINE: Array<{
+  id: string; title: string; cat: string; catColor: string; start: number; votes: Vote[]; hero?: boolean
+}> = [
+  { id: 'a', title: 'Streetlight out on Elm for 3 weeks', cat: 'Safety', catColor: PINK, start: 89, votes: [[35,4],[60,3],[95,5],[130,3]] },
+  { id: 'b', title: 'Crosswalk paint faded near the school', cat: 'Safety', catColor: PINK, start: 67, votes: [[40,3],[80,4],[125,3]] },
+  { id: 'c', title: 'Trash pickup missed for 3 weeks', cat: 'Other', catColor: TEXT_MUTE, start: 45, votes: [[50,2],[110,3]] },
+  { id: 'd', title: 'Bus stop bench fell over', cat: 'Transit', catColor: BLUE, start: 32, votes: [[55,2],[140,4]] },
+  { id: 'hero', title: 'Massive potholes on Main & 9th', cat: 'Pothole', catColor: ORANGE, start: 12, votes: [
+    [25,18], [45,42], [65,78], [85,128], [105,165], [125,140], [150,120], [170,55]
+  ], hero: true }
 ]
+
+const votesAt = (timeline: typeof FEED_TIMELINE[number], frame: number): number => {
+  let total = timeline.start
+  for (const [voteFrame, delta] of timeline.votes) {
+    if (frame >= voteFrame) {
+      const t = Math.min(1, (frame - voteFrame) / 8)
+      total += Math.floor(delta * t)
+    }
+  }
+  return total
+}
+
+// Precompute rank for every Pulse at every frame — used by FeedCard to lerp
+// position smoothly when ranks change (CSS transitions don't render).
+const rankHistory: Record<string, number[]> = {}
+for (const t of FEED_TIMELINE) rankHistory[t.id] = new Array(SCENE_CLIMB_LENGTH)
+for (let f = 0; f < SCENE_CLIMB_LENGTH; f++) {
+  const live = FEED_TIMELINE.map(t => ({ ...t, _v: votesAt(t, f) }))
+  const ranked = [...live].sort((a, b) => b._v - a._v)
+  ranked.forEach((p, i) => { rankHistory[p.id][f] = i })
+}
+
+const SMOOTH_FRAMES = 14
+const smoothedRank = (id: string, frame: number): number => {
+  const f = Math.max(0, Math.min(SCENE_CLIMB_LENGTH - 1, frame))
+  const current = rankHistory[id][f]
+  // Walk back to find the frame where the current rank was first reached
+  let changeFrame = f
+  for (let i = f; i > Math.max(0, f - SMOOTH_FRAMES); i--) {
+    if (rankHistory[id][i - 1] !== current) { changeFrame = i; break }
+    if (i === 1) changeFrame = 0
+  }
+  if (f - changeFrame >= SMOOTH_FRAMES - 1) return current
+  const oldRank = changeFrame > 0 ? rankHistory[id][changeFrame - 1] : current
+  if (oldRank === current) return current
+  const t = (f - changeFrame + 1) / SMOOTH_FRAMES
+  const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
+  return oldRank * (1 - eased) + current * eased
+}
 
 const SceneClimb: React.FC = () => {
   const frame = useCurrentFrame()
   const headerFade = interpolate(frame, [0, 14], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
-  const climbProgress = interpolate(frame, [30, 170], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-    easing: ENTER
-  })
+
+  const live = FEED_TIMELINE.map(t => ({
+    ...t,
+    currentVotes: votesAt(t, frame),
+    smoothRank: smoothedRank(t.id, frame)
+  }))
+  const intRankById: Record<string, number> = {}
+  const rankedNow = [...live].sort((a, b) => b.currentVotes - a.currentVotes)
+  rankedNow.forEach((p, i) => { intRankById[p.id] = i })
 
   return (
     <AbsoluteFill style={{ background: BG }}>
+      <LightLeak color={PINK_GLOW} startFrame={0} duration={50} />
+      <Particles count={16} opacity={0.14} />
+
       <div style={{ opacity: headerFade }}>
         <AppHeader />
       </div>
       <Caption text="When neighbors agree." startFrame={0} />
 
-      <div style={{ position: 'absolute', top: FEED_START_Y, left: 120, right: 120 }}>
-        {FEED_PULSES.map(p => {
-          const y = interpolate(
-            climbProgress,
-            [0, 1],
-            [p.startRank * (FEED_CARD_HEIGHT + FEED_CARD_GAP), p.endRank * (FEED_CARD_HEIGHT + FEED_CARD_GAP)],
-            { easing: ENTER }
-          )
-          const votes = p.hero ? Math.floor(p.startVotes + (p.endVotes - p.startVotes) * climbProgress) : p.startVotes
-          const isOnTop = p.endRank === 0 && climbProgress > 0.6
-          return (
-            <FeedCard
-              key={p.id}
-              y={y}
-              title={p.title}
-              cat={p.cat}
-              catColor={p.catColor}
-              votes={votes}
-              hero={!!p.hero}
-              celebrate={!!p.hero && isOnTop}
+      <div style={{ position: 'absolute', top: 220, left: 120, right: 120 }}>
+        {live.map(p => (
+          <FeedCard
+            key={p.id}
+            smoothRank={p.smoothRank}
+            intRank={intRankById[p.id]}
+            title={p.title}
+            cat={p.cat}
+            catColor={p.catColor}
+            votes={p.currentVotes}
+            hero={!!p.hero}
+            celebrate={p.hero && intRankById[p.id] === 0 && frame > 110}
+          />
+        ))}
+        {/* Floating "+N" indicators — anchored to each card's CURRENT position
+            so they ride along when the card reshuffles. */}
+        {live.flatMap((p) =>
+          p.votes.map(([voteFrame, delta], i) => (
+            <VotePop
+              key={`${p.id}-${i}`}
+              value={delta}
+              startFrame={voteFrame}
+              x={130}
+              y={20 + p.smoothRank * (FEED_CARD_HEIGHT + FEED_CARD_GAP)}
+              color={p.hero ? PINK : p.catColor}
             />
-          )
-        })}
+          ))
+        )}
       </div>
+
+      <Vignette strength={0.4} />
     </AbsoluteFill>
   )
 }
 
 const FeedCard: React.FC<{
-  y: number
+  smoothRank: number
+  intRank: number
   title: string
   cat: string
   catColor: string
   votes: number
   hero: boolean
   celebrate: boolean
-}> = ({ y, title, cat, catColor, votes, hero, celebrate }) => (
-  <div style={{
-    position: 'absolute',
-    top: y,
-    left: 0,
-    right: 0,
-    height: FEED_CARD_HEIGHT,
-    background: BG_CARD,
-    borderRadius: 18,
-    border: hero
-      ? `1.5px solid ${celebrate ? PINK : ORANGE}66`
-      : `1px solid ${BORDER}`,
-    padding: '20px 26px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 24,
-    fontFamily,
-    boxShadow: hero && celebrate ? `0 12px 50px ${PINK_GLOW}` : '0 4px 18px rgba(0,0,0,0.25)'
-  }}>
+}> = ({ smoothRank, intRank, title, cat, catColor, votes, hero, celebrate }) => {
+  const targetY = smoothRank * (FEED_CARD_HEIGHT + FEED_CARD_GAP)
+  return (
     <div style={{
+      position: 'absolute',
+      top: targetY,
+      left: 0,
+      right: 0,
+      height: FEED_CARD_HEIGHT,
+      background: BG_CARD,
+      borderRadius: 18,
+      border: hero
+        ? `1.5px solid ${celebrate ? PINK : ORANGE}66`
+        : `1px solid ${BORDER}`,
+      padding: '20px 26px',
       display: 'flex',
-      flexDirection: 'column',
       alignItems: 'center',
-      gap: 4,
-      width: 96,
-      flexShrink: 0,
-      padding: '10px 0',
-      borderRadius: 14,
-      background: hero && celebrate ? `${PINK}22` : 'rgba(255,255,255,0.04)',
-      border: hero && celebrate ? `1px solid ${PINK}` : `1px solid ${BORDER_STRONG}`
+      gap: 24,
+      fontFamily,
+      boxShadow: hero && celebrate
+        ? `0 16px 60px ${PINK_GLOW}, 0 0 0 1px ${PINK}55, inset 0 1px 0 rgba(255,255,255,0.06)`
+        : '0 6px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03)'
     }}>
-      <span style={{
-        fontSize: 30,
-        fontWeight: 800,
-        color: hero && celebrate ? PINK : TEXT,
-        fontVariantNumeric: 'tabular-nums',
-        letterSpacing: '-0.02em'
-      }}>{fmtNum(votes)}</span>
-      <span style={{ fontSize: 11, color: TEXT_MUTE, fontWeight: 700, letterSpacing: '0.08em' }}>VOTES</span>
-    </div>
-
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-        <Chip color={catColor} label={cat} />
-        {hero && celebrate && (
-          <span style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '4px 12px',
-            borderRadius: 6,
-            background: PINK,
-            color: 'white',
-            fontSize: 12,
-            fontWeight: 800,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase'
-          }}>
-            <IconTrending size={14} />
-            #1 Trending
-          </span>
-        )}
-      </div>
+      {/* Rank pill */}
       <div style={{
-        fontSize: 24,
-        fontWeight: 700,
-        color: TEXT,
-        letterSpacing: '-0.01em',
-        lineHeight: 1.25,
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        textOverflow: 'ellipsis'
-      }}>{title}</div>
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        background: hero && celebrate ? PINK : 'rgba(255,255,255,0.05)',
+        border: hero && celebrate ? `1px solid ${PINK}` : `1px solid ${BORDER_STRONG}`,
+        color: hero && celebrate ? 'white' : TEXT_MUTE,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 18,
+        fontWeight: 800,
+        flexShrink: 0
+      }}>{intRank + 1}</div>
+
+      {/* Vote pill */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 4,
+        width: 96,
+        flexShrink: 0,
+        padding: '10px 0',
+        borderRadius: 14,
+        background: hero && celebrate ? `${PINK}22` : 'rgba(255,255,255,0.04)',
+        border: hero && celebrate ? `1px solid ${PINK}` : `1px solid ${BORDER_STRONG}`,
+        boxShadow: hero && celebrate ? `inset 0 0 16px ${PINK}22` : 'none'
+      }}>
+        <GlowNumber value={votes} color={hero && celebrate ? PINK : TEXT} size={30} />
+        <span style={{ fontSize: 11, color: TEXT_MUTE, fontWeight: 700, letterSpacing: '0.08em' }}>VOTES</span>
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <Chip color={catColor} label={cat} />
+          {hero && celebrate && (
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '4px 12px',
+              borderRadius: 6,
+              background: PINK,
+              color: 'white',
+              fontSize: 12,
+              fontWeight: 800,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              boxShadow: `0 0 24px ${PINK}88`
+            }}>
+              <IconTrending size={14} />
+              #1 Trending
+            </span>
+          )}
+        </div>
+        <div style={{
+          fontSize: 24,
+          fontWeight: 700,
+          color: TEXT,
+          letterSpacing: '-0.01em',
+          lineHeight: 1.25,
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
+          textOverflow: 'ellipsis'
+        }}>{title}</div>
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 // ─── Scene 3: City response (13–17s) ─────────────────────────────────────
 const SceneListens: React.FC = () => {
@@ -502,12 +746,14 @@ const SceneListens: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ background: BG }}>
+      <LightLeak color={`${AMBER}66`} startFrame={0} duration={60} />
+      <Particles count={14} opacity={0.12} />
+
       <div style={{ opacity: headerFade }}>
         <AppHeader />
       </div>
       <Caption text="The city listens." startFrame={0} color={AMBER} />
 
-      {/* Pulse card with status badge */}
       <div style={{
         ...cardEnter,
         position: 'absolute',
@@ -518,7 +764,8 @@ const SceneListens: React.FC = () => {
         borderRadius: 20,
         border: `1px solid ${BORDER}`,
         padding: '30px 36px',
-        fontFamily
+        fontFamily,
+        boxShadow: '0 16px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <Chip color={ORANGE} label="Pothole" icon={<IconPothole size={14} />} />
@@ -534,7 +781,8 @@ const SceneListens: React.FC = () => {
             fontSize: 14,
             fontWeight: 800,
             letterSpacing: '0.04em',
-            textTransform: 'uppercase'
+            textTransform: 'uppercase',
+            boxShadow: `0 0 24px ${AMBER}55`
           }}>
             <IconRefresh size={14} />
             In progress
@@ -558,7 +806,6 @@ const SceneListens: React.FC = () => {
         }}>Massive potholes on Main &amp; 9th — bent my rim last week</div>
       </div>
 
-      {/* City Public Works notification */}
       <div style={{
         ...notifSlide,
         position: 'absolute',
@@ -572,7 +819,8 @@ const SceneListens: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         gap: 18,
-        fontFamily
+        fontFamily,
+        boxShadow: `0 12px 40px ${BLUE}22`
       }}>
         <div style={{
           width: 56,
@@ -583,7 +831,8 @@ const SceneListens: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          flexShrink: 0
+          flexShrink: 0,
+          boxShadow: `0 0 24px ${BLUE}66`
         }}>
           <IconGlobe size={28} />
         </div>
@@ -593,7 +842,6 @@ const SceneListens: React.FC = () => {
         </div>
       </div>
 
-      {/* Public Works comment */}
       <div style={{
         ...commentSlide,
         position: 'absolute',
@@ -606,7 +854,8 @@ const SceneListens: React.FC = () => {
         padding: '24px 28px',
         display: 'flex',
         gap: 18,
-        fontFamily
+        fontFamily,
+        boxShadow: '0 12px 40px rgba(0,0,0,0.4)'
       }}>
         <div style={{
           width: 56,
@@ -619,7 +868,8 @@ const SceneListens: React.FC = () => {
           justifyContent: 'center',
           fontSize: 22,
           fontWeight: 800,
-          flexShrink: 0
+          flexShrink: 0,
+          boxShadow: `0 0 18px ${BLUE}66`
         }}>PW</div>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
@@ -645,11 +895,13 @@ const SceneListens: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <Vignette strength={0.42} />
     </AbsoluteFill>
   )
 }
 
-// ─── Scene 4: Before/After wipe (17–23s) ─────────────────────────────────
+// ─── Scene 4: Before/After wipe (17–23s) ────────────────────────────────
 const SceneFixed: React.FC = () => {
   const frame = useCurrentFrame()
   const headerFade = interpolate(frame, [0, 12], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
@@ -665,6 +917,9 @@ const SceneFixed: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ background: BG }}>
+      <LightLeak color={`${GREEN}66`} startFrame={0} duration={70} />
+      <Particles count={14} opacity={0.12} />
+
       <div style={{ opacity: headerFade }}>
         <AppHeader />
       </div>
@@ -680,70 +935,93 @@ const SceneFixed: React.FC = () => {
         borderRadius: 22,
         overflow: 'hidden',
         border: `1px solid ${BORDER}`,
-        boxShadow: '0 16px 60px rgba(0,0,0,0.45)'
+        boxShadow: '0 24px 80px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.06)'
       }}>
-        {/* BEFORE layer */}
         <div style={{ position: 'absolute', inset: 0 }}>
-          <BeforePhoto style={{ width: '100%', height: '100%' }} />
+          <KenBurns startFrame={0} durationFrames={180} intensity={0.4}>
+            <BeforePhoto style={{ width: '100%', height: '100%' }} />
+          </KenBurns>
         </div>
-        {/* AFTER layer — clipped from the left by wipeProgress */}
         <div style={{
           position: 'absolute',
           inset: 0,
           clipPath: `inset(0 0 0 ${(1 - wipeProgress) * 100}%)`
         }}>
-          <AfterPhoto style={{ width: '100%', height: '100%' }} />
+          <KenBurns startFrame={0} durationFrames={180} intensity={0.4}>
+            <AfterPhoto style={{ width: '100%', height: '100%' }} />
+          </KenBurns>
         </div>
-        {/* Wipe line */}
         {wipeProgress > 0 && wipeProgress < 1 && (
-          <div style={{
-            position: 'absolute',
-            left: `${wipeProgress * 100}%`,
-            top: 0,
-            bottom: 0,
-            width: 4,
-            background: 'white',
-            boxShadow: `0 0 24px white, 0 0 48px ${GREEN}aa`,
-            transform: 'translateX(-2px)'
-          }} />
+          <>
+            <div style={{
+              position: 'absolute',
+              left: `${wipeProgress * 100}%`,
+              top: 0,
+              bottom: 0,
+              width: 6,
+              background: 'white',
+              boxShadow: `0 0 32px white, 0 0 64px ${GREEN}, 0 0 96px ${GREEN}aa`,
+              transform: 'translateX(-3px)'
+            }} />
+            {/* Sparkle particles trailing the wipe line */}
+            {Array.from({ length: 8 }).map((_, i) => {
+              const py = 60 + (i / 7) * 520 + Math.sin((frame + i * 12) / 10) * 8
+              return (
+                <div key={i} style={{
+                  position: 'absolute',
+                  left: `calc(${wipeProgress * 100}% - 3px)`,
+                  top: py,
+                  width: 4,
+                  height: 4,
+                  borderRadius: 2,
+                  background: 'white',
+                  boxShadow: `0 0 8px white, 0 0 16px ${GREEN}`,
+                  opacity: 0.9
+                }} />
+              )
+            })}
+          </>
         )}
         <div style={{
           position: 'absolute',
           top: 24,
           left: 24,
           opacity: labelBefore,
-          padding: '8px 16px',
-          borderRadius: 8,
-          background: 'rgba(0,0,0,0.7)',
+          padding: '10px 18px',
+          borderRadius: 10,
+          background: 'rgba(0,0,0,0.78)',
+          backdropFilter: 'blur(8px)',
           color: TEXT,
           fontSize: 14,
           fontWeight: 800,
-          letterSpacing: '0.16em',
+          letterSpacing: '0.18em',
           textTransform: 'uppercase',
-          fontFamily
+          fontFamily,
+          border: '1px solid rgba(255,255,255,0.12)'
         }}>Before</div>
         <div style={{
           position: 'absolute',
           top: 24,
           right: 24,
           opacity: labelAfter,
-          padding: '8px 16px',
-          borderRadius: 8,
+          padding: '10px 18px',
+          borderRadius: 10,
           background: GREEN,
           color: '#04210d',
           fontSize: 14,
           fontWeight: 800,
-          letterSpacing: '0.16em',
+          letterSpacing: '0.18em',
           textTransform: 'uppercase',
-          fontFamily
+          fontFamily,
+          boxShadow: `0 8px 32px ${GREEN}77`
         }}>After</div>
         <div style={{
           ...statusPop,
           position: 'absolute',
           bottom: 24,
           right: 24,
-          padding: '10px 18px',
-          borderRadius: 12,
+          padding: '12px 22px',
+          borderRadius: 14,
           background: GREEN,
           color: '#04210d',
           fontSize: 16,
@@ -751,7 +1029,7 @@ const SceneFixed: React.FC = () => {
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
           fontFamily,
-          boxShadow: `0 8px 28px ${GREEN}66`,
+          boxShadow: `0 12px 40px ${GREEN}88`,
           display: 'inline-flex',
           alignItems: 'center',
           gap: 10
@@ -760,6 +1038,11 @@ const SceneFixed: React.FC = () => {
           Resolved
         </div>
       </div>
+
+      {/* Celebration confetti when Resolved pops */}
+      <Confetti startFrame={132} x={1660} y={760} color={GREEN} />
+
+      <Vignette strength={0.4} />
     </AbsoluteFill>
   )
 }
@@ -769,23 +1052,24 @@ const SceneCelebrate: React.FC = () => {
   const frame = useCurrentFrame()
   const headerFade = interpolate(frame, [0, 12], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ENTER })
   const cardEnter = useEnter(0, 22)
-  const heartT1 = interpolate(frame, [40, 110], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH })
-  const heartT2 = interpolate(frame, [50, 120], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH })
-  const heartT3 = interpolate(frame, [60, 115], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH })
-  const heartT4 = interpolate(frame, [45, 105], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SMOOTH })
   const votes = useTicker(20, 47, 218, 80)
 
-  const heartStyle = (t: number, dx: number): React.CSSProperties => ({
-    position: 'absolute',
-    bottom: 140 + t * 280,
-    left: 960 + dx,
-    opacity: interpolate(t, [0, 0.2, 0.85, 1], [0, 1, 1, 0]),
-    transform: `translateX(${Math.sin(t * Math.PI) * 16}px)`,
-    color: GREEN
-  })
+  // Multiple floating reactions with varied sizes, speeds, drifts
+  const reactions = [
+    { startX: -260, startFrame: 22, size: 64, speed: 1.0 },
+    { startX: -80, startFrame: 30, size: 52, speed: 1.3 },
+    { startX: 100, startFrame: 26, size: 60, speed: 0.9 },
+    { startX: 240, startFrame: 38, size: 48, speed: 1.2 },
+    { startX: -180, startFrame: 50, size: 56, speed: 1.1 },
+    { startX: 180, startFrame: 60, size: 44, speed: 1.4 },
+    { startX: 0, startFrame: 70, size: 50, speed: 1.0 }
+  ]
 
   return (
     <AbsoluteFill style={{ background: BG }}>
+      <LightLeak color={`${GREEN}66`} startFrame={0} duration={60} />
+      <Particles count={14} opacity={0.12} />
+
       <div style={{ opacity: headerFade }}>
         <AppHeader />
       </div>
@@ -797,12 +1081,12 @@ const SceneCelebrate: React.FC = () => {
         top: 260,
         left: 240,
         right: 240,
-        background: `linear-gradient(135deg, ${GREEN}10, ${BG_CARD})`,
+        background: `linear-gradient(135deg, ${GREEN}15, ${BG_CARD})`,
         borderRadius: 22,
-        border: `1.5px solid ${GREEN}55`,
+        border: `1.5px solid ${GREEN}66`,
         padding: '36px 40px',
         fontFamily,
-        boxShadow: `0 16px 60px ${GREEN}22`
+        boxShadow: `0 24px 80px ${GREEN}33, 0 0 0 1px ${GREEN}22, inset 0 1px 0 rgba(255,255,255,0.06)`
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 }}>
           <Chip color={GREEN} label="Compliment" icon={<IconCompliment size={14} />} />
@@ -816,7 +1100,9 @@ const SceneCelebrate: React.FC = () => {
           letterSpacing: '-0.02em',
           lineHeight: 1.2,
           marginBottom: 24
-        }}>Public Works fixed Main &amp; 9th. Smooth as butter now.</div>
+        }}>
+          <WordReveal text="Public Works fixed Main & 9th. Smooth as butter now." startFrame={20} perWordStaggerFrames={3} />
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
           <div style={{
@@ -830,7 +1116,8 @@ const SceneCelebrate: React.FC = () => {
             color: GREEN,
             fontSize: 24,
             fontWeight: 800,
-            fontVariantNumeric: 'tabular-nums'
+            fontVariantNumeric: 'tabular-nums',
+            boxShadow: `0 0 28px ${GREEN}55`
           }}>
             <IconCompliment size={22} />
             {votes}
@@ -843,11 +1130,31 @@ const SceneCelebrate: React.FC = () => {
         </div>
       </div>
 
-      {/* Floating verified-check hearts (using compliment thumb icon for variety) */}
-      <div style={heartStyle(heartT1, -260)}><IconCompliment size={64} /></div>
-      <div style={heartStyle(heartT2, -80)}><IconCompliment size={56} /></div>
-      <div style={heartStyle(heartT3, 140)}><IconCompliment size={60} /></div>
-      <div style={heartStyle(heartT4, 280)}><IconCompliment size={52} /></div>
+      {/* Floating compliment icons — varied sizes, drift paths, rotations */}
+      {reactions.map((r, i) => {
+        const local = frame - r.startFrame
+        if (local < 0) return null
+        const t = Math.min(1, local / (60 * r.speed))
+        const bottom = 140 + t * 320 * r.speed
+        const sideways = Math.sin((local + i * 25) / 22) * 22
+        const rot = Math.sin((local + i * 17) / 20) * 12
+        const opacity = interpolate(t, [0, 0.18, 0.82, 1], [0, 1, 1, 0])
+        return (
+          <div key={i} style={{
+            position: 'absolute',
+            bottom,
+            left: 960 + r.startX + sideways,
+            color: GREEN,
+            opacity,
+            filter: `drop-shadow(0 0 12px ${GREEN}88)`,
+            transform: `rotate(${rot}deg)`
+          }}>
+            <IconCompliment size={r.size} />
+          </div>
+        )
+      })}
+
+      <Vignette strength={0.38} />
     </AbsoluteFill>
   )
 }
@@ -856,15 +1163,12 @@ const SceneCelebrate: React.FC = () => {
 const EndCard: React.FC = () => {
   const frame = useCurrentFrame()
   const brandPop = usePop(0, 22)
-  const titleSlide = useEnter(14, 22)
   const urlSlide = useEnter(24, 20)
   const ctaSlide = useEnter(36, 20)
-  const pulseScale = interpolate(
-    frame % 60,
-    [0, 30, 60],
-    [1, 1.06, 1],
-    { easing: Easing.inOut(Easing.cubic) }
-  )
+  // Continuous breathing on the logo + subtle scan shimmer on the CTA
+  const pulseScale = interpolate(frame % 60, [0, 30, 60], [1, 1.06, 1], { easing: Easing.inOut(Easing.cubic) })
+  const haloOpacity = interpolate(frame % 60, [0, 30, 60], [0.4, 0.8, 0.4], { easing: Easing.inOut(Easing.cubic) })
+  const shimmerX = interpolate(frame % 90, [0, 90], [-200, 600], { easing: Easing.linear })
 
   return (
     <AbsoluteFill style={{
@@ -872,42 +1176,77 @@ const EndCard: React.FC = () => {
       alignItems: 'center',
       padding: '120px 140px',
       fontFamily,
-      background: BG
+      background: `radial-gradient(ellipse at center, ${BG} 0%, ${BG_DEEP} 100%)`
     }}>
-      <div style={{ ...brandPop, marginBottom: 36 }}>
-        <div style={{ transform: `scale(${pulseScale})` }}>
+      <LightLeak color={PINK_GLOW} startFrame={0} duration={60} />
+      <Particles count={24} opacity={0.18} />
+
+      <div style={{ ...brandPop, marginBottom: 36, position: 'relative' }}>
+        {/* Halo behind the logo */}
+        <div style={{
+          position: 'absolute',
+          inset: -60,
+          borderRadius: '50%',
+          background: `radial-gradient(circle, ${PINK}33 0%, transparent 70%)`,
+          opacity: haloOpacity
+        }} />
+        <div style={{ transform: `scale(${pulseScale})`, position: 'relative' }}>
           <PulseLogo size={220} />
         </div>
       </div>
+
+      {/* Headline — per-word reveal */}
       <div style={{
-        ...titleSlide,
-        fontSize: 84,
+        fontSize: 96,
         fontWeight: 800,
         color: TEXT,
-        letterSpacing: '-0.03em',
-        textAlign: 'center'
-      }}>Your city.<br />Your voice.</div>
+        letterSpacing: '-0.035em',
+        textAlign: 'center',
+        lineHeight: 1.05
+      }}>
+        <div><WordReveal text="Your city." startFrame={14} perWordStaggerFrames={4} /></div>
+        <div><WordReveal text="Your voice." startFrame={22} perWordStaggerFrames={4} /></div>
+      </div>
+
       <div style={{
         ...urlSlide,
-        marginTop: 28,
+        marginTop: 32,
         fontSize: 30,
         fontWeight: 700,
         color: TEXT_DIM,
-        letterSpacing: '0.04em'
+        letterSpacing: '0.04em',
+        textShadow: `0 0 24px ${PINK}33`
       }}>pulse-civic.vercel.app</div>
+
       <div style={{
         ...ctaSlide,
-        marginTop: 32,
+        marginTop: 36,
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius: 18,
         background: PINK,
         color: 'white',
-        padding: '22px 44px',
-        borderRadius: 18,
-        fontSize: 24,
+        padding: '24px 48px',
+        fontSize: 26,
         fontWeight: 800,
         letterSpacing: '0.08em',
         textTransform: 'uppercase',
-        boxShadow: `0 12px 40px ${PINK_GLOW}`
-      }}>Open Pulse →</div>
+        boxShadow: `0 16px 50px ${PINK}aa, inset 0 1px 0 rgba(255,255,255,0.25)`
+      }}>
+        Open Pulse →
+        {/* Shimmer sweep */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: shimmerX,
+          width: 100,
+          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+          transform: 'skewX(-20deg)'
+        }} />
+      </div>
+
+      <Vignette strength={0.55} />
     </AbsoluteFill>
   )
 }

@@ -98,7 +98,7 @@ const callGemini = async (parts) => {
 
 const BEFORE_PROMPT = `A wide photorealistic photograph of a residential city street in mid-afternoon. The camera is at eye level, looking down the road. The pavement is dark asphalt with visible cracks, weathering, and a large pothole approximately three feet wide in the foreground center, with rough crumbled edges and broken asphalt around it. Faded yellow centerline visible. Modest two-story brick and clapboard houses line both sides of the street. A few parked cars at the edges. Overcast bleak sky. Documentary news photography style. Shot on a 35mm lens, sharp focus, natural light, no people. Color realistic, slightly cool tones. 16:9 aspect ratio.`
 
-const AFTER_PROMPT = `A wide photorealistic photograph of the same residential city street in mid-afternoon, taken from the exact same camera angle and position as the reference image. The pothole is now completely gone, the road has been freshly repaved with smooth, dark, even asphalt. Bright crisp white edge line and freshly painted yellow centerline dashes are visible. The same two-story brick and clapboard houses line the street, same parked cars at the edges. Sunnier sky with some blue showing. Documentary news photography style. Shot on a 35mm lens, sharp focus, natural light, no people. Color realistic, slightly warmer tones than the before image. 16:9 aspect ratio.`
+const AFTER_PROMPT = `IMPORTANT: Generate this image using the provided reference photo as the exact base composition. Keep EVERY structural element identical: the same two-story brick and clapboard houses on both sides, the same parked cars in the exact same positions, the same camera angle and perspective looking down the road, the same utility poles, the same trees, the same sidewalks. The ONLY change: the asphalt road surface is now PERFECTLY smooth, freshly paved, jet-black even asphalt across the entire road — absolutely NO pothole, NO patch marks, NO crumbled edges, NO cracks, NO darker patch where the pothole was. The road should look like it was just completely repaved end-to-end. The yellow centerline is freshly painted in continuous bright clean dashes. The sky is brighter and sunnier than the reference. Photorealistic documentary photography, 35mm lens, sharp focus, natural light, no people. 16:9.`
 
 // ─── Run ─────────────────────────────────────────────────────────────────
 
@@ -131,10 +131,17 @@ if (!fs.existsSync(beforePath)) {
 }
 
 if (!fs.existsSync(afterPath)) {
-  console.log('→ Generating after.jpg…')
-  const { buf, source } = await tryWithFallback('after', AFTER_PROMPT)
+  // Force the Gemini multimodal path for the after photo: it accepts the
+  // before image as a visual reference so composition stays consistent and
+  // the prompt can explicitly say "remove the pothole entirely".
+  console.log('→ Generating after.jpg via Gemini 2.5 Flash Image (with before as reference)…')
+  const referenceImage = fs.readFileSync(beforePath).toString('base64')
+  const buf = await callGemini([
+    { inlineData: { mimeType: 'image/jpeg', data: referenceImage } },
+    { text: AFTER_PROMPT }
+  ])
   fs.writeFileSync(afterPath, buf)
-  console.log(`  ✓ ${afterPath} (${(buf.length / 1024).toFixed(0)} KB via ${source})`)
+  console.log(`  ✓ ${afterPath} (${(buf.length / 1024).toFixed(0)} KB)`)
 } else {
   console.log(`  ✓ ${afterPath} (exists, skipping)`)
 }
